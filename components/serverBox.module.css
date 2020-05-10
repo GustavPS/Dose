@@ -1,0 +1,10 @@
+.server {
+    display: table;
+    background-color: rgb(54, 45, 45);
+    color: white;
+    padding: 15px;
+    margin: 10px;
+}
+.server p {
+    font-size: 12px;
+}
