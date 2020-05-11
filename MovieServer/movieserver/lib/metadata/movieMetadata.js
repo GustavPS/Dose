@@ -7,6 +7,11 @@ class MovieMetadata extends Metadata {
         super();
     }
 
+    /**
+     * Search for metadata about the movie
+     * 
+     * @param {String} movieName - The name of the movie 
+     */
     getMetadata(movieName) {
         return new Promise((resolve, reject) => {
             fetch(`${this.getAPIUrl()}/search/movie?api_key=${this.getAPIKey()}&language=en-US&query=${movieName}&page=1&include_adult=true`)
@@ -25,7 +30,22 @@ class MovieMetadata extends Metadata {
         });
     }
 
+    /**
+     * Insert metadata in the database about a movie
+     * 
+     * @param {Object} metadata 
+     * @param {Integer} internalMovieID 
+     */
     insertMetadata(metadata, internalMovieID) {
+        console.log(metadata);
+
+        // If the metadata doesn't have any genre, add one (All movies need to have a genre)
+        if (metadata.genres.length === 0) {
+            metadata.genres.push({
+                id: -1,
+                name: 'other'
+            });
+        }
         for (let category of metadata.genres) {
             // Check if we already have saved the category from imdb
             db.any('SELECT * FROM category WHERE imdb_category_id = $1 ', [category.id]).then(async (categoryInDb) => {

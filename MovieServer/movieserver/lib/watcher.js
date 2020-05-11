@@ -30,12 +30,17 @@ class Watcher {
 
     }
 
+    /**
+     * Returns true if the class is initialized, false otherwise.
+     */
     isInitialized() {
         return this.initialized;
     }
 
     /**
      * Checks if all the movies/libraries in the database exist in the file system.
+     * If it does not exist it will remove the entries in the database, along with the metadata
+     * for that entry.
      */
     async syncDatabase() {
         console.log("Syncing database..");
@@ -65,7 +70,7 @@ class Watcher {
     }
 
     /**
-     * Get all the libraries that is saved in the database
+     * Get all the libraries that is saved in the database and save it in the libraries variable
      */
     async fetchLibraries() {
         const movieLibraries = await db.any("SELECT * FROM library WHERE type = 'MOVIES'");
