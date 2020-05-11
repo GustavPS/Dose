@@ -1,1 +1,2 @@
-This is a starter template for [Learn Next.js](https://nextjs.org/learn).
+# DOSE
+A media library application for home movies and content that you have purchased.
