@@ -15,6 +15,11 @@ class MovieLibrary extends Library {
         super(name, path, id, new MovieMetadata());
     }
 
+    /**
+     * Add a new entry to the database about the movie PATH.
+     * It will try to find and save metadata for the movie.
+     * @param {String} path - The path to the movie
+     */
     async newEntry(path) {
         db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
             if (result.length === 0) {
@@ -30,7 +35,7 @@ class MovieLibrary extends Library {
                         let movieName = path.substring(0, path.indexOf('.'));
                         movieName = movieName.substring(movieName.lastIndexOf("/") + 1);
                         movieName = movieName.substring(movieName.lastIndexOf("\\") + 1);
-                        
+
                         console.log(` > Searching for metadata for movie '${movieName}'`);
                         // Try to find metadata
                         this.metadata.getMetadata(movieName).then(metadata => {
@@ -50,6 +55,10 @@ class MovieLibrary extends Library {
 
     }
 
+    /**
+     * Remove the entry for PATH in the database
+     * @param {String} path - Path to the removed movie
+     */
     async removeEntry(path) {
         db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id])
         .then(result => {
