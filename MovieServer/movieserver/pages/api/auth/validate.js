@@ -4,7 +4,7 @@ const jwtSecret = 'SERVERSECRET';
 
 export default async (req, res) => {
     console.log(req.body.token);
-    await fetch('http://192.168.0.105:3000/api/auth/validate', {
+    await fetch('http://localhost:3000/api/auth/validate', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

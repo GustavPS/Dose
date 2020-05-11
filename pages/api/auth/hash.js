@@ -35,7 +35,7 @@ function decodeJWT(token) {
     try {
         decoded = jwt.verify(token, jwtSecret);
     } catch (e) {
-        console.error(e);
+        console.log("error, token gammal? hash.js")
     }
 
     if (decoded) {

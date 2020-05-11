@@ -1,7 +1,10 @@
 import Head from 'next/head'
+import React from 'react';
 
 export default function Home() {
   return (
-    <div></div>
+    <div>
+      <h1>hej</h1>
+    </div>
   )
 }

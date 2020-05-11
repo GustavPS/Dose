@@ -4,7 +4,7 @@ import style from '../styles/index.module.css';
 import useSWR from 'swr';
 import ServerBox from '../components/serverBox';
 import Router from 'next/router';
-let LoggedIn = true;
+import cookie from 'js-cookie';
 
 // Fetcher for useSWR, redirect to login if not authorized
 const fetcher = url =>
@@ -19,6 +19,11 @@ const fetcher = url =>
     }
   );
 const chooseServer = server => {
+  cookie.set('server', JSON.stringify({
+    id: server.server_id,
+    name: server.server_name,
+    ip: server.server_ip
+  }));
   Router.push(`/server/${server.server_id}`);
 }
 
