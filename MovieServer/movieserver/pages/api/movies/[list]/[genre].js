@@ -20,7 +20,7 @@ export default (req, res) => {
   } else {
       db.any(`
       SELECT * FROM (
-        SELECT i.id, i.title, i.overview, i.release_date, i.runtime, i.popularity, i.added_date, i.trailer, array_agg(DISTINCT t.name) AS genres, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images
+        SELECT i.movie_id AS id, i.title, i.overview, i.release_date, i.runtime, i.popularity, i.added_date, i.trailer, array_agg(DISTINCT t.name) AS genres, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images
         FROM movie_metadata i
 
         -- Join with movie_category and category to get an array of the categories

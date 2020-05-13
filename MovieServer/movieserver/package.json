@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "nodemon --exec babel-node server.js",
     "build": "next build",
-    "start": "NODE_ENV=production node server.js"
+    "start": "node server.js"
   },
   "dependencies": {
+    "async-lock": "^1.2.4",
     "babel-loader": "^8.1.0",
     "babel-preset-react": "^6.24.1",
     "chokidar": "^3.4.0",

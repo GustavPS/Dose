@@ -131,7 +131,7 @@ export default (props) => {
                 for (let movie of movies) {
                     let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
                     movieElements.push(
-                        <MovieBackdrop title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img}></MovieBackdrop>
+                        <MovieBackdrop title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                     );
                 }
                 setActionMovies(movieElements);
@@ -143,7 +143,7 @@ export default (props) => {
                 for (let movie of movies) {
                     let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
                     movieElements.push(
-                        <MovieBackdrop title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img}></MovieBackdrop>
+                        <MovieBackdrop id={movie.id} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                     );
                 }
                 setDramaMovies(movieElements);
@@ -155,7 +155,7 @@ export default (props) => {
                 for (let movie of movies) {
                     let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
                     movieElements.push(
-                        <MovieBackdrop title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img}></MovieBackdrop>
+                        <MovieBackdrop id={movie.id} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                     );
                 }
                 setDocumentaryMovies(movieElements);
@@ -164,6 +164,10 @@ export default (props) => {
 
 
     }, []);
+
+    const selectMovie = (id) => {
+        Router.push(`/server/${server.server_id}/video/${id}`);
+    }
 
 
     const scrollLeft = (id) => {
