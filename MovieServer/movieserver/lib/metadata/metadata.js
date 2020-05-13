@@ -17,9 +17,16 @@ class Metadata {
         throw('getMetadata must be implemented');
     }
 
-    insertMetadata(metadata, internalMovieID) {
+    insertMetadata(metadata, images, trailer, internalMovieID) {
         throw('insertMetadata must be implemented');
+    }
 
+    getImages(movieID) {
+        throw('getImages must be implemented');
+    }
+
+    getTrailer(movieID) {
+        throw('getTrailer must be implamented');
     }
 }
 

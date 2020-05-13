@@ -1,8 +1,10 @@
 const fetch = require('node-fetch');
 const jwt = require('jsonwebtoken');
 const jwtSecret = 'SERVERSECRET';
+const cors = require('../../../lib/cors');
 
 export default async (req, res) => {
+    res = cors(res);
     console.log(req.body.token);
     await fetch('http://localhost:3000/api/auth/validate', {
         method: 'POST',

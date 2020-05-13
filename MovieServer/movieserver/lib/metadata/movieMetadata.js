@@ -18,15 +18,67 @@ class MovieMetadata extends Metadata {
             .then(res => res.json())
             .then(json => {
                 if (json.total_results == 0) {
-                    resolve(null);
+                    let result = {
+                        metadata: null,
+                        images: null
+                    }
+                    resolve(result);
                 } else {
                     fetch(`${this.getAPIUrl()}/movie/${json.results[0].id}?api_key=${this.getAPIKey()}&language=en-US`)
                     .then(res => res.json())
                     .then(metadata => {
-                        resolve(metadata);
+                        this.getImages(json.results[0].id)
+                        .then(images => {
+                            let active = true;
+                            for (let image of images.backdrops) {
+                                image.active = active;
+                                active = false;
+                            }
+                            active = true;
+                            for (let image of images.posters) {
+                                image.active = active;
+                                active = false;
+                            }
+
+
+                            this.getTrailer(json.results[0].id).then(trailer => {
+                                let result = {
+                                    metadata: metadata,
+                                    images: images,
+                                    trailer: trailer
+                                }
+                                resolve(result);
+                            });
+                        });
                     });
                 }
             });
+        });
+    }
+
+
+    getImages(movieID) {
+        return new Promise((resolve, reject) => {
+            fetch(`${this.getAPIUrl()}/movie/${movieID}/images?api_key=${this.getAPIKey()}`)
+            .then(res => res.json())
+            .then(images => {
+                resolve(images);
+            })
+        });
+    }
+
+    getTrailer(movieID) {
+        return new Promise((resolve, reject) => {
+            fetch(`${this.getAPIUrl()}/movie/${movieID}/videos?api_key=${this.getAPIKey()}`)
+            .then(res => res.json())
+            .then(videos => {
+                for (let video of videos.results) {
+                    if (video.type === 'Trailer') {
+                        resolve(video.key);
+                        return;
+                    }
+                }
+            })
         });
     }
 
@@ -36,8 +88,7 @@ class MovieMetadata extends Metadata {
      * @param {Object} metadata 
      * @param {Integer} internalMovieID 
      */
-    insertMetadata(metadata, internalMovieID) {
-        console.log(metadata);
+    async insertMetadata(metadata, images, trailer, internalMovieID) {
 
         // If the metadata doesn't have any genre, add one (All movies need to have a genre)
         if (metadata.genres.length === 0) {
@@ -59,9 +110,9 @@ class MovieMetadata extends Metadata {
             });
 
         }
-        // Save metadata
+        // SAVE METADATA
         let d = new Date();
-        db.none("INSERT INTO movie_metadata (movie_id, title, overview, poster, release_date, runtime, popularity, backdrop, added_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", [
+        db.none("INSERT INTO movie_metadata (movie_id, title, overview, poster, release_date, runtime, popularity, backdrop, added_date, trailer) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", [
             internalMovieID,
             metadata.title,
             metadata.overview,
@@ -70,8 +121,42 @@ class MovieMetadata extends Metadata {
             metadata.runtime,
             metadata.popularity,
             metadata.backdrop_path,
-            `${d.getFullYear()}-${("0" + (d.getMonth() + 1)).slice(-2)}-${("0" + d.getDate()).slice(-2)}`
+            `${d.getFullYear()}-${("0" + (d.getMonth() + 1)).slice(-2)}-${("0" + d.getDate()).slice(-2)}`,
+            trailer
         ]);
+
+
+
+
+        // SAVE IMAGES
+        // If the movie don't have a image, push one. All the movies need to have a image.
+        if (images.backdrops.length === 0) {
+            images.backdrops.push({
+                file_path: 'no_image',
+                active: true
+            });
+        }
+        if (images.posters.length === 0) {
+            images.posters.push({
+                file_path: 'no_image',
+                active: true
+            })
+        }
+        // TODO: This will push "no_name" to image even if it already exist. That is not needed
+        db.tx(async t => {
+            for (let backdrop of images.backdrops) {
+                const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [backdrop.file_path], c => +c.id);
+                t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'BACKDROP')", [internalMovieID, imageId, backdrop.active]);
+            }
+
+            // TODO: This will push "no_name" to image even if it already exist. That is not needed.
+            for (let poster of images.posters) {
+                const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [poster.file_path], c => +c.id);
+                t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'POSTER')", [internalMovieID, imageId, poster.active]);
+            }
+            return;
+        });
+
     }
 }
 

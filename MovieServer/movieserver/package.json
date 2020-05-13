@@ -5,12 +5,14 @@
   "scripts": {
     "dev": "nodemon --exec babel-node server.js",
     "build": "next build",
-    "start": "NODE_ENV=production nodemon --exec babel-node server.js"
+    "start": "NODE_ENV=production node server.js"
   },
   "dependencies": {
     "babel-loader": "^8.1.0",
     "babel-preset-react": "^6.24.1",
     "chokidar": "^3.4.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "mime": "^2.4.5",
     "next": "9.3.6",
     "node-fetch": "^2.6.0",
     "path-exists": "^4.0.0",

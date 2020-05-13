@@ -36,15 +36,17 @@ class MovieLibrary extends Library {
                         movieName = movieName.substring(movieName.lastIndexOf("/") + 1);
                         movieName = movieName.substring(movieName.lastIndexOf("\\") + 1);
 
-                        console.log(` > Searching for metadata for movie '${movieName}'`);
                         // Try to find metadata
-                        this.metadata.getMetadata(movieName).then(metadata => {
+                        this.metadata.getMetadata(movieName).then(result => {
+                            let metadata = result.metadata;
+                            let images = result.images;
+                            let trailer = result.trailer;
                             if (metadata === null) {
                                 console.log(` > Couldn't find any metadata for movie '${movieName}'`);
                             } else {
                                 console.log(` > Saving metadata for movie '${movieName}'`);
                                 // Insert metadata
-                                this.metadata.insertMetadata(metadata, internalMovieID);
+                                this.metadata.insertMetadata(metadata, images, trailer, internalMovieID);
                             }
                         })
                     });

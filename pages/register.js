@@ -1,6 +1,5 @@
 import Head from 'next/head'
 import Layout from '../components/layout'
-import LoginForm from '../components/loginForm'
 import LoginStyle from '../styles/login.module.css';
 import { Form, Button } from 'react-bootstrap';
 

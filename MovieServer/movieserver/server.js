@@ -18,6 +18,11 @@ console.log(`######
 ######   ####   ####  ######  `);
 console.log("\n\n");
 
+if (dev) {
+  console.log("\x1b[33m", 'Server running in development mode');
+  console.log("\x1b[0m", "")
+}
+
 function startWebServer() {
     app.prepare().then(() => {
         createServer((req, res) => {
