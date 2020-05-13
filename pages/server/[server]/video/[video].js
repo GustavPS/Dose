@@ -1,69 +1,73 @@
 import Head from 'next/head'
 import Layout from '../../../../components/layout'
-import Plyr from 'plyr';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router'
+import ReactPlayer from 'react-player'
  
+import Plyr from 'plyr';
+
 // Fetcher for useSWR, redirect to login if not authorized
 
 
 export default function Home() {
-  let player;
+  /*
+  const router = useRouter();
+  const { video } = router.query;
+  */
+  let baseVideoUrl = 'http://localhost:4000/api/video/sdf';
+  const [currentVideoUrl, setcurrentVideoUrl] = useState(baseVideoUrl)
+
+  const onSeek = () => {
+    let seconds = document.getElementById('seekInput').value;
+    player.src({
+      "type": "video/webm",
+      "src": `${baseVideoUrl}?time=${seconds}`
+    });
+    //player.src(`${baseVideoUrl}?time=${seconds}`);
+  }
+
+  let video;
 
   useEffect(() => {
+    video = videojs("video");
+    video.src('http://localhost:4000/api/video/sdf');
+
+     // hack duration
+     video.duration= function() {return video.theDuration; };
+     video.start= 0;
+     video.oldCurrentTime= video.currentTime;
+     video.currentTime= function(time) 
+     { 
+         if( time == undefined )
+         {
+             return video.oldCurrentTime + video.start;
+         }
+         video.start= time;
+         video.oldCurrentTime = 0;
+         video.src("http://localhost:4000/api/video/sdf?start=" + time);
+         video.play();
+         return this;
+     };
+     $.getJSON( "http://localhost:4000/api/video/sdf/getDuration", function( data ) 
+     {
+         video.theDuration= data.duration;
+     });
 
 
-      // First real dialog starts around 1:47
-      /*
-	const source = 'http://localhost:4000/api/video/sdf';
-	// For more dash options, see https://github.com/Dash-Industry-Forum/dash.js
-	const dash = dashjs.MediaPlayer().create();
-	const video = document.querySelector('video');
-	//dash.getDebug().setLogToBrowserConsole(false);
-	dash.initialize(video, source, true);
-
-	// Update caption tracks after initializing Plyr to get the generated captions
-	// For more options see: https://github.com/sampotts/plyr/#options
-  const player = new Plyr(video, {captions: {active: true, update: true}});
-  */
-
-  // Expose player and dash so they can be used from the console
-    player = new Plyr('#player');
-    player.source = {
-      type: 'video',
-      title: 'Example title',
-      sources: [
-        {
-          src: 'http://localhost:4000/api/video/abc',
-          type: 'video/mp4'
-        }
-      ]
-    };
-    console.log(player);
-    player.config.duration = 500;
-
-    player.on('ready', event => {
-      console.log('Player ready.');
-    });
-    player.on('seeking', event => {
-      console.log(`seek ${event.detail.plyr}`);
-    })
-    player.on('seeked', event => {
-      console.log(`Seek finished ${event.detail.plyr.currentTime}`)
-    })
-    player.on('progress', event => {
-      console.log(`Progress: ${event.detail.plyr.currentTime}`)
-    })
   });
 
 
   return (
     <>
         <Head>
-            <link rel="stylesheet" href="https://cdn.plyr.io/3.6.2/plyr.css" />
-            <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+        <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+        <link href="//vjs.zencdn.net/4.5/video-js.css" rel="stylesheet" />
+    <script src="//vjs.zencdn.net/4.5/video.js"></script>
+
         </Head>
-  <video crossOrigin="true" id="player"></video>
-        
-    </>
+        <video id="video" className="video-js vjs-default-skin" controls preload="auto" width="640" height="264">
+        </video>
+
+        </>
   )
 }

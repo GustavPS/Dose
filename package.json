@@ -19,6 +19,8 @@
     "react": "16.13.1",
     "react-bootstrap": "^1.0.1",
     "react-dom": "16.13.1",
-    "swr": "^0.2.0"
+    "react-player": "^2.0.1",
+    "swr": "^0.2.0",
+    "video.js": "^7.0.3"
   }
 }
