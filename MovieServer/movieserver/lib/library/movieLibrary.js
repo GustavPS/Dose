@@ -21,6 +21,19 @@ class MovieLibrary extends Library {
      * @param {String} path - The path to the movie
      */
     async newEntry(path) {
+        let movieName;
+        try {
+            movieName = this.cleanName(path)
+        } catch(e) {
+            if (e.name === 'UnsupportedFormat') {
+                console.log(`${path} is not a supported format.`);
+            } else {
+                console.log(e);
+            }
+            return;
+        }
+
+
         db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
             if (result.length === 0) {
                 console.log(` > Found a new movie (${path} for library: '${this.name}')`);
@@ -30,12 +43,6 @@ class MovieLibrary extends Library {
                     db.one('SELECT id FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(result => {
                         let internalMovieID = result.id;
 
-
-                        // Clean the path so we only get the movie name
-                        let movieName = path.substring(0, path.indexOf('.'));
-                        movieName = movieName.substring(movieName.lastIndexOf("/") + 1);
-                        movieName = movieName.substring(movieName.lastIndexOf("\\") + 1);
-
                         // Try to find metadata
                         this.metadata.getMetadata(movieName).then(result => {
                             let metadata = result.metadata;
@@ -43,6 +50,14 @@ class MovieLibrary extends Library {
                             let trailer = result.trailer;
                             if (metadata === null) {
                                 console.log(` > Couldn't find any metadata for movie '${movieName}'`);
+                                images = {
+                                    backdrops: [],
+                                    posters: []
+                                }
+                                metadata = this.metadata.getDummyMetadata(movieName);
+                                trailer = "";
+                                
+                                this.metadata.insertMetadata(metadata, images, trailer, internalMovieID);
                             } else {
                                 console.log(` > Saving metadata for movie '${movieName}'`);
                                 // Insert metadata

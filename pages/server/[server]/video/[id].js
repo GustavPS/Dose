@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router'
 import ReactPlayer from 'react-player'
 import Styles from '../../../../styles/video.module.css';
+import fetch from 'node-fetch'
+
 
  
 import Plyr from 'plyr';
@@ -11,18 +13,19 @@ import Plyr from 'plyr';
 // Fetcher for useSWR, redirect to login if not authorized
 
 
-export default function Home() {
+export default function Home(props) {
+  const server = props.server;
   const router = useRouter();
   const { id } = router.query;
 
-  let baseVideoUrl = `http://localhost:4000/api/video/${id}`;
+  let baseVideoUrl = `http://${server.server_ip}:4000/api/video/${id}`;
 
   let video;
 
   useEffect(() => {
     video = videojs("video");
     video.src({
-      src: `http://localhost:4000/api/video/${id}`,
+      src: `http://${server.server_ip}:4000/api/video/${id}`,
       type: 'video/webm',
     });
     video.poster("https://image.tmdb.org/t/p/original/k20j3PMQSelVQ6M4dQoHuvtvPF5.jpg");
@@ -56,7 +59,7 @@ export default function Home() {
          video.start= time;
          video.oldCurrentTime(0);
          video.src({
-           src: `http://localhost:4000/api/video/${id}?start=${time}`,
+           src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}`,
            type: 'video/webm'
           });
          video.play();
@@ -65,7 +68,7 @@ export default function Home() {
 
        // Get the dureation of the movie
        if (id !== undefined) {
-        $.getJSON( `http://localhost:4000/api/video/${id}/getDuration`, function( data ) 
+        $.getJSON( `http://${server.server_ip}:4000/api/video/${id}/getDuration`, function( data ) 
         {
             video.theDuration= data.duration;
         });
@@ -96,4 +99,26 @@ export default function Home() {
         </div>
         </>
   )
+}
+
+// Get the information about the server and send it to the front end before render (this is server-side)
+export async function getServerSideProps(context) {
+  let serverId = context.params.server;
+  return await fetch('http://localhost:3000/api/servers/getServer', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+          id: serverId
+      }),
+  })
+  .then((r) => r.json())
+  .then((data) => {
+      return {
+          props: {
+              server: data.server
+          }
+        }
+  });
 }

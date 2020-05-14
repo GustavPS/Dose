@@ -27,6 +27,7 @@ export default (props) => {
     const [latestMovies, setLatesMovies] = useState(null);
     const [dramaMovies, setDramaMovies] = useState(null);
     const [documentaryMovies, setDocumentaryMovies] = useState(null);
+    const [otherMovies, setOtherMovies] = useState(null);
 
     // Check if user have access to this server
     const validateAccess = async (cb) => {
@@ -160,6 +161,18 @@ export default (props) => {
                 }
                 setDocumentaryMovies(movieElements);
             });
+
+            getMovieList('other', 'added_date', 20).then(movies => {
+                movies.reverse();
+                let movieElements = [];
+                for (let movie of movies) {
+                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                    movieElements.push(
+                        <MovieBackdrop id={movie.id} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                    );
+                }
+                setOtherMovies(movieElements);
+            });
         });
 
 
@@ -224,6 +237,19 @@ export default (props) => {
                             <img src="/images/left.svg" width="70" />
                         </div>
                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('documentaryMovies')}>
+                            <img src="/images/right.svg" width="70" />
+                        </div>
+                    </div>
+
+                    <h2>Other</h2>
+                    <div className={Styles.movieRow}>
+                        <div id="otherMovies" className={Styles.scrollable}>
+                            {otherMovies}
+                        </div>
+                        <div className={Styles.scrollButton} onClick={() => scrollLeft('otherMovies')}>
+                            <img src="/images/left.svg" width="70" />
+                        </div>
+                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('otherMovies')}>
                             <img src="/images/right.svg" width="70" />
                         </div>
                     </div>

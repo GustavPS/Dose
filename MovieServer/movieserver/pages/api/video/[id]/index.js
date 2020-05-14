@@ -131,7 +131,7 @@ function startFFMPEG(filename, offset, req, res) {
 
           // save to stream
           
-
+        // Lås med accesstoken+videoid
         lock.acquire('key', function(done) {
           killOtherInstances(req.cookies.serverToken);
           transcodings.push({

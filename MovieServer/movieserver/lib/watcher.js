@@ -89,6 +89,13 @@ class Watcher {
         
     }
 
+
+    cleanPath(filePath) {
+        filePath = filePath.substring(filePath.indexOf("/") + 1);
+        filePath = filePath.substring(filePath.indexOf("\\") + 1);
+        return filePath;
+    }
+
     /**
      * Start watching for file changes
      * 
@@ -103,13 +110,11 @@ class Watcher {
           ignoreInitial: false
         })
         .on('add', (filePath, event) => {
-            filePath = filePath.substring(filePath.indexOf("/") + 1);
-            filePath = filePath.substring(filePath.indexOf("\\") + 1);
+            filePath = this.cleanPath(filePath);
             library.newEntry(filePath);
         })
         .on('unlink', (filePath) => {
-            filePath = filePath.substring(filePath.indexOf("/") + 1);
-            filePath = filePath.substring(filePath.indexOf("\\") + 1);
+            filePath = this.cleanPath(filePath);
             library.removeEntry(filePath);
         })
         .on('error', error => {

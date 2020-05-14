@@ -17,6 +17,7 @@
     "next": "9.3.6",
     "node-fetch": "^2.6.0",
     "path-exists": "^4.0.0",
+    "pg-promise": "^10.5.5",
     "react": "16.13.1",
     "react-dom": "16.13.1"
   },

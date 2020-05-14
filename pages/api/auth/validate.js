@@ -5,6 +5,8 @@ export default async function handle(req, res) {
     let user = hash.decodeJWT(req.body.token);
     let username = '';
 
+    console.log("REQUEST: " + req.body.token);
+
     // Not authenticated
     if (user !== false) {
         username = user.username;
