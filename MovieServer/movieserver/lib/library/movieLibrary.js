@@ -62,6 +62,8 @@ class MovieLibrary extends Library {
                     if (result.length === 0) {
                         console.log(` > Saving subtitle for ${movieName} in library ${movie.library}`);
                         db.none('INSERT INTO subtitle (path, movie_id, library_id) VALUES ($1, $2, $3)', [path, movie.id, movie.library]);
+                    } else {
+                        console.log(`Couldn't find any matching movies for subtitle ${path}`);
                     }
                 })
             }

@@ -8,6 +8,7 @@ const ORDERBY = [
 const fs = require('fs');
 const path = require('path');
 var ffmpeg = require('fluent-ffmpeg');
+var crypto = require("crypto");
 
 
 export default (req, res) => {
@@ -25,7 +26,7 @@ export default (req, res) => {
         getSubtitlePath(subtitleID)
         .then(subPath => {
             let folderName = path.dirname(subPath);
-            let output = path.join(folderName, 'delayed.vtt');
+            let output = path.join(folderName, crypto.randomBytes(20).toString('hex')+'.vtt');
     
             // Transcode the subtitle to vtt, with offset according the variables hours, minutes and seconds
             ffmpeg(subPath)

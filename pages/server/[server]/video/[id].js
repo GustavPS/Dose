@@ -8,9 +8,6 @@ import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
 
 
- 
-import Plyr from 'plyr';
-
 // Fetcher for useSWR, redirect to login if not authorized
 
 
@@ -26,7 +23,10 @@ export default function Home(props) {
 
   useEffect(() => {
     // Initiate video.js
+    require('@silvermine/videojs-quality-selector')(videojs);
+
     video = videojs("video");
+
 
     // Load the video
     video.src({
@@ -113,7 +113,11 @@ export default function Home(props) {
                 src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}`
               }, false);
             }
-            video.play();
+            try {
+              //video.play();
+            } catch (e) {
+              console.log("Play canceled, probably a new seek.");
+            }
           }
 
          return this;
@@ -136,7 +140,10 @@ export default function Home(props) {
         <Head>
         <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
         <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
+        <link href="/chromecast/silvermine-videojs-chromecast.css" rel="stylesheet" />
         <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
+        <script src="/chromecast/silvermine-videojs-chromecast.min.js"></script>
+        <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
         </Head>
         <video id="video"className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto">

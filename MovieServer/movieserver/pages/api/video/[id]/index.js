@@ -68,9 +68,9 @@ function killOtherInstances(serverToken) {
       remove.push(count);
       try {
         t.process.kill();
-        console.log("KILLING A TRANSCODING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        console.log("Killing a transcoding")
       } catch(e) {
-        console.log("Process already killed.");
+        console.log("Tried to kill a transcoding but the process was already killed.");
       }
     }
     count++;
@@ -82,6 +82,8 @@ function killOtherInstances(serverToken) {
 }
 
 function startFFMPEG(filename, offset, req, res) {
+  // crf = constant rate factor, lower is better
+  // https://superuser.com/questions/677576/what-is-crf-used-for-in-ffmpeg
   var proc = ffmpeg(filename)
         .inputOptions([
           `-ss ${offset}`,
@@ -89,11 +91,15 @@ function startFFMPEG(filename, offset, req, res) {
         ])
         .setStartTime(offset)
         .withVideoCodec('libvpx')
-        .withVideoBitrate(2048)
+        .withVideoBitrate(50000)
         .withAudioCodec('libvorbis')
         .outputOption([
-          '-s 1920x1080',
-          '-deadline realtime'
+          '-deadline realtime',
+          '-lag-in-frames 0',
+          '-static-thresh 0',
+          '-frame-parallel 1',
+          '-crf 4'
+
         ])
         .outputFormat('webm')
 
@@ -129,9 +135,8 @@ function startFFMPEG(filename, offset, req, res) {
           }
         })
 
-          // save to stream
           
-        // Lås med accesstoken+videoid
+        // TODO: Lås med accesstoken+videoid
         lock.acquire('key', function(done) {
           killOtherInstances(req.cookies.serverToken);
           transcodings.push({
@@ -140,6 +145,7 @@ function startFFMPEG(filename, offset, req, res) {
           });
           done();
         }, function() {
+          // save to stream and start the transcoding
           proc.output(res,{ end:true }).run();
 
         });

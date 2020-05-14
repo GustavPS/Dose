@@ -100,7 +100,8 @@ class Watcher {
     }
 
 
-    cleanPath(filePath) {
+    cleanPath(filePath, libraryPath) {
+        filePath = filePath.replace(libraryPath, "");
         filePath = filePath.substring(filePath.indexOf("/") + 1);
         filePath = filePath.substring(filePath.indexOf("\\") + 1);
         return filePath;
@@ -120,11 +121,11 @@ class Watcher {
           ignoreInitial: false
         })
         .on('add', (filePath, event) => {
-            filePath = this.cleanPath(filePath);
+            filePath = this.cleanPath(filePath, relativePath);
             library.newEntry(filePath);
         })
         .on('unlink', (filePath) => {
-            filePath = this.cleanPath(filePath);
+            filePath = this.cleanPath(filePath, relativePath);
             library.removeEntry(filePath);
         })
         .on('error', error => {
