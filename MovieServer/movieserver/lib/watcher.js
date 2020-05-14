@@ -66,6 +66,16 @@ class Watcher {
             }
         }
 
+        const subtitles = await db.any("SELECT subtitle.id AS subtitle_id, subtitle.path AS subtitle_path, subtitle.movie_id AS movie_id, subtitle.library_id AS library_id, library.path AS library_path, library.name AS library_name FROM subtitle, library WHERE subtitle.library_id = library.id");
+        console.log(subtitles);
+        for (const subtitle of subtitles) {
+            let exist = await pathExists(subtitle.library_path + subtitle.subtitle_path);
+            if (!exist) {
+                console.log(`Can't find ${subtitle.subtitle_path} in library ${subtitle.library_name}, removing from the databse (${subtitle.library_path + subtitle.subtitle_path})`);
+                await db.none('DELETE FROM subtitle WHERE id = $1', [subtitle.subtitle_id]);
+            }
+        }
+
         console.log(" > Done syncing database!");
     }
 

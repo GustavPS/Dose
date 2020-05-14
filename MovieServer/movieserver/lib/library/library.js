@@ -1,9 +1,12 @@
 var ffmpeg = require('fluent-ffmpeg');
 
 
-const FORMATS = [
+const MOVIE_FORMATS = [
     'mp4', 'ts', 'mkv', 'webm', 'avi'
 ];
+const SUB_FORMATS = [
+    'srt', 'vtt', 'sub'
+]
 
 class Library {
     constructor(name, path, id, metadata) {
@@ -27,26 +30,31 @@ class Library {
         throw('removeEntry must be implemented.');
     }
 
-    cleanName(path) {
+    cleanNameAndType(path) {
         let fileExtension = path.substring(path.lastIndexOf('.') + 1);
-        if (!FORMATS.includes(fileExtension)) {
+        if (!MOVIE_FORMATS.includes(fileExtension) && !SUB_FORMATS.includes(fileExtension)) {
             throw({
                 name: 'UnsupportedFormat',
-                message: `Movie format unsupported (${fileExtension})`
+                message: `File format unsupported (${fileExtension})`
             });
         }
 
-        let movieName = path.substr(0, path.lastIndexOf('.'));
-        movieName = movieName.substring(movieName.lastIndexOf("/") + 1);
-        movieName = movieName.substring(movieName.lastIndexOf("\\") + 1);
+        let type = MOVIE_FORMATS.includes(fileExtension) ? 'MOVIE' : 'SUBTITLE'
+
+        let name = path.substr(0, path.lastIndexOf('.'));
+        name = name.substring(name.lastIndexOf("/") + 1);
+        name = name.substring(name.lastIndexOf("\\") + 1);
 
         let re = new RegExp("([ .\\w'!-]+?)(\\W\\d{4}\\W?.*)", 'gm');
-        let matches = re.exec(movieName)
+        let matches = re.exec(name)
         if (matches != null && matches.length >= 2) {
-            movieName = matches[1];
-            movieName = movieName.replace(/\./g, ' ');
+            name = matches[1];
+            name = name.replace(/\./g, ' ');
         }
-        return movieName;
+        return {
+            name: name,
+            type: type
+        }
     }
 }
 

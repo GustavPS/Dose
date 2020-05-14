@@ -20,7 +20,8 @@
     "react-bootstrap": "^1.0.1",
     "react-dom": "16.13.1",
     "react-player": "^2.0.1",
-    "swr": "^0.2.0"
+    "swr": "^0.2.0",
+    "vtt-live-edit": "^1.0.7"
   },
   "devDependencies": {
     "video.js": "^7.7.6"

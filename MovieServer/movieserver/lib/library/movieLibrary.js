@@ -15,31 +15,13 @@ class MovieLibrary extends Library {
         super(name, path, id, new MovieMetadata());
     }
 
-    /**
-     * Add a new entry to the database about the movie PATH.
-     * It will try to find and save metadata for the movie.
-     * @param {String} path - The path to the movie
-     */
-    async newEntry(path) {
-        let movieName;
-        try {
-            movieName = this.cleanName(path)
-        } catch(e) {
-            if (e.name === 'UnsupportedFormat') {
-                console.log(`${path} is not a supported format.`);
-            } else {
-                console.log(e);
-            }
-            return;
-        }
-
-
+    addMovieIfNotSaved(movieName, path) {
         db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
             if (result.length === 0) {
                 console.log(` > Found a new movie (${path} for library: '${this.name}')`);
 
                 // Insert to the movie table (contining the path of the movie)
-                db.any('INSERT INTO movie (path, library) VALUES ($1, $2)', [path, this.id]).then(() => {
+                db.any('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3)', [path, this.id, movieName]).then(() => {
                     db.one('SELECT id FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(result => {
                         let internalMovieID = result.id;
 
@@ -69,6 +51,49 @@ class MovieLibrary extends Library {
 
             }
         })
+    }
+
+    addSubtitleIfNotSaved(movieName, path) {
+        console.log(path);
+        console.log(movieName);
+        db.any('SELECT * FROM movie WHERE library = $1 AND name = $2', [this.id, movieName]).then(movies => {
+            for (let movie of movies) {
+                db.any('SELECT * FROM subtitle WHERE movie_id = $1 AND path = $2 AND library_id = $3', [movie.id, path, movie.library]).then(result => {
+                    if (result.length === 0) {
+                        console.log(` > Saving subtitle for ${movieName} in library ${movie.library}`);
+                        db.none('INSERT INTO subtitle (path, movie_id, library_id) VALUES ($1, $2, $3)', [path, movie.id, movie.library]);
+                    }
+                })
+            }
+        });
+    }
+
+    /**
+     * Add a new entry to the database about the movie PATH.
+     * It will try to find and save metadata for the movie.
+     * @param {String} path - The path to the movie
+     */
+    async newEntry(path) {
+        let movieName;
+        let type;
+        try {
+            let result = this.cleanNameAndType(path);
+            movieName = result.name;
+            type = result.type;
+        } catch(e) {
+            if (e.name === 'UnsupportedFormat') {
+                console.log(`${path} is not a supported format.`);
+            } else {
+                console.log(e);
+            }
+            return;
+        }
+
+        if (type === 'MOVIE') {
+            this.addMovieIfNotSaved(movieName, path);
+        } else if (type === 'SUBTITLE') {
+            this.addSubtitleIfNotSaved(movieName, path);
+        }
 
     }
 

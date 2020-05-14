@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nodemon --exec babel-node server.js",
     "build": "next build",
-    "start": "node server.js"
+    "linuxStart": "NODE_ENV=production node server.js",
+    "windowsStart": "node server.js"
   },
   "dependencies": {
     "async-lock": "^1.2.4",

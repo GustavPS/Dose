@@ -5,6 +5,7 @@ import { useRouter } from 'next/router'
 import ReactPlayer from 'react-player'
 import Styles from '../../../../styles/video.module.css';
 import fetch from 'node-fetch'
+import vtt from 'vtt-live-edit';
 
 
  
@@ -15,6 +16,7 @@ import Plyr from 'plyr';
 
 export default function Home(props) {
   const server = props.server;
+  const availableSubtitles = props.subtitles;
   const router = useRouter();
   const { id } = router.query;
 
@@ -23,12 +25,27 @@ export default function Home(props) {
   let video;
 
   useEffect(() => {
+    // Initiate video.js
     video = videojs("video");
+
+    // Load the video
     video.src({
       src: `http://${server.server_ip}:4000/api/video/${id}`,
       type: 'video/webm',
     });
+
+    // Set the poster image
     video.poster("https://image.tmdb.org/t/p/original/k20j3PMQSelVQ6M4dQoHuvtvPF5.jpg");
+
+    // Load all the subtitles
+    for (let subtitle of availableSubtitles) {
+        video.addRemoteTextTrack({
+          kind: 'subtitles',
+          label: subtitle.language,
+          language: subtitle.language,
+          src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}`
+        }, false);
+    }
 
 
      // hack duration
@@ -56,13 +73,49 @@ export default function Home(props) {
          {
              return video.oldCurrentTime() + video.start;
          }
+
+         /* THE CODE BELOW WILL RUN WHEN THE USER SEEKS THE VIDEO */
+
+         // Find the current active subtitle and save it so we know what to show after seek.
+         let tracks = video.textTracks();
+         let activeSub;
+         for (let i = 0; i < tracks.length; i++) {
+           if (tracks[i].mode == 'showing') {
+             activeSub = tracks[i].label;
+           }
+         }
+
+         // Hack video.js start time (So we can see the videos playing time / current time)
          video.start= time;
          video.oldCurrentTime(0);
+         // Set the new source (with the offset)
          video.src({
            src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}`,
            type: 'video/webm'
           });
-         video.play();
+
+
+          // Add the subtitles again, and set "activeSub" to active.
+          for (let subtitle of availableSubtitles) {
+            if (subtitle.language === activeSub) {
+              video.addRemoteTextTrack({
+                kind: 'subtitles',
+                label: subtitle.language,
+                language: subtitle.language,
+                src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}`,
+                default: true
+              }, false);
+            } else {
+              video.addRemoteTextTrack({
+                kind: 'subtitles',
+                label: subtitle.language,
+                language: subtitle.language,
+                src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}`
+              }, false);
+            }
+            video.play();
+          }
+
          return this;
      };
 
@@ -73,6 +126,7 @@ export default function Home(props) {
             video.theDuration= data.duration;
         });
        }
+
 
   });
 
@@ -85,7 +139,8 @@ export default function Home(props) {
         <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
 
         </Head>
-        <video id="video"className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto"></video>
+        <video id="video"className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto">
+        </video>
 
         <div className={Styles.description}>
             <h1>Top Gun</h1>
@@ -104,7 +159,9 @@ export default function Home(props) {
 // Get the information about the server and send it to the front end before render (this is server-side)
 export async function getServerSideProps(context) {
   let serverId = context.params.server;
-  return await fetch('http://localhost:3000/api/servers/getServer', {
+  let movieID = context.params.id;
+
+  return await fetch('http://88.129.86.234:3000/api/servers/getServer', {
       method: 'POST',
       headers: {
           'Content-Type': 'application/json'
@@ -114,11 +171,24 @@ export async function getServerSideProps(context) {
       }),
   })
   .then((r) => r.json())
-  .then((data) => {
+  .then(async (data) =>{
+    console.log(data);
+    return await fetch(`http://${data.server.server_ip}:4000/api/subtitles/list?movie=${movieID}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    })
+    .then((r) => r.json())
+    .then((subtitles) => {
+      console.log(subtitles);
       return {
-          props: {
-              server: data.server
-          }
+        props: {
+            server: data.server,
+            subtitles: subtitles.subtitles
         }
+      }
+    })
+
   });
 }

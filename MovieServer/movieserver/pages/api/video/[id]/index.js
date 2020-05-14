@@ -110,7 +110,7 @@ function startFFMPEG(filename, offset, req, res) {
           console.log('file has been converted succesfully');
         })
         .on('progress', function(progress) {
-          console.log('Processing: ' + progress.percent + '% done');
+          //console.log('Processing: ' + progress.percent + '% done');
         })
         .on('error', function(err, stdout, stderr) {
           try {
