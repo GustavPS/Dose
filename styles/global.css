@@ -24,6 +24,10 @@ html {
 .video-js .vjs-big-play-button {
     display: none;
 }
+
+.vjs-menu-button-popup .vjs-menu {
+    left: -6em !important;
+}
 /*
 .plyr {
     position: absolute;
