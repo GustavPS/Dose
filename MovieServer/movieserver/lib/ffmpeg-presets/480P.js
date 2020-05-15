@@ -2,7 +2,7 @@ exports.load = function(ffmpeg) {
     ffmpeg
     .withVideoCodec('h264_nvenc')
     .withVideoBitrate(1000)
-    .withAudioCodec('aac')
+    .withAudioCodec('libmp3lame')
     .outputOption([
       '-deadline realtime',
       '-lag-in-frames 0',
