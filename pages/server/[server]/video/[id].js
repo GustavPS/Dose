@@ -179,6 +179,8 @@ export default function Home(props) {
             }
           }
 
+          video.play();
+
          return this;
      };
 
