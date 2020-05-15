@@ -1,4 +1,5 @@
 var ffmpeg = require('fluent-ffmpeg');
+const pathLib = require('path');
 
 
 const MOVIE_FORMATS = [
@@ -50,10 +51,16 @@ class Library {
         if (matches != null && matches.length >= 2) {
             name = matches[1];
             name = name.replace(/\./g, ' ');
+            name = name.trim();
         }
+
+        // Get the folder name (for subtitles)
+        let parentFolder =  pathLib.dirname(path);
+
         return {
             name: name,
-            type: type
+            type: type,
+            parentFolder: parentFolder
         }
     }
 }

@@ -2,6 +2,7 @@ const Metadata = require('./metadata');
 const fetch = require('node-fetch');
 const db = require('../db');
 
+
 class MovieMetadata extends Metadata {
     constructor() {
         super();

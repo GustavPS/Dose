@@ -1,15 +1,17 @@
 exports.load = function(ffmpeg) {
     ffmpeg
-    .withVideoCodec('libvpx')
+    .withVideoCodec('h264_nvenc')
     .withVideoBitrate(4000)
-    .withAudioCodec('libvorbis')
+    .withAudioCodec('aac')
     .outputOption([
       '-deadline realtime',
       '-lag-in-frames 0',
       '-static-thresh 0',
       '-frame-parallel 1',
       '-crf 4',
-      '-vf scale=-1:720'
+      '-vf scale=-1:720',
+      '-movflags frag_keyframe+faststart',
+      '-pix_fmt yuv420p'
     ])
-    .outputFormat('webm')
+    .outputFormat('mp4')
   };
