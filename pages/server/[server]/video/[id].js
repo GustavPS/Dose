@@ -26,16 +26,40 @@ export default function Home(props) {
 
   useEffect(() => {
     // Initiate video.js
-    require('@silvermine/videojs-quality-selector')(videojs);
+
 
     video = videojs("video");
-
+    require('@silvermine/videojs-quality-selector')(videojs);
+    video.controlBar.addChild('QualitySelector');
 
     // Load the video
-    video.src({
-      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}`,
+    video.src([{
+      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=directplay`,
       type: 'video/webm',
-    });
+      label: 'directplay',
+      selected: true
+    },
+    {
+      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=1080p`,
+      type: 'video/mp4',
+      label: '1080P'
+    },
+    {
+      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=720p`,
+      type: 'video/mp4',
+      label: '720P'
+    },
+    {
+      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=480p`,
+      type: 'video/mp4',
+      label: '480P'
+    },
+    {
+      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=240p`,
+      type: 'video/mp4',
+      label: '240P'
+    },
+  ]);
 
     // Set the poster image
     video.poster("https://image.tmdb.org/t/p/original/k20j3PMQSelVQ6M4dQoHuvtvPF5.jpg");
@@ -61,7 +85,6 @@ export default function Home(props) {
         if (seconds < 0) {
           seconds = 0;
         }
-
         this.techCall_('setCurrentTime', seconds);
         return;
       }
@@ -79,6 +102,9 @@ export default function Home(props) {
 
          /* THE CODE BELOW WILL RUN WHEN THE USER SEEKS THE VIDEO */
 
+         // Save the current source (So we know what quality to play after seek)
+         let currentQuality = video.currentSource().label;
+         console.log(currentQuality);
          // Find the current active subtitle and save it so we know what to show after seek.
          let tracks = video.textTracks();
          let activeSub;
@@ -92,10 +118,40 @@ export default function Home(props) {
          video.start= time;
          video.oldCurrentTime(0);
          // Set the new source (with the offset)
-         video.src({
-           src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}`,
-           type: 'video/webm'
-          });
+         console.log("ÄR VI FRAMME SNART????");
+         video.src(
+          [
+             {
+               src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=directplay`,
+               type: 'video/webm',
+               label: 'directplay',
+               selected: currentQuality === "directplay"
+             },
+             {
+               src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=1080p`,
+               type: 'video/mp4',
+               label: '1080P',
+               selected: currentQuality === "1080P"
+             },
+             {
+               src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=720p`,
+               type: 'video/mp4',
+               label: '720P',
+               selected: currentQuality === "720P"
+             },
+             {
+              src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=480p`,
+              type: 'video/mp4',
+              label: '480P',
+              selected: currentQuality === "480P"
+            },
+            {
+              src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=240p`,
+              type: 'video/mp4',
+              label: '240P',
+              selected: currentQuality === "240P"
+            }
+          ]);
 
 
           // Add the subtitles again, and set "activeSub" to active.
@@ -141,10 +197,13 @@ export default function Home(props) {
   return (
     <>
         <Head>
+        <link href="https://unpkg.com/@silvermine/videojs-quality-selector/dist/css/quality-selector.css" rel="stylesheet" />
         <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
         <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
         <link href="/chromecast/silvermine-videojs-chromecast.css" rel="stylesheet" />
         <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
+        <script src="https://unpkg.com/@silvermine/videojs-quality-selector/dist/js/silvermine-videojs-quality-selector.min.js"></script>
+
         <script src="/chromecast/silvermine-videojs-chromecast.min.js"></script>
         <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 

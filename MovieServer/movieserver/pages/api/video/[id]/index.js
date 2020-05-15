@@ -9,6 +9,14 @@ let transcodings = [];
 var AsyncLock = require('async-lock');
 var lock = new AsyncLock();
 
+const ALLOWED_QUALITIES = [
+  '1080p',
+  '720p',
+  '480p',
+  '240p',
+  'directplay'
+];
+
 export default async (req, res) => {
   getMoviePath(req.query.id).then(filename => {
     var stat = fs.statSync(filename);
@@ -87,10 +95,18 @@ function startFFMPEG(filename, offset, req, res) {
 
   */
 
+  let quality = req.query.quality;
+  if (!ALLOWED_QUALITIES.includes(quality)) {
+    res.status(404).end();
+    return;
+  }
+  console.log(quality);
+  
+
   // crf = constant rate factor, lower is better
   // https://superuser.com/questions/677576/what-is-crf-used-for-in-ffmpeg
   var proc = ffmpeg(filename, { presets: '../../../../lib/ffmpeg-presets'})
-        .preset('directplay')
+        .preset(quality)
         // Might be faster with only 1 thread? TODO: Test it
         .inputOptions([
           `-ss ${offset}`,
