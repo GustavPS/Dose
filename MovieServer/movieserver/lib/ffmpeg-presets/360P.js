@@ -1,7 +1,7 @@
 exports.load = function(ffmpeg) {
     ffmpeg
     .withVideoCodec('libvpx')
-    .withVideoBitrate(50000)
+    .withVideoBitrate(1000)
     .withAudioCodec('libvorbis')
     .outputOption([
       '-deadline realtime',
