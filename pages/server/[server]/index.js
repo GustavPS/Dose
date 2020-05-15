@@ -29,6 +29,11 @@ export default (props) => {
     const [documentaryMovies, setDocumentaryMovies] = useState(null);
     const [otherMovies, setOtherMovies] = useState(null);
 
+    const [movies, setMovies] = useState([]);
+
+
+
+
     // Check if user have access to this server
     const validateAccess = async (cb) => {
         return await fetch(`http://${server.server_ip}:4000/api/auth/validate`, {
@@ -104,6 +109,7 @@ export default (props) => {
 
     useEffect(() => {
         validateAccess(() => {
+            // Get all the newest released movies (The slieshow)
             getMovieList(null, 'release_date', 5).then(movies => {
                 movies.reverse();
                 let movieElements = [];
@@ -126,56 +132,38 @@ export default (props) => {
                 }
                 setLatesMovies(movieElements);
             });
-            getMovieList('action', 'added_date', 20).then(movies => {
-                movies.reverse();
-                let movieElements = [];
-                for (let movie of movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    movieElements.push(
-                        <MovieBackdrop title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                    );
-                }
-                setActionMovies(movieElements);
-            });
 
-            getMovieList('drama', 'added_date', 20).then(movies => {
-                movies.reverse();
-                let movieElements = [];
-                for (let movie of movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    movieElements.push(
-                        <MovieBackdrop id={movie.id} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                    );
+            // Get all genres from the server
+            fetch(`http://${server.server_ip}:4000/api/genre/list`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-                setDramaMovies(movieElements);
-            });
-
-            getMovieList('documentary', 'added_date', 20).then(movies => {
-                movies.reverse();
-                let movieElements = [];
-                for (let movie of movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    movieElements.push(
-                        <MovieBackdrop id={movie.id} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                    );
+            })
+            .then((r) => r.json())
+            .then(async (result) => {
+                let genres = result.genres;
+                let genreList = [];
+                for (let genre of genres) {
+                    // Get the movies for that genre
+                    const movieList = await getMovieList(genre.name, 'added_date', 20);
+                    movieList.reverse();
+                    let movieElements = [];
+                    for (let movie of movieList) {
+                        let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                        movieElements.push(
+                            <MovieBackdrop title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                        );
+                    }
+                    genreList.push({
+                        name: genre.name,
+                        movieElements: movieElements
+                    });
                 }
-                setDocumentaryMovies(movieElements);
-            });
-
-            getMovieList('other', 'added_date', 20).then(movies => {
-                movies.reverse();
-                let movieElements = [];
-                for (let movie of movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    movieElements.push(
-                        <MovieBackdrop id={movie.id} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                    );
-                }
-                setOtherMovies(movieElements);
+                console.log(genreList);
+                setMovies(genreList);
             });
         });
-
-
     }, []);
 
     const selectMovie = (id) => {
@@ -191,6 +179,31 @@ export default (props) => {
         document.getElementById(id).scrollLeft += 1000;
     }
 
+    const showMovies = () => {
+        console.log("RERENDER")
+        console.log(movies);
+        let render = []
+        movies.map((genre, index) => {
+            if (genre.movieElements.length != 0) {
+                render.push(
+                    <div className={Styles.movieRow}>
+                        <h2 style={{textTransform: 'capitalize'}}>{genre.name}</h2>    
+                        <div id={genre.name + "Movies"} className={Styles.scrollable}>
+                            {genre.movieElements}
+                        </div>
+                        <div className={Styles.scrollButton} onClick={() => scrollLeft(genre.name + 'Movies')}>
+                            <img src="/images/left.svg" width="70" />
+                        </div>
+                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight(genre.name + 'Movies')}>
+                            <img src="/images/right.svg" width="70" />
+                        </div>
+                    </div>     
+                );
+            }
+        })
+        return render;
+    }
+
     // LAYOUT //
     return (
         <Layout>
@@ -202,62 +215,13 @@ export default (props) => {
             <br></br>
             <div style={{color: 'white'}}>
                 <Container fluid>
-                    <h2>Action</h2>
-                    <div className={Styles.movieRow}>
-                        <div id="actionMovies" className={Styles.scrollable}>
-                            {actionMovies}
-                        </div>
-                        <div className={Styles.scrollButton} onClick={() => scrollLeft('actionMovies')}>
-                            <img src="/images/left.svg" width="70" />
-                        </div>
-                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('actionMovies')}>
-                            <img src="/images/right.svg" width="70" />
-                        </div>
-                    </div>
-
-                    <h2>Drama</h2>
-                    <div className={Styles.movieRow}>
-                        <div id="dramaMovies" className={Styles.scrollable}>
-                            {dramaMovies}
-                        </div>
-                        <div className={Styles.scrollButton} onClick={() => scrollLeft('dramaMovies')}>
-                            <img src="/images/left.svg" width="70" />
-                        </div>
-                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('dramaMovies')}>
-                            <img src="/images/right.svg" width="70" />
-                        </div>
-                    </div>
-
-                    <h2>Documentaries</h2>
-                    <div className={Styles.movieRow}>
-                        <div id="documentaryMovies" className={Styles.scrollable}>
-                            {documentaryMovies}
-                        </div>
-                        <div className={Styles.scrollButton} onClick={() => scrollLeft('documentaryMovies')}>
-                            <img src="/images/left.svg" width="70" />
-                        </div>
-                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('documentaryMovies')}>
-                            <img src="/images/right.svg" width="70" />
-                        </div>
-                    </div>
-
-                    <h2>Other</h2>
-                    <div className={Styles.movieRow}>
-                        <div id="otherMovies" className={Styles.scrollable}>
-                            {otherMovies}
-                        </div>
-                        <div className={Styles.scrollButton} onClick={() => scrollLeft('otherMovies')}>
-                            <img src="/images/left.svg" width="70" />
-                        </div>
-                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('otherMovies')}>
-                            <img src="/images/right.svg" width="70" />
-                        </div>
-                    </div>
+                    {showMovies()}
                 </Container>
             </div>
         </Layout>
     )
 }
+
 
 
 
