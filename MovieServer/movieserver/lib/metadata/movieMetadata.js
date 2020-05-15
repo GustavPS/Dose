@@ -113,7 +113,7 @@ class MovieMetadata extends Metadata {
         }
         // SAVE METADATA
         let d = new Date();
-        db.none("INSERT INTO movie_metadata (movie_id, title, overview, poster, release_date, runtime, popularity, backdrop, added_date, trailer) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", [
+        db.none("INSERT INTO movie_metadata (movie_id, title, overview, poster, release_date, runtime, popularity, backdrop, added_date, trailer, run_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)", [
             internalMovieID,
             metadata.title,
             metadata.overview,
@@ -123,7 +123,8 @@ class MovieMetadata extends Metadata {
             metadata.popularity,
             metadata.backdrop_path,
             `${d.getFullYear()}-${("0" + (d.getMonth() + 1)).slice(-2)}-${("0" + d.getDate()).slice(-2)}`,
-            trailer
+            trailer,
+            metadata.runtime === -1 ? -1 : metadata.runtime * 60 // insert -1 if runtime is -1 (when we use dummy metadata)
         ]);
 
 

@@ -23,13 +23,9 @@ const fetcher = url =>
 export default (props) => {
     // props.server is from the SSR under this function
     let server = props.server;
-    const [actionMovies, setActionMovies] = useState(null);
     const [latestMovies, setLatesMovies] = useState(null);
-    const [dramaMovies, setDramaMovies] = useState(null);
-    const [documentaryMovies, setDocumentaryMovies] = useState(null);
-    const [otherMovies, setOtherMovies] = useState(null);
-
     const [movies, setMovies] = useState([]);
+    const [ongoingMovies, setOngoingMovies] = useState([]);
 
 
 
@@ -64,9 +60,14 @@ export default (props) => {
      * @param {string} orderby 
      * @param {int} limit 
      */
-    const getMovieList = async (genre=null, orderby=null, limit=20) => {
+    const getMovieList = async (genre=null, orderby=null, limit=20, ongoing=false) => {
         return new Promise((resolve, reject) => {
-            const url = `http://${server.server_ip}:4000/api/movies/list${genre !== null ? '/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}`
+            let url;
+            if (ongoing) {
+                url = `http://${server.server_ip}:4000/api/movies/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+            } else {
+                url = `http://${server.server_ip}:4000/api/movies/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+            }
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -132,6 +133,26 @@ export default (props) => {
                 }
                 setLatesMovies(movieElements);
             });
+
+            // Get ongoing movies
+            getMovieList(null, 'release_date', 20, true).then(movies => {
+                movies.reverse();
+                console.log(movies);
+                let movieElements = [];
+                for (let movie of movies) {
+                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                    movieElements.push(
+                        <MovieBackdrop time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+
+                    );
+                }
+                setOngoingMovies(movieElements);
+            });
+
+            
+
+
+
 
             // Get all genres from the server
             fetch(`http://${server.server_ip}:4000/api/genre/list`, {
@@ -217,6 +238,22 @@ export default (props) => {
             <br></br>
             <div style={{color: 'white'}}>
                 <Container fluid>
+                    {ongoingMovies.length > 0 &&
+                        <>
+                            <h2 style={{textTransform: 'capitalize'}}>Ongoing</h2>    
+                            <div className={Styles.movieRow}>
+                                <div id="ongoingMovies" className={Styles.scrollable}>
+                                    {ongoingMovies}
+                                </div>
+                                <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
+                                    <img src="/images/left.svg" width="70" />
+                                </div>
+                                <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
+                                    <img src="/images/right.svg" width="70" />
+                                </div>
+                            </div> 
+                        </> 
+                    }
                     {showMovies()}
                 </Container>
             </div>

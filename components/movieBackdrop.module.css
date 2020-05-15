@@ -38,3 +38,33 @@
     transition: all 0.8s;
     white-space: normal;
 }
+
+.progress {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    height: 6px;
+}
+
+.progress {
+    color: rgb(23, 52, 70);
+}
+  
+.progress::-webkit-progress-value {
+background: rgb(23, 52, 70);
+}
+
+.progress::-moz-progress-bar {
+background: whitesmoke;
+}
+
+.progress::-webkit-progress-value {
+background: rgb(23, 52, 70);
+}
+
+.progress::-webkit-progress-bar {
+background: whitesmoke;
+}

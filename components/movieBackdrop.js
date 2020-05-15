@@ -10,6 +10,8 @@ export default class MovieBackdrop extends React.Component {
         this.runtime = props.runtime;
         this.backdrop = props.backdrop;
         this.id = props.id;
+        this.time = props.time ? props.time : null;
+        this.runtime = props.runtime ? props.runtime : null;
     }
 
     render() {
@@ -19,6 +21,9 @@ export default class MovieBackdrop extends React.Component {
                 <p className={style.overview}>
                     {this.overview.substring(0, 150)}{this.overview.length > 150 ? '...' : ''}
                 </p>
+                {this.time != null && this.runtime != null &&
+                    <progress className={style.progress} value={this.time} max={this.runtime}></progress>
+                }
             </div>
         )
     }

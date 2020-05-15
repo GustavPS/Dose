@@ -20,8 +20,6 @@ export default function Home(props) {
   const serverToken = props.serverToken;
   console.log(serverToken);
 
-  let baseVideoUrl = `http://${server.server_ip}:4000/api/video/${id}`;
-
   let video;
   let videoSources = [];
 
@@ -33,40 +31,58 @@ export default function Home(props) {
     require('@silvermine/videojs-quality-selector')(videojs);
     video.controlBar.addChild('QualitySelector');
 
-    fetch(`http://${server.server_ip}:4000/api/video/${id}/getResolution`, {
-      method: 'GET',
-      headers: {
-          'Content-Type': 'application/json'
-      }
+
+    // Get the saved time for this video
+    fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/get?token=${serverToken}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
     })
     .then(r => r.json())
-    .then(result => {
-      console.log(result);
-      let sources = [];
-      if (result.directplay) {
-        sources.push({
-          src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=directplay`,
-          type: 'video/webm',
-          label: 'directplay',
-          selected: true
-        });
-      }
+    .then(time => {
+      time = time.time;
+        // Get the available resolutions for this video
+        fetch(`http://${server.server_ip}:4000/api/video/${id}/getResolution`, {
+          method: 'GET',
+          headers: {
+              'Content-Type': 'application/json'
+          }
+        })
+        .then(r => r.json())
+        .then(result => {
+          console.log(result);
+          let sources = [];
+          if (result.directplay) {
+            sources.push({
+              src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&start=${time}&quality=directplay`,
+              type: 'video/mp4',
+              label: 'directplay',
+              selected: true
+            });
+          }
 
-      let count = 0;
-      for (let resolution of result.resolutions) {
-        sources.push({
-          src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=${resolution}`,
-          type: 'video/mp4',
-          label: resolution,
-          selected: !result.directplay && count === 0
-        });
-        count++;
-      }
-      videoSources = sources;
-      video.src(videoSources);
+          let count = 0;
+          for (let resolution of result.resolutions) {
+            sources.push({
+              src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&start=${time}&quality=${resolution}`,
+              type: 'video/mp4',
+              label: resolution,
+              selected: !result.directplay && count === 0
+            });
+            count++;
+          }
+          videoSources = sources;
+          video.src(videoSources);
+          video.currentTime(time);
 
+          setInterval(() => {
+              updateWatchTime(video.currentTime());
+          }, 5000);
+        });
     });
-    // Load the video
+
+
 
     // Set the poster image
     video.poster("https://image.tmdb.org/t/p/original/k20j3PMQSelVQ6M4dQoHuvtvPF5.jpg");
@@ -175,9 +191,11 @@ export default function Home(props) {
             video.theDuration= data.duration;
         });
        }
-
-
   });
+
+    const updateWatchTime = (time) => {
+        fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/set?time=${time}&token=${serverToken}`);
+    }
 
 
   return (
@@ -227,6 +245,7 @@ export async function getServerSideProps(context) {
   })
   .then((r) => r.json())
   .then(async (data) =>{
+    // TODO: Flytta till frontend
     console.log(data);
     return await fetch(`http://${data.server.server_ip}:4000/api/subtitles/list?movie=${movieID}`, {
       method: 'GET',

@@ -1,5 +1,5 @@
-const db = require('../../../../lib/db');
-const cors = require('../../../../lib/cors');
+const db = require('../../../../../lib/db');
+const cors = require('../../../../../lib/cors');
 const ORDERBY = [
   'id',
   'added_date',
