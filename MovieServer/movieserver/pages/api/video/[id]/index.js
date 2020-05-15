@@ -31,7 +31,6 @@ export default async (req, res) => {
       res.writeHead(200, { // NOTE: a partial http response
           'Accept-Ranges': 'bytes',
           'Connection':'close',
-          'Content-Type':'video/webm',
           'Content-Range':'bytes '+start+'-'+end+'/*',
           'Transfer-Encoding':'chunked',
           'Access-Control-Allow-Origin': '*',
@@ -90,25 +89,13 @@ function startFFMPEG(filename, offset, req, res) {
 
   // crf = constant rate factor, lower is better
   // https://superuser.com/questions/677576/what-is-crf-used-for-in-ffmpeg
-  var proc = ffmpeg(filename)
+  var proc = ffmpeg(filename, { presets: '../../../../lib/ffmpeg-presets'})
+        .preset('directplay')
         // Might be faster with only 1 thread? TODO: Test it
         .inputOptions([
           `-ss ${offset}`,
           '-threads 3'
         ])
-        .setStartTime(offset)
-        .withVideoCodec('libvpx')
-        .withVideoBitrate(50000)
-        .withAudioCodec('libvorbis')
-        .outputOption([
-          '-deadline realtime',
-          '-lag-in-frames 0',
-          '-static-thresh 0',
-          '-frame-parallel 1',
-          '-crf 4'
-
-        ])
-        .outputFormat('webm')
 
         .on('start', function(commandLine) {
 
