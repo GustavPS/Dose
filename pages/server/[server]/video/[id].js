@@ -23,6 +23,7 @@ export default function Home(props) {
   let baseVideoUrl = `http://${server.server_ip}:4000/api/video/${id}`;
 
   let video;
+  let videoSources = [];
 
   useEffect(() => {
     // Initiate video.js
@@ -32,34 +33,40 @@ export default function Home(props) {
     require('@silvermine/videojs-quality-selector')(videojs);
     video.controlBar.addChild('QualitySelector');
 
+    fetch(`http://${server.server_ip}:4000/api/video/${id}/getResolution`, {
+      method: 'GET',
+      headers: {
+          'Content-Type': 'application/json'
+      }
+    })
+    .then(r => r.json())
+    .then(result => {
+      console.log(result);
+      let sources = [];
+      if (result.directplay) {
+        sources.push({
+          src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=directplay`,
+          type: 'video/webm',
+          label: 'directplay',
+          selected: true
+        });
+      }
+
+      let count = 0;
+      for (let resolution of result.resolutions) {
+        sources.push({
+          src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=${resolution}`,
+          type: 'video/mp4',
+          label: resolution,
+          selected: !result.directplay && count === 0
+        });
+        count++;
+      }
+      videoSources = sources;
+      video.src(videoSources);
+
+    });
     // Load the video
-    video.src([{
-      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=directplay`,
-      type: 'video/webm',
-      label: 'directplay',
-      selected: true
-    },
-    {
-      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=1080p`,
-      type: 'video/mp4',
-      label: '1080P'
-    },
-    {
-      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=720p`,
-      type: 'video/mp4',
-      label: '720P'
-    },
-    {
-      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=480p`,
-      type: 'video/mp4',
-      label: '480P'
-    },
-    {
-      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&quality=240p`,
-      type: 'video/mp4',
-      label: '240P'
-    },
-  ]);
 
     // Set the poster image
     video.poster("https://image.tmdb.org/t/p/original/k20j3PMQSelVQ6M4dQoHuvtvPF5.jpg");
@@ -104,7 +111,7 @@ export default function Home(props) {
 
          // Save the current source (So we know what quality to play after seek)
          let currentQuality = video.currentSource().label;
-         console.log(currentQuality);
+         console.log("CURRENT: " + currentQuality);
          // Find the current active subtitle and save it so we know what to show after seek.
          let tracks = video.textTracks();
          let activeSub;
@@ -118,40 +125,17 @@ export default function Home(props) {
          video.start= time;
          video.oldCurrentTime(0);
          // Set the new source (with the offset)
-         console.log("ÄR VI FRAMME SNART????");
-         video.src(
-          [
-             {
-               src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=directplay`,
-               type: 'video/webm',
-               label: 'directplay',
-               selected: currentQuality === "directplay"
-             },
-             {
-               src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=1080p`,
-               type: 'video/mp4',
-               label: '1080P',
-               selected: currentQuality === "1080P"
-             },
-             {
-               src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=720p`,
-               type: 'video/mp4',
-               label: '720P',
-               selected: currentQuality === "720P"
-             },
-             {
-              src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=480p`,
-              type: 'video/mp4',
-              label: '480P',
-              selected: currentQuality === "480P"
-            },
-            {
-              src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=240p`,
-              type: 'video/mp4',
-              label: '240P',
-              selected: currentQuality === "240P"
-            }
-          ]);
+
+         for (let i = 0; i < videoSources.length; i++) {
+           videoSources[i].src = `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=${videoSources[i].label}`
+           if (currentQuality !== videoSources[i].label) {
+              videoSources[i].selected = false;
+           } else {
+              videoSources[i].selected = true;
+           }
+         }
+         
+         video.src(videoSources);
 
 
           // Add the subtitles again, and set "activeSub" to active.

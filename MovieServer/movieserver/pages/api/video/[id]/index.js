@@ -10,10 +10,10 @@ var AsyncLock = require('async-lock');
 var lock = new AsyncLock();
 
 const ALLOWED_QUALITIES = [
-  '1080p',
-  '720p',
-  '480p',
-  '240p',
+  '1080P',
+  '720P',
+  '480P',
+  '240P',
   'directplay'
 ];
 
@@ -100,7 +100,6 @@ function startFFMPEG(filename, offset, req, res) {
     res.status(404).end();
     return;
   }
-  console.log(quality);
   
 
   // crf = constant rate factor, lower is better

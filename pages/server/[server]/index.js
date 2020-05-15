@@ -186,8 +186,9 @@ export default (props) => {
         movies.map((genre, index) => {
             if (genre.movieElements.length != 0) {
                 render.push(
-                    <div className={Styles.movieRow}>
+                    <>
                         <h2 style={{textTransform: 'capitalize'}}>{genre.name}</h2>    
+                    <div className={Styles.movieRow}>
                         <div id={genre.name + "Movies"} className={Styles.scrollable}>
                             {genre.movieElements}
                         </div>
@@ -197,7 +198,8 @@ export default (props) => {
                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight(genre.name + 'Movies')}>
                             <img src="/images/right.svg" width="70" />
                         </div>
-                    </div>     
+                    </div>  
+                    </>   
                 );
             }
         })
