@@ -213,13 +213,20 @@ export default (props) => {
                         <div id={genre.name + "Movies"} className={Styles.scrollable}>
                             {genre.movieElements}
                         </div>
-                        <div className={Styles.scrollButton} onClick={() => scrollLeft(genre.name + 'Movies')}>
-                            <img src="/images/left.svg" width="70" />
-                        </div>
-                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight(genre.name + 'Movies')}>
-                            <img src="/images/right.svg" width="70" />
-                        </div>
-                    </div>  
+                        {genre.movieElements.length >= 5 &&
+                            <>
+                                <div className={Styles.scrollButton} onClick={() => scrollLeft(genre.name + 'Movies')}>
+                                    <img src="/images/left.svg" width="70" />
+                                </div>
+                                <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight(genre.name + 'Movies')}>
+                                    <img src="/images/right.svg" width="70" />
+                                </div>
+
+                            </>
+                        }
+                        
+                    </div>
+                    <hr className={Styles.divider}></hr>
                     </>   
                 );
             }
@@ -245,13 +252,18 @@ export default (props) => {
                                 <div id="ongoingMovies" className={Styles.scrollable}>
                                     {ongoingMovies}
                                 </div>
-                                <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
-                                    <img src="/images/left.svg" width="70" />
-                                </div>
-                                <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
-                                    <img src="/images/right.svg" width="70" />
-                                </div>
+                                {ongoingMovies.length >= 5 &&
+                                    <>
+                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
+                                            <img src="/images/left.svg" width="70" />
+                                        </div>
+                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
+                                            <img src="/images/right.svg" width="70" />
+                                        </div>
+                                    </>
+                                }
                             </div> 
+                        <hr className={Styles.divider}></hr>
                         </> 
                     }
                     {showMovies()}

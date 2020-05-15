@@ -1,5 +1,5 @@
 .backdrop {
-    width: 400px;
+    width: 20vw;
     height: 200px;
     background-size: cover;
     background-position: center;
@@ -12,7 +12,7 @@
 }
 
 .backdrop:hover {
-    width: 600px;
+    width: 30vw;
     cursor: pointer;
 }
 
@@ -27,6 +27,7 @@
 .backdrop .title {
     opacity: 0;
     transition: all 0.2s;
+    will-change: opacity;
     margin: 5px 15px;
 }
 .backdrop .overview {
@@ -36,6 +37,7 @@
     margin: 10px;
     opacity: 0;
     transition: all 0.8s;
+    will-change: opacity;
     white-space: normal;
 }
 

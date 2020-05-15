@@ -201,6 +201,8 @@ export default function Home(props) {
   return (
     <>
         <Head>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
+
         <link href="https://unpkg.com/@silvermine/videojs-quality-selector/dist/css/quality-selector.css" rel="stylesheet" />
         <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
         <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
