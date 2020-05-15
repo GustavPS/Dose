@@ -82,9 +82,16 @@ function killOtherInstances(serverToken) {
 }
 
 function startFFMPEG(filename, offset, req, res) {
+  /*
+  Direct play: https://stackoverflow.com/questions/40077681/ffmpeg-converting-from-mkv-to-mp4-without-re-encoding ?
+
+
+  */
+
   // crf = constant rate factor, lower is better
   // https://superuser.com/questions/677576/what-is-crf-used-for-in-ffmpeg
   var proc = ffmpeg(filename)
+        // Might be faster with only 1 thread? TODO: Test it
         .inputOptions([
           `-ss ${offset}`,
           '-threads 3'
@@ -138,10 +145,10 @@ function startFFMPEG(filename, offset, req, res) {
           
         // TODO: Lås med accesstoken+videoid
         lock.acquire('key', function(done) {
-          killOtherInstances(req.cookies.serverToken);
+          killOtherInstances(req.query.token);
           transcodings.push({
             process: proc,
-            token: req.cookies.serverToken
+            token: req.query.token
           });
           done();
         }, function() {

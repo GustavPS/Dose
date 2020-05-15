@@ -7,6 +7,7 @@ import Styles from '../../../../styles/video.module.css';
 import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
 
+import cookies from 'next-cookies'
 
 // Fetcher for useSWR, redirect to login if not authorized
 
@@ -16,6 +17,8 @@ export default function Home(props) {
   const availableSubtitles = props.subtitles;
   const router = useRouter();
   const { id } = router.query;
+  const serverToken = props.serverToken;
+  console.log(serverToken);
 
   let baseVideoUrl = `http://${server.server_ip}:4000/api/video/${id}`;
 
@@ -30,7 +33,7 @@ export default function Home(props) {
 
     // Load the video
     video.src({
-      src: `http://${server.server_ip}:4000/api/video/${id}`,
+      src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}`,
       type: 'video/webm',
     });
 
@@ -90,7 +93,7 @@ export default function Home(props) {
          video.oldCurrentTime(0);
          // Set the new source (with the offset)
          video.src({
-           src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}`,
+           src: `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}`,
            type: 'video/webm'
           });
 
@@ -192,7 +195,8 @@ export async function getServerSideProps(context) {
       return {
         props: {
             server: data.server,
-            subtitles: subtitles.subtitles
+            subtitles: subtitles.subtitles,
+            serverToken: cookies(context).serverToken || ''
         }
       }
     })
