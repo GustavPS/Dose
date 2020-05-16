@@ -1,0 +1,11 @@
+.SearchResult {
+    width: 100%;
+    max-height: 0;
+    color: white;
+    display: flex;
+    max-height: 0;
+}
+
+.SearchResultOpen {
+    max-height: 500px;
+}

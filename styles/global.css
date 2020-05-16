@@ -4,6 +4,7 @@ header {
     -webkit-box-shadow: 0px 7px 25px -9px rgba(0, 0, 0, 0.4);
     -moz-box-shadow: 0px 7px 25px -9px rgba(0, 0, 0, 0.4);
     box-shadow: 0px 7px 25px -9px rgba(0, 0, 0, 0.4);
+    position: relative;
 }
 
 body {

@@ -1,0 +1,12 @@
+.searchForm {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 20px;
+    display: table;
+}
+
+.searchForm input {
+    background-color: #173446;
+    color: white;
+}

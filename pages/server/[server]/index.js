@@ -28,6 +28,7 @@ export default (props) => {
     const [latestMovies, setLatesMovies] = useState(null);
     const [movies, setMovies] = useState([]);
     const [ongoingMovies, setOngoingMovies] = useState([]);
+    let allContent = [];
 
 
 
@@ -239,7 +240,7 @@ export default (props) => {
 
     // LAYOUT //
     return (
-        <Layout>
+        <Layout searchEnabled server={server}>
             <Head>
             </Head>
             <Carousel interval={10000}>
