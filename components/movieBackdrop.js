@@ -15,6 +15,7 @@ export default class MovieBackdrop extends React.Component {
     }
 
     render() {
+
         return (
             <div onClick={() => this.props.onClick(this.id)} className={style.backdrop} style={{backgroundImage: `url('${this.backdrop}')`}}>
                 <h3 className={style.title}>{this.title}</h3>

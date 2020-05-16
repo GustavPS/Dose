@@ -25,6 +25,7 @@
     overflow-y: visible;
     -ms-overflow-style: none;
     white-space: nowrap;
+    scroll-behavior: smooth;
 }
 
 .scrollable::-webkit-scrollbar {

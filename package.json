@@ -21,6 +21,8 @@
     "react": "16.13.1",
     "react-bootstrap": "^1.0.1",
     "react-dom": "16.13.1",
+    "react-in-viewport": "^1.0.0-alpha.11",
+    "react-on-screen": "^2.1.1",
     "react-player": "^2.0.1",
     "swr": "^0.2.0",
     "vtt-live-edit": "^1.0.7"

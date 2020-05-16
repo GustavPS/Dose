@@ -194,7 +194,7 @@ export default function Home(props) {
   });
 
     const updateWatchTime = (time) => {
-        fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/set?time=${time}&token=${serverToken}`);
+        fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/set?time=${time}&videoDuration=${video.theDuration}&token=${serverToken}`);
     }
 
 

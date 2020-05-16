@@ -6,7 +6,9 @@ import Router from 'next/router';
 import { useEffect, useState } from 'react';
 import { Carousel, Container, Row, Col } from 'react-bootstrap';
 
+
 import Styles from '../../../styles/server.module.css';
+import backdrop from '../../../components/movieBackdrop.module.css';
 
 
 import MovieBackdrop from '../../../components/movieBackdrop';
@@ -118,11 +120,12 @@ export default (props) => {
                     let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
                     movieElements.push(
                         <Carousel.Item>
-                            <img
+                            <img 
                                 className="d-block w-100"
                                 src={img}
                                 alt={movie.title}
                                 style={{objectFit: 'cover', height: '80vh', minHeight: '500px'}}
+                                onClick={() => {selectMovie(movie.id)}}
                             />
                             <Carousel.Caption>
                                 <h3>{movie.title}</h3>
@@ -140,10 +143,9 @@ export default (props) => {
                 console.log(movies);
                 let movieElements = [];
                 for (let movie of movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
                     movieElements.push(
                         <MovieBackdrop time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-
                     );
                 }
                 setOngoingMovies(movieElements);
@@ -171,7 +173,7 @@ export default (props) => {
                     movieList.reverse();
                     let movieElements = [];
                     for (let movie of movieList) {
-                        let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                        let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
                         movieElements.push(
                             <MovieBackdrop title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                         );
@@ -193,11 +195,14 @@ export default (props) => {
 
 
     const scrollLeft = (id) => {
-        document.getElementById(id).scrollLeft -= 1000;
-
+        document.getElementById(id).scrollLeft -= (window.innerWidth)*0.8;
+        window.scrollTo(window.scrollX, window.scrollY - 1);
+        window.scrollTo(window.scrollX, window.scrollY + 1);
     }
     const scrollRight = (id) => {
-        document.getElementById(id).scrollLeft += 1000;
+        document.getElementById(id).scrollLeft += (window.innerWidth)*0.8;
+        window.scrollTo(window.scrollX, window.scrollY - 1);
+        window.scrollTo(window.scrollX, window.scrollY + 1);
     }
 
     const showMovies = () => {
