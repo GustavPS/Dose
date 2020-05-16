@@ -44,6 +44,7 @@
     height: auto;
     display: inline-flex;
     padding: 50px 50px 0 50px;
+    margin-top: 40px;
 }
 
 .poster {
@@ -86,10 +87,13 @@
     border-radius: 10px;
     width: 100%;
     height: 70px;
-    cursor: pointer;
 }
 
 .bottom {
     color: white;
     padding: 20px 50px 0 50px;
+}
+
+.unmarkAsWatchText {
+    display: none;
 }

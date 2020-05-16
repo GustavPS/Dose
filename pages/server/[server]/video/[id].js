@@ -1,11 +1,12 @@
 import Head from 'next/head'
 import Layout from '../../../../components/layout'
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router'
 import ReactPlayer from 'react-player'
 import Styles from '../../../../styles/video.module.css';
 import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
+import Router from 'next/router';
 
 import cookies from 'next-cookies'
 
@@ -20,15 +21,18 @@ export default function Home(props) {
   const { id } = router.query;
   const serverToken = props.serverToken;
   const [metadata, setMetadata] = useState({});
+  const [watched, setWatched] = useState(false);
+  const [startWatching, setStartWatchin] = useState(false);
+  // Ugly hack to be able to access the videojs element outside of useEffect(). 
+  // The videojs object will be inserted here.
+  const [videoObj, setVideoObj] = useState(null);
 
-  let video;
+  let video = undefined;
   let videoSources = [];
-  let videoStarted = false;
-  let pluginsMounted = false;
 
 
 
-
+  // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
     fetch(`http://${server.server_ip}:4000/api/movies/${id}?token=${serverToken}`, {
       method: 'GET',
@@ -66,27 +70,18 @@ export default function Home(props) {
       currentTime += `${minutes}:${seconds}`
       meta.currentTimeSeconds = meta.currentTime;
       meta.currentTime = currentTime;
+      setWatched(meta.watched);
       setMetadata(meta);
+      return () => {
+        video = video;
+        
+      }
     });
-  }, [])
-
-  useEffect(() => {
-    // Initiate video.js
-    // Get metadata for this movie (only if we haven't fetched it before)
+  }, []);
 
 
 
-
-    video = videojs("video");
-    if (!pluginsMounted) {
-      pluginsMounted = true;
-      require('@silvermine/videojs-quality-selector')(videojs);
-      video.controlBar.addChild('QualitySelector');
-    }
-
-
-
-
+  const loadSources = () => {
     // Get the saved time for this video
     fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/get?token=${serverToken}`, {
         method: 'GET',
@@ -132,20 +127,39 @@ export default function Home(props) {
           video.currentTime(time);
         });
     });
+  }
 
 
-
-
+  const loadSubtitles = () => {
     // Load all the subtitles
     for (let subtitle of availableSubtitles) {
-        video.addRemoteTextTrack({
-          kind: 'subtitles',
-          label: subtitle.language,
-          language: subtitle.language,
-          src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}`
-        }, false);
+      video.addRemoteTextTrack({
+        kind: 'subtitles',
+        label: subtitle.language,
+        language: subtitle.language,
+        src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}`
+      }, false);
     }
+  }
 
+
+  useEffect(() => {
+      video = videojs("video", {
+        children: {
+          controlBar: {
+            PictureInPictureToggle: false
+          }
+        }
+      });
+      console.log("MOUNTING PLUGIN")
+      require('@silvermine/videojs-quality-selector')(videojs);
+      video.controlBar.addChild('QualitySelector');
+      loadSources();
+      loadSubtitles();
+
+    console.log(video);
+    // Initiate video.js
+    // Get metadata for this movie (only if we haven't fetched it before)
 
      // hack duration
      video.duration= function() {return video.theDuration; };
@@ -177,6 +191,7 @@ export default function Home(props) {
          // Save the current source (So we know what quality to play after seek)
          let currentQuality = video.currentSource().label;
          console.log("CURRENT: " + currentQuality);
+         let paused = video.paused();
          // Find the current active subtitle and save it so we know what to show after seek.
          let tracks = video.textTracks();
          let activeSub;
@@ -227,8 +242,7 @@ export default function Home(props) {
               console.log("Play canceled, probably a new seek.");
             }
           }
-
-          if (videoStarted) {
+          if (!paused) {
             video.play();
           }
 
@@ -242,46 +256,91 @@ export default function Home(props) {
             video.theDuration= data.duration;
         });
        }
-  });
 
-    const updateWatchTime = (time) => {
-        fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/set?time=${time}&videoDuration=${video.theDuration}&token=${serverToken}`);
-    }
+       setVideoObj(video);
+       return () => {
+        video = video;
+        
+      }
+  }, []);
 
-    const startWatching = (time) => {
-      videoStarted = true;
-      video.currentTime(time);
-      video.play();
+  useEffect(() => {
+    if (startWatching !== false) {
+      videoObj.currentTime(startWatching);
+      videoObj.play();
       document.getElementById('video').style.opacity = '1';
       document.getElementById('video').style.zIndex = '10';
       document.getElementById('container').style.opacity = '0';
       setInterval(() => {
-        updateWatchTime(video.currentTime());
+        updateWatchTime(videoObj.currentTime());
       }, 5000);
+    }
+    return () => {
+        video = video;
+    }
+
+});
+
+    const updateWatchTime = (time) => {
+        fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/set?time=${time}&videoDuration=${videoObj.theDuration}&token=${serverToken}`);
+    }
+
+    const markAsWatched = () => {
+      fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
+      .then(r => r.json())
+      .then(status => {
+        if (status.success) {
+          setWatched(true);
+        } else {
+          console.log("ERROR MARKING AS WATCHED: " + status);
+        }
+      })      .catch(err => {
+        console.log(err);
+      });
+    }
+
+    const markAsNotWatched = () => {
+      fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
+      .then(r => r.json())
+      .then(status => {
+        if (status.success) {
+          setWatched(false);
+        } else {
+          console.log("ERROR MARKING AS WATCHED: " + status);
+        }
+      })
+      .catch(err => {
+        console.log(err);
+      });
     }
 
 
+
+
+
+    
+    //  
   return (
     <>
         <Head>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
+        <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
 
         <link href="https://unpkg.com/@silvermine/videojs-quality-selector/dist/css/quality-selector.css" rel="stylesheet" />
         <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
         <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
         <link href="/chromecast/silvermine-videojs-chromecast.css" rel="stylesheet" />
-        <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
         <script src="https://unpkg.com/@silvermine/videojs-quality-selector/dist/js/silvermine-videojs-quality-selector.min.js"></script>
-
         <script src="/chromecast/silvermine-videojs-chromecast.min.js"></script>
         <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
         </Head>
-        <video id="video"className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto">
-        </video>
+        <video disablePictureInPicture id="video" className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto"></video>
 
         <div id="container">
         <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
+        <div className="backIcon" onClick={() => Router.back()}></div>
+
 
         <div className={Styles.top}>
           <div className={Styles.poster} style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.poster}')`}} />
@@ -299,14 +358,31 @@ export default function Home(props) {
             <div className={Styles.actions}>
               {metadata.currentTimeSeconds > 0 &&
               <div style={{marginRight: "15px"}}>
-                <div className={Styles.playButton} onClick={() => startWatching(metadata.currentTimeSeconds)}></div>
+                <div className={Styles.playButton} onClick={() => setStartWatchin(metadata.currentTimeSeconds)}></div>
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
               </div>
               }
               <div>
-                <div className={Styles.playButton} onClick={() => startWatching(0)}></div>
+                <div className={Styles.playButton} onClick={() => setStartWatchin(0)}></div>
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
               </div>
+              {watched &&
+              <>
+                  <div style={{marginLeft: "15px"}}>
+                  <div id="markAsWatched" style={{backgroundImage: "url('/images/cross.svg')"}} className={Styles.playButton} onClick={() => markAsNotWatched()}></div>
+                  <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som osedd</p>
+                  </div>
+              </>
+              }
+              {!watched &&
+              <>
+                <div style={{marginLeft: "15px"}}>
+                <div id="markAsWatched" style={{backgroundImage: "url('/images/eye.svg')"}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
+                <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
+                </div>
+              </>
+              }
+
             </div>
           </div>
         </div>

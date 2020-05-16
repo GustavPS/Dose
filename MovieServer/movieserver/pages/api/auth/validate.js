@@ -30,7 +30,7 @@ export default async (req, res) => {
                         },
                         jwtSecret,
                         {
-                            expiresIn: 3000, // 50 min
+                            expiresIn: 300000, // 50 min
                         },
                     );
                     res.status(200).json({

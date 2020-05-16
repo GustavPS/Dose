@@ -140,12 +140,11 @@ export default (props) => {
             // Get ongoing movies
             getMovieList(null, 'release_date', 20, true).then(movies => {
                 movies.reverse();
-                console.log(movies);
                 let movieElements = [];
                 for (let movie of movies) {
                     let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
                     movieElements.push(
-                        <MovieBackdrop time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                        <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                     );
                 }
                 setOngoingMovies(movieElements);
@@ -170,7 +169,6 @@ export default (props) => {
                     // Get the movies for that genre
                     getMovieList(genre.name, 'added_date', 20).then(movieList => {
                         let genreList = movies;
-                        console.log(genreList);
                         movieList.reverse();
                         let movieElements = [];
                         for (let movie of movieList) {
@@ -208,8 +206,6 @@ export default (props) => {
     }
 
     const showMovies = () => {
-        console.log("RERENDER")
-        console.log(movies);
         let render = []
         movies.map((genre, index) => {
             if (genre.movieElements.length != 0) {

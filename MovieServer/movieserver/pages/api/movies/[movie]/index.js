@@ -1,5 +1,5 @@
-const db = require('../../../lib/db');
-const cors = require('../../../lib/cors');
+const db = require('../../../../lib/db');
+const cors = require('../../../../lib/cors');
 const jwtSecret = 'SERVERSECRET';
 const jwt = require('jsonwebtoken');
 
@@ -33,7 +33,8 @@ export default (req, res) => {
         if (decoded) {
             let user_id = decoded.user_id;
             db.one(`
-            SELECT i.movie_id AS id, i.title, i.overview, i.release_date, i.runtime, i.popularity, i.added_date, i.trailer, array_agg(DISTINCT t.name) AS genres, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images
+            SELECT i.movie_id AS id, i.title, i.overview, i.release_date, i.runtime, i.popularity, i.added_date, i.trailer, array_agg(DISTINCT t.name) AS genres, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images,
+            m.movie_id AS watched
             FROM movie_metadata i
 
             -- Join with movie_category and category to get an array of the categories
@@ -48,11 +49,15 @@ export default (req, res) => {
             INNER JOIN image k
             ON j.image_id = k.id
 
-            WHERE i.movie_id = $1
+            LEFT JOIN user_movie_watched m
+            ON m.user_id = $1 AND m.movie_id = i.movie_id
 
-            GROUP BY i.id, i.title
-            `, [movieID]).then(result => {
 
+            WHERE i.movie_id = $2
+
+            GROUP BY i.id, i.title, m.movie_id
+            `, [user_id, movieID]).then(result => {
+                result.watched = result.watched !== null
                 db.any('SELECT time FROM user_movie_progress WHERE user_id = $1 AND movie_id = $2', [user_id, movieID]).then(progress => {
                     let response = {
                         result: result

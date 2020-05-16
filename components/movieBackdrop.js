@@ -12,6 +12,23 @@ export default class MovieBackdrop extends React.Component {
         this.id = props.id;
         this.time = props.time ? props.time : null;
         this.runtime = props.runtime ? props.runtime : null;
+        this.markAsDoneButton = props.markAsDoneButton;
+
+        this.markAsWatched = this.markAsWatched.bind(this);
+    }
+
+    markAsWatched() {
+        fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
+        .then(r => r.json())
+        .then(status => {
+            if (status.success) {
+                this.props.unMountMe();
+            } else {
+                console.log("ERROR MARKING AS WATCHED: " + status);
+            }
+        }).catch(err => {
+            console.log(err);
+        });
     }
 
     render() {

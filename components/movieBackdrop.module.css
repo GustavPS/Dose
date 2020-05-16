@@ -70,3 +70,23 @@ background: rgb(23, 52, 70);
 .progress::-webkit-progress-bar {
 background: whitesmoke;
 }
+
+.setAsWatched {
+    position: relative;
+    border-radius: 50%;
+    float: right;
+    margin: 10px 10px 0 0;
+    width: 25px;
+    height: 25px;
+    background-image: url('/images/cross.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.setAsWatched:hover {
+    box-shadow: 0 -0 0 1px #1b1b1b;
+    transform: scale(1.5);
+}

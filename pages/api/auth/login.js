@@ -45,7 +45,7 @@ export default async function handle(req, res) {
             },
             hash.getJWTSecret(),
             {
-                expiresIn: 3000, // 50 min
+                expiresIn: 300000, // 50 min
             },
         );
 
