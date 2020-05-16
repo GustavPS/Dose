@@ -10,6 +10,7 @@ import vtt from 'vtt-live-edit';
 import cookies from 'next-cookies'
 
 // Fetcher for useSWR, redirect to login if not authorized
+let fetchedMetadata = false;
 
 
 export default function Home(props) {
@@ -18,18 +19,67 @@ export default function Home(props) {
   const router = useRouter();
   const { id } = router.query;
   const serverToken = props.serverToken;
-  console.log(serverToken);
+  const [metadata, setMetadata] = useState({});
 
   let video;
   let videoSources = [];
+  let videoStarted = false;
+
+
+
+
+  useEffect(() => {
+    fetch(`http://${server.server_ip}:4000/api/movies/${id}?token=${serverToken}`, {
+      method: 'GET',
+      headers: {
+          'Content-Type': 'application/json'
+      }
+    })
+    .then(r => r.json())
+    .then(result => {
+      let meta = result.result;
+      let finish_at = new Date(new Date().getTime() + meta.runtime * 60000);
+      meta.finish_at = finish_at.getHours() + ":" + finish_at.getMinutes();
+      for (let image of meta.images) {
+        if (image.active && image.type === 'BACKDROP') {
+          meta.backdrop = image.path;
+        }
+        if (image.active && image.type === 'POSTER') {
+          meta.poster = image.path;
+        }
+      }
+
+      let currentTime = "";
+      let hours = Math.floor(meta.currentTime / 60 / 60)
+      let minutes = Math.floor(meta.currentTime / 60)
+      let seconds = Math.floor(meta.currentTime % 60);
+      if (hours >= 1) {
+        currentTime += `${hours}:`
+      }
+      if (minutes < 10) {
+        minutes = `0${minutes}`;
+      }
+      if (seconds < 10) {
+        seconds = `0${seconds}`
+      }
+      currentTime += `${minutes}:${seconds}`
+      meta.currentTimeSeconds = meta.currentTime;
+      meta.currentTime = currentTime;
+      setMetadata(meta);
+    });
+  }, [])
 
   useEffect(() => {
     // Initiate video.js
+    // Get metadata for this movie (only if we haven't fetched it before)
+
+
 
 
     video = videojs("video");
     require('@silvermine/videojs-quality-selector')(videojs);
     video.controlBar.addChild('QualitySelector');
+
 
 
     // Get the saved time for this video
@@ -75,10 +125,6 @@ export default function Home(props) {
           videoSources = sources;
           video.src(videoSources);
           video.currentTime(time);
-
-          setInterval(() => {
-              updateWatchTime(video.currentTime());
-          }, 5000);
         });
     });
 
@@ -179,7 +225,9 @@ export default function Home(props) {
             }
           }
 
-          //video.play();
+          if (videoStarted) {
+            video.play();
+          }
 
          return this;
      };
@@ -198,11 +246,15 @@ export default function Home(props) {
     }
 
     const startWatching = (time) => {
+      videoStarted = true;
       video.currentTime(time);
       video.play();
       document.getElementById('video').style.opacity = '1';
       document.getElementById('video').style.zIndex = '10';
       document.getElementById('container').style.opacity = '0';
+      setInterval(() => {
+        updateWatchTime(video.currentTime());
+      }, 5000);
     }
 
 
@@ -226,26 +278,28 @@ export default function Home(props) {
         </video>
 
         <div id="container">
-        <div style={{backgroundImage: "url('https://image.tmdb.org/t/p/original//4uMrZS7XEHRNKwHr5wSOxROanPF.jpg')"}} className={Styles.background}></div>
+        <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
 
         <div className={Styles.top}>
-          <div className={Styles.poster} style={{backgroundImage: "url('https://image.tmdb.org/t/p/original/lk3z8lCUKVqOARzsp6dXRbCft8P.jpg')"}} />
+          <div className={Styles.poster} style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.poster}')`}} />
           <div className={Styles.description}>
-            <h1>Top Gun</h1>
+            <h1>{metadata.title}</h1>
             <div className={Styles.metadata}>
-              <p className={Styles.releaseDate}>2018</p>
-              <p className={Styles.runtime}>2h 10m</p>
-              <p className={Styles.endsat}>Slutar vid 12:05</p>
-              <p className={Styles.addedDate}>Tillagd 2020-05-13</p>
+              <p className={Styles.releaseDate}>{metadata.release_date}</p>
+              <p className={Styles.runtime}>{Math.floor(metadata.runtime / 60) + "h " + metadata.runtime%60+"m"}</p>
+              <p className={Styles.endsat}>Slutar vid {metadata.finish_at}</p>
+              <p className={Styles.addedDate}>Tillagd {metadata.added_date}</p>
             </div>
             <div className={Styles.overview}>
-                <p>As students at the United States Navy's elite fighter weapons school compete to be best in the class, one daring young pilot learns a few things from a civilian instructor that are not taught in the classroom.</p>
+                <p>{metadata.overview}</p>
             </div>
             <div className={Styles.actions}>
+              {metadata.currentTimeSeconds > 0 &&
               <div style={{marginRight: "15px"}}>
-                <div className={Styles.playButton} onClick={() => startWatching(500)}></div>
-                <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från 31:41</p>
+                <div className={Styles.playButton} onClick={() => startWatching(metadata.currentTimeSeconds)}></div>
+                <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
               </div>
+              }
               <div>
                 <div className={Styles.playButton} onClick={() => startWatching(0)}></div>
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
@@ -255,8 +309,8 @@ export default function Home(props) {
         </div>
         <div className={Styles.bottom}>
           <h1>Actors</h1>
-          <div classname={Styles.actors}>
-            <div classname={Styles.actor}>
+          <div className={Styles.actors}>
+            <div className={Styles.actor}>
 
             </div>
           </div>
