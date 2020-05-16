@@ -179,7 +179,7 @@ export default function Home(props) {
             }
           }
 
-          video.play();
+          //video.play();
 
          return this;
      };
@@ -195,6 +195,14 @@ export default function Home(props) {
 
     const updateWatchTime = (time) => {
         fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/set?time=${time}&videoDuration=${video.theDuration}&token=${serverToken}`);
+    }
+
+    const startWatching = (time) => {
+      video.currentTime(time);
+      video.play();
+      document.getElementById('video').style.opacity = '1';
+      document.getElementById('video').style.zIndex = '10';
+      document.getElementById('container').style.opacity = '0';
     }
 
 
@@ -217,15 +225,42 @@ export default function Home(props) {
         <video id="video"className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto">
         </video>
 
-        <div className={Styles.description}>
+        <div id="container">
+        <div style={{backgroundImage: "url('https://image.tmdb.org/t/p/original//4uMrZS7XEHRNKwHr5wSOxROanPF.jpg')"}} className={Styles.background}></div>
+
+        <div className={Styles.top}>
+          <div className={Styles.poster} style={{backgroundImage: "url('https://image.tmdb.org/t/p/original/lk3z8lCUKVqOARzsp6dXRbCft8P.jpg')"}} />
+          <div className={Styles.description}>
             <h1>Top Gun</h1>
+            <div className={Styles.metadata}>
+              <p className={Styles.releaseDate}>2018</p>
+              <p className={Styles.runtime}>2h 10m</p>
+              <p className={Styles.endsat}>Slutar vid 12:05</p>
+              <p className={Styles.addedDate}>Tillagd 2020-05-13</p>
+            </div>
             <div className={Styles.overview}>
                 <p>As students at the United States Navy's elite fighter weapons school compete to be best in the class, one daring young pilot learns a few things from a civilian instructor that are not taught in the classroom.</p>
             </div>
-
-            <div className={Styles.actors}>
-                <h2>Actors</h2>
+            <div className={Styles.actions}>
+              <div style={{marginRight: "15px"}}>
+                <div className={Styles.playButton} onClick={() => startWatching(500)}></div>
+                <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från 31:41</p>
+              </div>
+              <div>
+                <div className={Styles.playButton} onClick={() => startWatching(0)}></div>
+                <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
+              </div>
             </div>
+          </div>
+        </div>
+        <div className={Styles.bottom}>
+          <h1>Actors</h1>
+          <div classname={Styles.actors}>
+            <div classname={Styles.actor}>
+
+            </div>
+          </div>
+        </div>
         </div>
         </>
   )
