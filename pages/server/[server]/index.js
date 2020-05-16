@@ -166,25 +166,27 @@ export default (props) => {
             .then((r) => r.json())
             .then(async (result) => {
                 let genres = result.genres;
-                let genreList = [];
                 for (let genre of genres) {
                     // Get the movies for that genre
-                    const movieList = await getMovieList(genre.name, 'added_date', 20);
-                    movieList.reverse();
-                    let movieElements = [];
-                    for (let movie of movieList) {
-                        let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                        movieElements.push(
-                            <MovieBackdrop title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                        );
-                    }
-                    genreList.push({
-                        name: genre.name,
-                        movieElements: movieElements
+                    getMovieList(genre.name, 'added_date', 20).then(movieList => {
+                        let genreList = movies;
+                        console.log(genreList);
+                        movieList.reverse();
+                        let movieElements = [];
+                        for (let movie of movieList) {
+                            let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                            movieElements.push(
+                                <MovieBackdrop title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                            );
+                        }
+                        genreList.push({
+                            name: genre.name,
+                            movieElements: movieElements
+                        });
+                        setMovies([]);
+                        setMovies(genreList);
                     });
                 }
-                console.log(genreList);
-                setMovies(genreList);
             });
         });
     }, []);

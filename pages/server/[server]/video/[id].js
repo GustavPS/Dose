@@ -24,6 +24,7 @@ export default function Home(props) {
   let video;
   let videoSources = [];
   let videoStarted = false;
+  let pluginsMounted = false;
 
 
 
@@ -77,8 +78,12 @@ export default function Home(props) {
 
 
     video = videojs("video");
-    require('@silvermine/videojs-quality-selector')(videojs);
-    video.controlBar.addChild('QualitySelector');
+    if (!pluginsMounted) {
+      pluginsMounted = true;
+      require('@silvermine/videojs-quality-selector')(videojs);
+      video.controlBar.addChild('QualitySelector');
+    }
+
 
 
 
@@ -130,8 +135,6 @@ export default function Home(props) {
 
 
 
-    // Set the poster image
-    video.poster("https://image.tmdb.org/t/p/original/k20j3PMQSelVQ6M4dQoHuvtvPF5.jpg");
 
     // Load all the subtitles
     for (let subtitle of availableSubtitles) {
