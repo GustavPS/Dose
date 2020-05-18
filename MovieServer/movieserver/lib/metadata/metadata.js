@@ -67,7 +67,8 @@ class Metadata {
             title: movieName,
             video: false,
             vote_average: -1,
-            vote_count: -1
+            vote_count: -1,
+            first_air_date: -1
           }
     }
 }

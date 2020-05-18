@@ -10,19 +10,31 @@ var ffmpeg = require('fluent-ffmpeg');
 
 
 export default (req, res) => {
+  return new Promise(async (resolve, reject) => {
+
   res.setHeader('Access-Control-Allow-Origin', "*");
   res.setHeader('Access-Control-Allow-Headers', "*");
 
+  let type = req.query.type === undefined ? 'movie' : 'serie';
+
   // TODO: Error handling
-  getMoviePath(req.query.id).then(filename => {
-    ffmpeg.ffprobe(filename, function(err, metadata) {
-      if (err) {
-        console.log(err);
-      }
-        res.status(200).json({duration: metadata.format.duration});
-    });
+  let filename = "";
+  if (type === 'movie') {
+    filename = await getMoviePath(req.query.id);
+  } else if (type === 'serie') {
+    filename = await getShowPath(req.query.id);
+  }
+  console.log(filename);
+  console.log(type);
+  ffmpeg.ffprobe(filename, function(err, metadata) {
+    if (err) {
+      console.log(err);
+    }
+      res.status(200).json({duration: metadata.format.duration});
+      resolve();
   });
   
+});
 
 }
 
@@ -35,5 +47,21 @@ function getMoviePath(movieID) {
             `, [movieID]).then((result) => {
               resolve(`${result.basepath}${result.subpath}`)
             });
+  });
+}
+function getShowPath(showID) {
+  return new Promise((resolve, reject) => {
+
+    db.one(`SELECT DISTINCT serie_episode.path AS subpath, library.path AS basepath FROM library
+            INNER JOIN serie
+            ON serie.library = library.id
+
+            INNER JOIN serie_episode
+            ON serie_episode.id = $1
+
+            WHERE serie_episode.id = $1
+    `, [showID]).then(result => {
+      resolve(`${result.basepath}${result.subpath}`);
+    });
   });
 }

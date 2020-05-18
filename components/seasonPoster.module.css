@@ -1,0 +1,32 @@
+.poster {
+    height: 300px;
+    width: 202px;
+    position: relative;
+    cursor: pointer;
+}
+
+.posterImage {
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 100%;
+    transition: 0.2s all;
+}
+
+.posterImage:hover {
+    opacity: 0.5;
+}
+
+.poster:hover .seasonName {
+    opacity: 1;
+}
+
+.seasonName {
+    text-align: center;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    opacity: 0;
+    transition: 0.2s all;
+}

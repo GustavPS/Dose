@@ -1,9 +1,9 @@
 import Head from 'next/head'
-import Layout from '../../../../components/layout'
+import Layout from '../../../../../../../../../components/layout';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router'
 import ReactPlayer from 'react-player'
-import Styles from '../../../../styles/video.module.css';
+import Styles from '../../../../../../../../../styles/video.module.css';
 import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
 import Router from 'next/router';
@@ -18,7 +18,7 @@ export default function Home(props) {
   const server = props.server;
   const availableSubtitles = props.subtitles;
   const router = useRouter();
-  const { id } = router.query;
+  const { id, season, episode, internalID } = router.query;
   const serverToken = props.serverToken;
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
@@ -34,7 +34,7 @@ export default function Home(props) {
 
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
-    fetch(`http://${server.server_ip}:4000/api/movies/${id}?token=${serverToken}`, {
+    fetch(`http://${server.server_ip}:4000/api/series/${id}/season/${season}/episode/${episode}?token=${serverToken}`, {
       method: 'GET',
       headers: {
           'Content-Type': 'application/json'
@@ -42,6 +42,7 @@ export default function Home(props) {
     })
     .then(r => r.json())
     .then(result => {
+        console.log(result);
       let meta = result.result;
       let finish_at = new Date(new Date().getTime() + meta.runtime * 60000);
       meta.finish_at = finish_at.getHours() + ":" + finish_at.getMinutes();
@@ -70,6 +71,7 @@ export default function Home(props) {
       currentTime += `${minutes}:${seconds}`
       meta.currentTimeSeconds = meta.currentTime;
       meta.currentTime = currentTime;
+
       setWatched(meta.watched);
       setMetadata(meta);
       return () => {
@@ -83,7 +85,7 @@ export default function Home(props) {
 
   const loadSources = () => {
     // Get the saved time for this video
-    fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/get?token=${serverToken}`, {
+    fetch(`http://${server.server_ip}:4000/api/video/${internalID}/currenttime/get?token=${serverToken}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -91,9 +93,10 @@ export default function Home(props) {
     })
     .then(r => r.json())
     .then(time => {
+        console.log(time);
       time = time.time;
         // Get the available resolutions for this video
-        fetch(`http://${server.server_ip}:4000/api/video/${id}/getResolution`, {
+        fetch(`http://${server.server_ip}:4000/api/video/${internalID}/getResolution?type=serie`, {
           method: 'GET',
           headers: {
               'Content-Type': 'application/json'
@@ -101,11 +104,13 @@ export default function Home(props) {
         })
         .then(r => r.json())
         .then(result => {
+          console.log("RESOLUTION STUFF")
           console.log(result);
           let sources = [];
-          if (result.directplay) {
+
+            if (result.directplay) {
             sources.push({
-              src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&start=${time}&quality=directplay`,
+              src: `http://${server.server_ip}:4000/api/video/${internalID}?type=serie&token=${serverToken}&start=${time}&quality=directplay`,
               type: 'video/mp4',
               label: 'directplay',
               selected: true
@@ -115,7 +120,7 @@ export default function Home(props) {
           let count = 0;
           for (let resolution of result.resolutions) {
             sources.push({
-              src: `http://${server.server_ip}:4000/api/video/${id}?token=${serverToken}&start=${time}&quality=${resolution}`,
+              src: `http://${server.server_ip}:4000/api/video/${internalID}?type=serie&token=${serverToken}&start=${time}&quality=${resolution}`,
               type: 'video/mp4',
               label: resolution,
               selected: !result.directplay && count === 0
@@ -123,6 +128,7 @@ export default function Home(props) {
             count++;
           }
           videoSources = sources;
+          console.log(videoSources);
           video.src(videoSources);
           video.currentTime(time);
         });
@@ -133,6 +139,7 @@ export default function Home(props) {
   const loadSubtitles = () => {
     // Load all the subtitles
     for (let subtitle of availableSubtitles) {
+      console.log("LOADING SUBTITLE");
       video.addRemoteTextTrack({
         kind: 'subtitles',
         label: subtitle.language,
@@ -144,13 +151,9 @@ export default function Home(props) {
 
 
   useEffect(() => {
-      video = videojs("video", {
-        children: {
-          controlBar: {
-            PictureInPictureToggle: false
-          }
-        }
-      });
+
+      console.log("NUUUUUUUUUUUUU")
+      video = videojs("video");
       console.log("MOUNTING PLUGIN")
       require('@silvermine/videojs-quality-selector')(videojs);
       video.controlBar.addChild('QualitySelector');
@@ -207,7 +210,7 @@ export default function Home(props) {
          // Set the new source (with the offset)
 
          for (let i = 0; i < videoSources.length; i++) {
-           videoSources[i].src = `http://${server.server_ip}:4000/api/video/${id}?start=${time}&token=${serverToken}&quality=${videoSources[i].label}`
+           videoSources[i].src = `http://${server.server_ip}:4000/api/video/${internalID}?type=serie&start=${time}&token=${serverToken}&quality=${videoSources[i].label}`
            if (currentQuality !== videoSources[i].label) {
               videoSources[i].selected = false;
            } else {
@@ -251,7 +254,7 @@ export default function Home(props) {
 
        // Get the dureation of the movie
        if (id !== undefined) {
-        $.getJSON( `http://${server.server_ip}:4000/api/video/${id}/getDuration`, function( data ) 
+        $.getJSON( `http://${server.server_ip}:4000/api/video/${internalID}/getDuration?type=serie`, function( data ) 
         {
             video.theDuration= data.duration;
         });

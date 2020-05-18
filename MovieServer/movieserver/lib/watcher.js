@@ -84,7 +84,7 @@ class Watcher {
      */
     async fetchLibraries() {
         const movieLibraries = await db.any("SELECT * FROM library WHERE type = 'MOVIES'");
-        const tvLibraries = await db.any("SELECT * FROM library WHERE type = 'TV'");
+        const tvLibraries = await db.any("SELECT * FROM library WHERE type = 'SERIES'");
         console.log('Movie libraries:')
         console.table(movieLibraries);
         console.log('TV lirbaries:')
@@ -120,13 +120,25 @@ class Watcher {
           awaitWriteFinish: true,
           ignoreInitial: false
         })
-        .on('add', (filePath, event) => {
+        .on('add', async (filePath, event) => {
             filePath = this.cleanPath(filePath, relativePath);
-            library.newEntry(filePath);
+            if (library.getType() === 'SERIES') {
+                await library.newEntry(filePath);
+            } else {
+                library.newEntry(filePath);
+            }
         })
         .on('unlink', (filePath) => {
             filePath = this.cleanPath(filePath, relativePath);
             library.removeEntry(filePath);
+        })
+        .on('addDir', filePath => {
+            /*
+            if (library.getType() === 'SERIES')  {
+                filePath = this.cleanPath(filePath, relativePath);
+                library.newFolder(filePath);
+            }
+            */
         })
         .on('error', error => {
             console.log(`File system watcher error: ${error}`);

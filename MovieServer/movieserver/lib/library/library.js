@@ -24,11 +24,26 @@ class Library {
         return this.name;
     }
 
+    getType() {
+        throw('getType must be implemented.')
+    }
+
     newEntry(path) {
         throw('newEntry must be implemented.');
     }
     removeEntry(path) {
         throw('removeEntry must be implemented.');
+    }
+
+    nameMatch(name) {
+        let re = new RegExp("([ .\\w'!-]+?)(\\W\\d{4}\\W?.*)", 'gm');
+        let matches = re.exec(name)
+        if (matches != null && matches.length >= 2) {
+            name = matches[1];
+            name = name.replace(/\./g, ' ');
+            name = name.trim();
+        }
+        return name;
     }
 
     cleanNameAndType(path) {

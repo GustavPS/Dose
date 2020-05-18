@@ -8,8 +8,6 @@ import { Carousel, Container, Row, Col } from 'react-bootstrap';
 
 
 import Styles from '../../../styles/server.module.css';
-import backdrop from '../../../components/movieBackdrop.module.css';
-
 
 import MovieBackdrop from '../../../components/movieBackdrop';
 
@@ -26,8 +24,9 @@ export default (props) => {
     // props.server is from the SSR under this function
     let server = props.server;
     const [latestMovies, setLatesMovies] = useState(null);
-    const [movies, setMovies] = useState([]);
     const [ongoingMovies, setOngoingMovies] = useState([]);
+    const [newlyAddedMovies, setNewlyAddedMovies] = useState([]);
+    const [newlyAddedShows, setNewlyAddedShows] = useState([]);
     let allContent = [];
 
 
@@ -111,6 +110,54 @@ export default (props) => {
         });
     }
 
+    const getShowList = async (genre=null, orderby=null, limit=20, ongoing=false) => {
+        return new Promise((resolve, reject) => {
+            let url;
+            if (ongoing) {
+                url = `http://${server.server_ip}:4000/api/series/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+            } else {
+                url = `http://${server.server_ip}:4000/api/series/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+            }
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    limit: 20
+                })
+            })
+            .then((r) => r.json())
+            .then((response) => {
+                // Mark the movies active image
+                response.result.forEach(movie => {
+                    for (let image of movie.images) {
+                        if (image.active) {
+                            if (image.type === 'BACKDROP') {
+                                if (image.path === 'no_image') {
+                                    movie.backdrop = null;
+                                } else {
+                                    movie.backdrop = image.path;
+                                }
+                            } else {
+                                if (image.path === 'no_image') {
+                                    movie.backdrop = null;
+                                } else {
+                                    movie.poster = image.path;
+                                }
+                            }
+
+                            if (movie.backdrop != null && movie.poster != null) {
+                                break;
+                            }
+                        }
+                    }
+                });
+                resolve(response.result);
+            });
+        });
+    }
+
     useEffect(() => {
         validateAccess(() => {
             // Get all the newest released movies (The slieshow)
@@ -151,47 +198,44 @@ export default (props) => {
                 setOngoingMovies(movieElements);
             });
 
-            
+            // Get newly added movies
+            getMovieList(null, 'added_date', 20).then(movies => {
+                movies.reverse();
 
-
-
-
-            // Get all genres from the server
-            fetch(`http://${server.server_ip}:4000/api/genre/list`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+                let movieElements = [];
+                for (let movie of movies) {
+                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                    movieElements.push(
+                        <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                    );
                 }
-            })
-            .then((r) => r.json())
-            .then(async (result) => {
-                let genres = result.genres;
-                for (let genre of genres) {
-                    // Get the movies for that genre
-                    getMovieList(genre.name, 'added_date', 20).then(movieList => {
-                        let genreList = movies;
-                        movieList.reverse();
-                        let movieElements = [];
-                        for (let movie of movieList) {
-                            let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                            movieElements.push(
-                                <MovieBackdrop title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                            );
-                        }
-                        genreList.push({
-                            name: genre.name,
-                            movieElements: movieElements
-                        });
-                        setMovies([]);
-                        setMovies(genreList);
-                    });
+                setNewlyAddedMovies(movieElements);
+                
+            });
+
+            // Get newly added shows
+            getShowList(null, 'added_date', 20).then(shows => {
+                shows.reverse();
+
+                let showElements = [];
+                for (let show of shows) {
+                    let img = show.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${show.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                    showElements.push(
+                        <MovieBackdrop markAsDoneButton id={show.id} time={show.watchtime} runtime={show.runtime} title={show.title} overview={show.overview} runtime={show.runtime} backdrop={img} onClick={(id) => selectShow(show.id)}></MovieBackdrop>
+                    );
                 }
+                setNewlyAddedShows(showElements);
+                
             });
         });
     }, []);
 
     const selectMovie = (id) => {
-        Router.push(`/server/${server.server_id}/video/${id}`);
+        Router.push(`/server/${server.server_id}/movies/video/${id}`);
+    }
+
+    const selectShow = (id) => {
+        Router.push(`/server/${server.server_id}/shows/video/${id}`);
     }
 
 
@@ -204,38 +248,6 @@ export default (props) => {
         document.getElementById(id).scrollLeft += (window.innerWidth)*0.8;
         window.scrollTo(window.scrollX, window.scrollY - 1);
         window.scrollTo(window.scrollX, window.scrollY + 1);
-    }
-
-    const showMovies = () => {
-        let render = []
-        movies.map((genre, index) => {
-            if (genre.movieElements.length != 0) {
-                render.push(
-                    <>
-                        <h2 style={{textTransform: 'capitalize'}}>{genre.name}</h2>    
-                    <div className={Styles.movieRow}>
-                        <div id={genre.name + "Movies"} className={Styles.scrollable}>
-                            {genre.movieElements}
-                        </div>
-                        {genre.movieElements.length >= 5 &&
-                            <>
-                                <div className={Styles.scrollButton} onClick={() => scrollLeft(genre.name + 'Movies')}>
-                                    <img src="/images/left.svg" width="70" />
-                                </div>
-                                <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight(genre.name + 'Movies')}>
-                                    <img src="/images/right.svg" width="70" />
-                                </div>
-
-                            </>
-                        }
-                        
-                    </div>
-                    <hr className={Styles.divider}></hr>
-                    </>   
-                );
-            }
-        })
-        return render;
     }
 
     // LAYOUT //
@@ -251,7 +263,7 @@ export default (props) => {
                 <Container fluid>
                     {ongoingMovies.length > 0 &&
                         <>
-                            <h2 style={{textTransform: 'capitalize'}}>Ongoing</h2>    
+                            <h2 style={{textTransform: 'capitalize'}}>Pågående filmer</h2>    
                             <div className={Styles.movieRow}>
                                 <div id="ongoingMovies" className={Styles.scrollable}>
                                     {ongoingMovies}
@@ -270,7 +282,51 @@ export default (props) => {
                         <hr className={Styles.divider}></hr>
                         </> 
                     }
-                    {showMovies()}
+
+                    {newlyAddedMovies.length > 0 &&
+                        <>
+                            <h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2>    
+                            <div className={Styles.movieRow}>
+                                <div id="newlyAddedMovies" className={Styles.scrollable}>
+                                    {newlyAddedMovies}
+                                </div>
+                                {newlyAddedMovies.length >= 5 &&
+                                    <>
+                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedMovies')}>
+                                            <img src="/images/left.svg" width="70" />
+                                        </div>
+                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedMovies')}>
+                                            <img src="/images/right.svg" width="70" />
+                                        </div>
+                                    </>
+                                }
+                            </div> 
+                        <hr className={Styles.divider}></hr>
+                        </> 
+                    }
+
+                    
+                    {newlyAddedShows.length > 0 &&
+                        <>
+                            <h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda serier</h2>    
+                            <div className={Styles.movieRow}>
+                                <div id="newlyAddedShows" className={Styles.scrollable}>
+                                    {newlyAddedShows}
+                                </div>
+                                {newlyAddedShows.length >= 5 &&
+                                    <>
+                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedShows')}>
+                                            <img src="/images/left.svg" width="70" />
+                                        </div>
+                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedShows')}>
+                                            <img src="/images/right.svg" width="70" />
+                                        </div>
+                                    </>
+                                }
+                            </div> 
+                        <hr className={Styles.divider}></hr>
+                        </> 
+                    }
                 </Container>
             </div>
         </Layout>

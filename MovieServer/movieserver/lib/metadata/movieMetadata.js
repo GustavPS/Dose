@@ -79,6 +79,7 @@ class MovieMetadata extends Metadata {
                         return;
                     }
                 }
+                resolve(null);
             })
         });
     }

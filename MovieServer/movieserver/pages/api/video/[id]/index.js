@@ -18,7 +18,15 @@ const ALLOWED_QUALITIES = [
 ];
 
 export default async (req, res) => {
-  getMoviePath(req.query.id).then(filename => {
+    let type = req.query.type === undefined ? 'movie' : 'serie';
+    let filename = "";
+    if (type === 'movie') {
+      filename = await getMoviePath(req.query.id);
+    } else if (type === 'serie') {
+      filename = await getEpisodePath(req.query.id); 
+    } else {
+    }
+    console.log(filename);
     var stat = fs.statSync(filename);
       var start = 0;
       var end = 0;
@@ -38,22 +46,17 @@ export default async (req, res) => {
 
       res.writeHead(200, { // NOTE: a partial http response
           'Accept-Ranges': 'bytes',
-          'Connection':'close',
+          'Connection':'keep-alive', // Maybe should be keep-alive? To prevent ERR_INCOMPLETE_CHUNKED_ENCODING 200 after video paus
           'Content-Range':'bytes '+start+'-'+end+'/*',
           'Transfer-Encoding':'chunked',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': '*',
           "Content-Disposition":"inline",
-          "Content-Transfer-Enconding":"binary"
+          "Content-Transfer-Enconding":"binary",
+          'Content-Type': 'video/mp4'
       });
         let offset = req.query.start ? req.query.start : 0;
         startFFMPEG(filename, offset, req, res);
-  });
-
-    
-
-    
-
 }
 
 function getMoviePath(movieID) {
@@ -63,7 +66,24 @@ function getMoviePath(movieID) {
               ON movie.library = library.id AND movie.id = $1
             `, [movieID]).then((result) => {
               resolve(`${result.basepath}${result.subpath}`)
-            });
+      });
+  });
+}
+
+function getEpisodePath(showID) {
+  return new Promise((resolve, reject) => {
+
+    db.one(`SELECT DISTINCT serie_episode.path AS subpath, library.path AS basepath FROM library
+            INNER JOIN serie
+            ON serie.library = library.id
+
+            INNER JOIN serie_episode
+            ON serie_episode.id = $1
+
+            WHERE serie_episode.id = $1
+    `, [showID]).then(result => {
+      resolve(`${result.basepath}${result.subpath}`);
+    });
   });
 }
 
@@ -96,7 +116,12 @@ function startFFMPEG(filename, offset, req, res) {
   */
 
   let quality = req.query.quality;
+  console.log("FILE: ")
+  console.log(filename);
+  console.log(offset);
+  console.log(quality);
   if (!ALLOWED_QUALITIES.includes(quality)) {
+    console.log("INTE TILLÅTEN");
     res.status(404).end();
     return;
   }
@@ -113,7 +138,7 @@ function startFFMPEG(filename, offset, req, res) {
         ])
 
         .on('start', function(commandLine) {
-
+          console.log("started")
         })
           // setup event handlers
         .on('end', function() {
@@ -142,6 +167,7 @@ function startFFMPEG(filename, offset, req, res) {
           } catch(e) {
 
           }
+          console.log("On exit");
         })
 
           

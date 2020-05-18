@@ -18,11 +18,11 @@
 .description {
     color: white;
     padding: 20px;
-    height: 50%;
+    width: 80vw;
+
 }
 
 .overview {
-    width: 50%;
 }
 
 
@@ -49,7 +49,7 @@
 
 .poster {
     height: 379px;
-    width: 256px;
+    width: 14vw;
     background-size: contain;
     background-repeat: no-repeat;
     transition: all 0.2s;
@@ -96,4 +96,12 @@
 
 .unmarkAsWatchText {
     display: none;
+}
+
+.seasons {
+    display: inline-flex;
+}
+
+.seasons div {
+    margin: 0 5px;
 }

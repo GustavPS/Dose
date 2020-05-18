@@ -1,0 +1,38 @@
+.backdrop {
+    width: 20vw;
+    height: 200px;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    cursor: pointer;
+}
+
+
+.episodeInformation {
+    width: 75vw;
+}
+
+.row {
+    display: flex;
+}
+
+.row p {
+    font-size: 14px;
+}
+
+.playIcon {
+    background-image: url('/images/play_1.svg');
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.1s;
+}
+
+.playIcon:hover {
+    width: 60px;
+    height: 60px;
+}

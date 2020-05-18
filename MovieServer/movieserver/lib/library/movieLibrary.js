@@ -16,6 +16,10 @@ class MovieLibrary extends Library {
         super(name, path, id, new MovieMetadata());
     }
 
+    getType() {
+        return 'MOVIES';
+    }
+
     addMovieIfNotSaved(movieName, path) {
         db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
             if (result.length === 0) {
@@ -114,8 +118,15 @@ class MovieLibrary extends Library {
         db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id])
         .then(result => {
             if (result.length > 0) {
-                console.log(` > Removing movie ${result.name} from '${this.name}'`);
+                console.log(` > Removing movie ${result[0].name} from '${this.name}'`);
                 db.none('DELETE FROM movie WHERE path = $1 AND library = $2', [path, this.id]);
+            }
+        });
+        db.any('SELECT * FROM subtitle WHERE path = $1 AND library_id = $2', [path, this.id])
+        .then(result => {
+            if (result.length > 0) {
+                console.log(` > Removing a subtitle for Movie ID ${result[0].id} from '${this.name}'`);
+                db.none('DELETE FROM subtitle WHERE path = $1 AND library_id = $2', [path, this.id]);
             }
         });
 

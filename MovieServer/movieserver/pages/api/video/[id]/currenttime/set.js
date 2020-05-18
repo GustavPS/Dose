@@ -22,7 +22,6 @@ export default (req, res) => {
         let time = Math.floor(parseInt(req.query.time));
         let videoDuration = Math.floor(parseInt(req.query.videoDuration));
         let token = req.query.token;
-        console.log(token);
     
     
     
