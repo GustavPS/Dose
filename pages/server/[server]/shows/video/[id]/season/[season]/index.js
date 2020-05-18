@@ -42,6 +42,7 @@ export default function Home(props) {
           meta.backdrop = image.path;
         }
       }
+      console.log(meta);
       meta.poster = meta.poster_path;
       setMetadata(meta);
       return () => {

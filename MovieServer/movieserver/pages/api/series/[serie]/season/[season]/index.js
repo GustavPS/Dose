@@ -45,7 +45,7 @@ export default (req, res) => {
             ON j.serie_id = i.serie_id AND j.season_number = $1
             
             INNER JOIN serie_episode p
-            ON p.serie_id = i.serie_id AND p.season_number = j.season_number
+            ON p.serie_id = i.serie_id AND p.season_number = j.season_number AND p.episode = j.episode_number
 
             -- Join with serie_image and image to get an array of the movies images
             INNER JOIN serie_image k
