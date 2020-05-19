@@ -17,8 +17,10 @@ export default (req, res) => {
         res.setHeader('Access-Control-Allow-Headers', "*");
     
         // TODO: Error handling
-        let movie_id = req.query.id;
+        let content_id = req.query.id;
         let token = req.query.token;
+        let type = req.query.type;
+
     
     
         let decoded;
@@ -36,25 +38,52 @@ export default (req, res) => {
     
         if (decoded) {
             let user_id = decoded.user_id;
-            db.one('SELECT time FROM user_movie_progress WHERE user_id = $1 AND movie_id = $2', [user_id, movie_id])
-            .then(result => {
-                res.status(200).json({
-                    time: result.time
+            if (type === 'movie') {
+                getProgressFromMovie(user_id, content_id).then(time => {
+                    res.status(200).json({
+                        time: time
+                    });
                 });
-                resolve();
-            })
-            .catch(err => {
-                res.status(200).json({
-                    time: 0
+            } else if(type === 'serie') {
+                getProgressFromEpisode(user_id, content_id).then(time => {
+                    res.status(200).json({
+                        time: time
+                    })
                 });
-                resolve();
-            });
+            } else {
+                res.status(404).end();
+            }
+
+
         } else {
             console.log("Decoded var false i getCurrentTime");
             res.status(403).end();
             resolve();
         }
     });
+}
 
 
+function getProgressFromMovie(user_id, movie_id) {
+    return new Promise(resolve => {
+        db.one('SELECT time FROM user_movie_progress WHERE user_id = $1 AND movie_id = $2', [user_id, movie_id])
+        .then(result => {
+            resolve(result.time);
+        })
+        .catch(err => {
+            resolve(0);
+        });
+    });
+}
+
+function getProgressFromEpisode(user_id, episode_id) {
+    return new Promise(resolve => {
+        db.one('SELECT time FROM user_episode_progress WHERE user_id = $1 AND episode_id = $2', [user_id, episode_id])
+        .then(result => {
+            resolve(result.time);
+        })
+        .catch(err => {
+            resolve(0);
+        })
+    });
 }

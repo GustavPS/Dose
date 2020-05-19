@@ -83,7 +83,7 @@ export default function Home(props) {
 
   const loadSources = () => {
     // Get the saved time for this video
-    fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/get?token=${serverToken}`, {
+    fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/get?type=movie&token=${serverToken}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'

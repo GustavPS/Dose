@@ -18,7 +18,8 @@ export default function Home(props) {
   const server = props.server;
   const availableSubtitles = props.subtitles;
   const router = useRouter();
-  const { id, season, episode, internalID } = router.query;
+  const { id } = router.query;
+  //let {internalID} = router.query;
   const serverToken = props.serverToken;
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
@@ -27,6 +28,18 @@ export default function Home(props) {
   // The videojs object will be inserted here.
   const [videoObj, setVideoObj] = useState(null);
 
+  /*
+  const [internalID, setInternalID] = useState(router.query.internalID);
+  const [season, setSeason] = useState(router.query.season);
+  const [episode, setEpisode] = useState(router.query.episode);
+*/
+  const [episodeInformation, setEpisodeInformation] = useState({
+    internalID: router.query.internalID,
+    season: router.query.season,
+    episode: router.query.episode,
+    hasChanged: false
+  })
+
   let video = undefined;
   let videoSources = [];
 
@@ -34,7 +47,7 @@ export default function Home(props) {
 
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
-    fetch(`http://${server.server_ip}:4000/api/series/${id}/season/${season}/episode/${episode}?token=${serverToken}`, {
+    fetch(`http://${server.server_ip}:4000/api/series/${id}/season/${episodeInformation.season}/episode/${episodeInformation.episode}?token=${serverToken}`, {
       method: 'GET',
       headers: {
           'Content-Type': 'application/json'
@@ -83,9 +96,10 @@ export default function Home(props) {
 
 
 
-  const loadSources = () => {
+  const loadSources = (video, autoplay=false) => {
+    console.log("ID::::::::::" + episodeInformation.internalID);
     // Get the saved time for this video
-    fetch(`http://${server.server_ip}:4000/api/video/${internalID}/currenttime/get?token=${serverToken}`, {
+    fetch(`http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}/currenttime/get?type=serie&token=${serverToken}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -96,7 +110,7 @@ export default function Home(props) {
         console.log(time);
       time = time.time;
         // Get the available resolutions for this video
-        fetch(`http://${server.server_ip}:4000/api/video/${internalID}/getResolution?type=serie`, {
+        fetch(`http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}/getResolution?type=serie`, {
           method: 'GET',
           headers: {
               'Content-Type': 'application/json'
@@ -111,7 +125,7 @@ export default function Home(props) {
           let count = 0;
           for (let resolution of result.resolutions) {
             sources.push({
-              src: `http://${server.server_ip}:4000/api/video/${internalID}?type=serie&token=${serverToken}&start=${time}&quality=${resolution}`,
+              src: `http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}?type=serie&token=${serverToken}&start=${time}&quality=${resolution}`,
               type: 'video/mp4',
               label: resolution,
               selected: count === 0
@@ -121,7 +135,7 @@ export default function Home(props) {
 
           if (result.directplay) {
             sources.push({
-              src: `http://${server.server_ip}:4000/api/video/${internalID}?type=serie&token=${serverToken}&start=${time}&quality=directplay`,
+              src: `http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}?type=serie&token=${serverToken}&start=${time}&quality=directplay`,
               type: 'video/mp4',
               label: 'directplay',
               selected: false
@@ -131,12 +145,16 @@ export default function Home(props) {
           console.log(videoSources);
           video.src(videoSources);
           video.currentTime(time);
+
+          if (autoplay) {
+            setStartWatchin(0);
+          }
         });
     });
   }
 
 
-  const loadSubtitles = () => {
+  const loadSubtitles = (video) => {
     // Load all the subtitles
     for (let subtitle of availableSubtitles) {
       console.log("LOADING SUBTITLE");
@@ -152,13 +170,15 @@ export default function Home(props) {
 
   useEffect(() => {
 
-      console.log("NUUUUUUUUUUUUU")
       video = videojs("video");
       console.log("MOUNTING PLUGIN")
-      require('@silvermine/videojs-quality-selector')(videojs);
-      video.controlBar.addChild('QualitySelector');
-      loadSources();
-      loadSubtitles();
+      if (!episodeInformation.hasChanged) {
+        require('@silvermine/videojs-quality-selector')(videojs);
+        video.controlBar.addChild('QualitySelector');
+      }
+
+      loadSources(video);
+      loadSubtitles(video);
 
     console.log(video);
     // Initiate video.js
@@ -210,7 +230,7 @@ export default function Home(props) {
          // Set the new source (with the offset)
 
          for (let i = 0; i < videoSources.length; i++) {
-           videoSources[i].src = `http://${server.server_ip}:4000/api/video/${internalID}?type=serie&start=${time}&token=${serverToken}&quality=${videoSources[i].label}`
+           videoSources[i].src = `http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}?type=serie&start=${time}&token=${serverToken}&quality=${videoSources[i].label}`
            if (currentQuality !== videoSources[i].label) {
               videoSources[i].selected = false;
            } else {
@@ -219,6 +239,9 @@ export default function Home(props) {
          }
          
          video.src(videoSources);
+         console.log("KOLLA HÄR:")
+         console.log(videoSources);
+         console.log("INTERNAL: " + episodeInformation.internalID);
 
 
           // Add the subtitles again, and set "activeSub" to active.
@@ -254,7 +277,7 @@ export default function Home(props) {
 
        // Get the dureation of the movie
        if (id !== undefined) {
-        $.getJSON( `http://${server.server_ip}:4000/api/video/${internalID}/getDuration?type=serie`, function( data ) 
+        $.getJSON( `http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}/getDuration?type=serie`, function( data ) 
         {
             video.theDuration= data.duration;
         });
@@ -265,7 +288,7 @@ export default function Home(props) {
         video = video;
         
       }
-  }, []);
+  }, [episodeInformation]);
 
   useEffect(() => {
     if (startWatching !== false) {
@@ -285,7 +308,10 @@ export default function Home(props) {
 });
 
     const updateWatchTime = (time) => {
-        fetch(`http://${server.server_ip}:4000/api/video/${internalID}/currenttime/set?type=serie&time=${time}&videoDuration=${videoObj.theDuration}&token=${serverToken}`);
+      if (videoObj.theDuration - time <= 40) {
+        createShowNextEpisodeElement();
+      }
+        fetch(`http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}/currenttime/set?type=serie&time=${time}&videoDuration=${videoObj.theDuration}&token=${serverToken}`);
     }
 
     const markAsWatched = () => {
@@ -318,6 +344,38 @@ export default function Home(props) {
     }
 
 
+    const createShowNextEpisodeElement = () => {
+        let node = document.getElementById('nextepisode');
+        node.style.display = 'block';
+        document.getElementById('video').appendChild(node);
+
+        let timeLeft = parseInt(videoObj.theDuration - videoObj.currentTime() - 1);
+        document.getElementById('timeToNextEpisode').innerHTML = timeLeft;
+        let timer = setInterval(() => {
+        let timeLeft = parseInt(videoObj.theDuration - videoObj.currentTime() - 1);
+        document.getElementById('timeToNextEpisode').innerHTML = timeLeft;
+        if(timeLeft === 0) {
+            playNextEpisode();
+            clearInterval(timer);
+
+        }
+      }, 1000);
+    }
+
+    const playNextEpisode = () => {
+      fetch(`http://${server.server_ip}:4000/api/series/getNextEpisode?serie_id=${id}&season=${episodeInformation.season}&episode=${episodeInformation.episode}&token=${serverToken}`)
+      .then(r => r.json())
+      .then(result => {
+        videoObj.pause();
+        document.getElementById('nextepisode').style.display = 'none';
+        setEpisodeInformation({
+          internalID: result.internalID,
+          season: result.season,
+          episode: result.episode,
+          hasChanged: true
+        });
+      });
+    }
 
 
 
@@ -338,7 +396,16 @@ export default function Home(props) {
         <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
         </Head>
-        <video disablePictureInPicture id="video" className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto"></video>
+        <video disablePictureInPicture id="video" className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto">
+        </video>
+
+        <div id="nextepisode">
+          <h3>Nästa avsnitt spelas upp om <span id="timeToNextEpisode"></span> sekunder</h3>
+          <button id="playNextEpisode" onClick={() => playNextEpisode()}>Starta nu</button>
+          <button id="cancelNextEpisode">Avbryt</button>
+        </div>
+
+
 
         <div id="container">
         <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>

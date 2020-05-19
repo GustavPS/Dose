@@ -58,11 +58,18 @@ export default (req, res) => {
             GROUP BY i.name, i.air_date, i.overview, i.vote_average, i.added_date, j.poster_path, n.id
 
             `, [seasonID, serieID, seasonID, episodeID]).then(result => {
-                let response = {
-                    result: result
-                }
-                res.status(200).json(response);
-                resolve();
+                db.any('SELECT time FROM user_episode_progress WHERE user_id = $1 AND episode_id = $2', [user_id, result.internalepisodeid]).then(progress => {
+                    console.log(progress);
+                    let response = {
+                        result: result
+                    }
+                    if (progress.length > 0) {
+                        response.result.currentTime = progress[0].time;
+                    }
+
+                    res.status(200).json(response);
+                    resolve();
+                });
             });
         } else {
             res.status(403).end();

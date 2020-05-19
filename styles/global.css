@@ -65,3 +65,21 @@ p, h1, h2, h3, h4, h5, h6 {
 .vjs-picture-in-picture-control {
     display: none !important;
 }
+
+#nextepisode {
+    position: absolute;
+    bottom: 40px;
+    right: 15px;
+    z-index: 100;
+    display: none;
+}
+
+#nextepisode button {
+    background-color: green;
+    padding: 5px 10px;
+    margin-right: 10px;
+}
+
+#cancelNextEpisode {
+    background-color: gray !important;
+}
