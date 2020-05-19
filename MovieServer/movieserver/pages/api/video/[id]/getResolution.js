@@ -6,6 +6,17 @@ const ORDERBY = [
   'release_date',
   'popularity'
 ];
+
+const SUPPORTED_VIDEO_CODECS = [
+  'h264',
+  'h265'
+]
+const SUPPORTED_AUDIO_CODECS = [
+  'aac',
+  'mp3',
+  'vorbis',
+  'opus'
+]
 var ffmpeg = require('fluent-ffmpeg');
 
 
@@ -35,8 +46,10 @@ export default async(req, res) => {
         availableResolutions.push("480P");
         availableResolutions.push("360P");
         availableResolutions.push("240P");
+
+
+        let directPlay = SUPPORTED_VIDEO_CODECS.includes(metadata.streams[0].codec_name) && SUPPORTED_AUDIO_CODECS.includes(metadata.streams[1].codec_name)
   
-        let directPlay = metadata.format.format_name.includes('mp4');
         res.status(200).json({
             resolutions: availableResolutions,
             directplay: directPlay

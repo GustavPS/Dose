@@ -122,25 +122,28 @@ export default function Home(props) {
           console.log(result);
           let sources = [];
 
-          let count = 0;
-          for (let resolution of result.resolutions) {
-            sources.push({
-              src: `http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}?type=serie&token=${serverToken}&start=${time}&quality=${resolution}`,
-              type: 'video/mp4',
-              label: resolution,
-              selected: count === 0
-            });
-            count++;
-          }
 
           if (result.directplay) {
             sources.push({
               src: `http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}?type=serie&token=${serverToken}&start=${time}&quality=directplay`,
               type: 'video/mp4',
               label: 'directplay',
-              selected: false
+              selected: true
             });
           }
+
+          let count = 0;
+          for (let resolution of result.resolutions) {
+            sources.push({
+              src: `http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}?type=serie&token=${serverToken}&start=${time}&quality=${resolution}`,
+              type: 'video/mp4',
+              label: resolution,
+              selected: count === 0 && !result.directplay
+            });
+            count++;
+          }
+
+
           videoSources = sources;
           console.log(videoSources);
           video.src(videoSources);
