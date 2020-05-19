@@ -25,6 +25,7 @@ export default (props) => {
     let server = props.server;
     const [latestMovies, setLatesMovies] = useState(null);
     const [ongoingMovies, setOngoingMovies] = useState([]);
+    const [ongoingShows, setOngoingShows] = useState([]);
     const [newlyAddedMovies, setNewlyAddedMovies] = useState([]);
     const [newlyAddedShows, setNewlyAddedShows] = useState([]);
     let allContent = [];
@@ -130,6 +131,59 @@ export default (props) => {
             .then((r) => r.json())
             .then((response) => {
                 // Mark the movies active image
+                if (ongoing) {
+                    response.upcoming.forEach(movie => {
+                        for (let image of movie.images) {
+                            if (image.active) {
+                                if (image.type === 'BACKDROP') {
+                                    if (image.path === 'no_image') {
+                                        movie.backdrop = null;
+                                    } else {
+                                        movie.backdrop = image.path;
+                                    }
+                                } else {
+                                    if (image.path === 'no_image') {
+                                        movie.backdrop = null;
+                                    } else {
+                                        movie.poster = image.path;
+                                    }
+                                }
+    
+                                if (movie.backdrop != null && movie.poster != null) {
+                                    break;
+                                }
+                            }
+                        }
+                    });
+
+                    response.ongoing.forEach(movie => {
+                        for (let image of movie.images) {
+                            if (image.active) {
+                                if (image.type === 'BACKDROP') {
+                                    if (image.path === 'no_image') {
+                                        movie.backdrop = null;
+                                    } else {
+                                        movie.backdrop = image.path;
+                                    }
+                                } else {
+                                    if (image.path === 'no_image') {
+                                        movie.backdrop = null;
+                                    } else {
+                                        movie.poster = image.path;
+                                    }
+                                }
+    
+                                if (movie.backdrop != null && movie.poster != null) {
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                    resolve(response);
+                    return;
+                }
+
+
                 response.result.forEach(movie => {
                     for (let image of movie.images) {
                         if (image.active) {
@@ -227,6 +281,28 @@ export default (props) => {
                 setNewlyAddedShows(showElements);
                 
             });
+
+            // Get ongoing shows
+            getShowList(null, 'added_date', 20, true).then(result => {
+                console.log(result);
+                let showElements = [];
+                for (let show of result.upcoming) {
+                    let img = show.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${show.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                    showElements.push(
+                        <MovieBackdrop showTitle markAsDoneButton id={show.id} time={show.time_watched} runtime={show.runtime} title={show.season_name + " - Episode " + show.episode_number}
+                                       overview={show.overview} runtime={show.total_time} backdrop={img} onClick={(id) => selectEpisode(show.show_id, show.season_number, show.episode_number, show.internalepisodeid)}></MovieBackdrop>
+                    );
+                }
+                for (let show of result.ongoing) {
+                    let img = show.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${show.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                    showElements.push(
+                        <MovieBackdrop showTitle markAsDoneButton id={show.id} time={show.time_watched} runtime={show.runtime} title={show.season_name + " - Episode " + show.episode_number}
+                                       overview={show.overview} runtime={show.total_time} backdrop={img} onClick={(id) => selectEpisode(show.show_id, show.season_number, show.episode_number, show.internalepisodeid)}></MovieBackdrop>
+                    );
+                }
+                setOngoingShows(showElements);
+                console.log(result);
+            });
         });
     }, []);
 
@@ -236,6 +312,10 @@ export default (props) => {
 
     const selectShow = (id) => {
         Router.push(`/server/${server.server_id}/shows/video/${id}`);
+    }
+
+    const selectEpisode = (showID, seasonNumber, episodeNumber, internalEpisodeID) => {
+        Router.push(`/server/${server.server_id}/shows/video/${showID}/season/${seasonNumber}/episode/${episodeNumber}?internalID=${internalEpisodeID}`)
     }
 
 
@@ -274,6 +354,28 @@ export default (props) => {
                                             <img src="/images/left.svg" width="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
+                                            <img src="/images/right.svg" width="70" />
+                                        </div>
+                                    </>
+                                }
+                            </div> 
+                        <hr className={Styles.divider}></hr>
+                        </> 
+                    }
+
+                    {ongoingShows.length > 0 &&
+                        <>
+                            <h2 style={{textTransform: 'capitalize'}}>Pågående serier</h2>    
+                            <div className={Styles.movieRow}>
+                                <div id="ongoingShows" className={Styles.scrollable}>
+                                    {ongoingShows}
+                                </div>
+                                {ongoingShows.length >= 5 &&
+                                    <>
+                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingShows')}>
+                                            <img src="/images/left.svg" width="70" />
+                                        </div>
+                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingShows')}>
                                             <img src="/images/right.svg" width="70" />
                                         </div>
                                     </>

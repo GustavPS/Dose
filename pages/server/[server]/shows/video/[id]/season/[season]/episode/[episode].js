@@ -285,7 +285,7 @@ export default function Home(props) {
 });
 
     const updateWatchTime = (time) => {
-        fetch(`http://${server.server_ip}:4000/api/video/${id}/currenttime/set?time=${time}&videoDuration=${videoObj.theDuration}&token=${serverToken}`);
+        fetch(`http://${server.server_ip}:4000/api/video/${internalID}/currenttime/set?type=serie&time=${time}&videoDuration=${videoObj.theDuration}&token=${serverToken}`);
     }
 
     const markAsWatched = () => {
