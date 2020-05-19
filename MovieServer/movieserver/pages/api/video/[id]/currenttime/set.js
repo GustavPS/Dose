@@ -126,8 +126,8 @@ function setEpisodeProgress(episode_id, user_id, time, videoDuration) {
                         db.none('UPDATE user_episode_progress SET time = $1 WHERE user_id = $2 AND episode_id = $3', [time, user_id, episode_id]);
                     }
                     // Remove the "next episode" row from the database (because the user is currently watching it)
-                    db.none('DELETE FROM user_next_episode WHERE user_id = $1 AND serie_id = $2', [user_id, episodeInfo.serie_id, episode_id]);
-                    db.none('DELETE FROM user_episode_progress WHERE episode_id != $1 AND user_id = $2', [episode_id, user_id]);
+                    db.none('DELETE FROM user_next_episode WHERE user_id = $1 AND serie_id = $2', [user_id, episodeInfo.serie_id]);
+                    db.none('DELETE FROM user_episode_progress WHERE episode_id != $1 AND user_id = $2 AND episode_id IN (SELECT id FROM serie_episode WHERE serie_id = $3)', [episode_id, user_id, episodeInfo.serie_id]);
                     resolve();
                 });
             }
