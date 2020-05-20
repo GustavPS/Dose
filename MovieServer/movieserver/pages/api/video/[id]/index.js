@@ -153,6 +153,8 @@ function startFFMPEG(filename, offset, req, res) {
           //console.log('Processing: ' + progress.percent + '% done');
         })
         .on('error', function(err, stdout, stderr) {
+          console.log(stdout);
+          console.log(stderr);
           try {
             this.kill();
           } catch(e) {

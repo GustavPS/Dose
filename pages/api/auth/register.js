@@ -7,9 +7,6 @@ export default async function handle(req, res) {
     let email = req.body.email;
     let username = req.body.username;
     let password = req.body.password;
-    console.log(email);
-    console.log(username);
-    console.log(password);
 
     try {
         // Check if user exist;

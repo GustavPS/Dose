@@ -5,6 +5,7 @@ import cookie from 'js-cookie';
 import Router from 'next/router';
 import { useEffect, useState } from 'react';
 import { Carousel, Container, Row, Col } from 'react-bootstrap';
+import Link from 'next/link';
 
 
 import Styles from '../../../styles/server.module.css';
@@ -254,8 +255,6 @@ export default (props) => {
 
             // Get newly added movies
             getMovieList(null, 'added_date', 20).then(movies => {
-                movies.reverse();
-
                 let movieElements = [];
                 for (let movie of movies) {
                     let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
@@ -284,7 +283,6 @@ export default (props) => {
 
             // Get ongoing shows
             getShowList(null, 'added_date', 20, true).then(result => {
-                console.log(result);
                 let showElements = [];
                 for (let show of result.upcoming) {
                     let img = show.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${show.backdrop}` : 'https://via.placeholder.com/2000x1000' 
@@ -301,7 +299,6 @@ export default (props) => {
                     );
                 }
                 setOngoingShows(showElements);
-                console.log(result);
             });
         });
     }, []);
@@ -343,7 +340,7 @@ export default (props) => {
                 <Container fluid>
                     {ongoingMovies.length > 0 &&
                         <>
-                            <h2 style={{textTransform: 'capitalize'}}>Pågående filmer</h2>    
+                            <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Pågående filmer</h2></a></Link>   
                             <div className={Styles.movieRow}>
                                 <div id="ongoingMovies" className={Styles.scrollable}>
                                     {ongoingMovies}

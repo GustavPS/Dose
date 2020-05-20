@@ -58,14 +58,12 @@ export default function Home(props) {
 
 
   const getSeasonElements = () => {
-      console.log(metadata);
       let seasonElements = [];
       for (let season of metadata.seasons) {
             let img = season.poster_path !== null ? `https://image.tmdb.org/t/p/original/${season.poster_path}` : 'https://via.placeholder.com/2000x1000' 
           seasonElements.push(
               <SeasonPoster name={season.name} title={season.name} id={season.season_id} poster={img} onClick={() => selectSeason(season.season_id)}></SeasonPoster>
           )
-          console.log(season.name);
       }
       return seasonElements;
   }

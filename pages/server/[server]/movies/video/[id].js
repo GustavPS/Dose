@@ -101,7 +101,6 @@ export default function Home(props) {
         })
         .then(r => r.json())
         .then(result => {
-          console.log(result);
           let sources = [];
           if (result.directplay) {
             sources.push({
@@ -152,7 +151,6 @@ export default function Home(props) {
       loadSources();
       loadSubtitles();
 
-    console.log(video);
     // Initiate video.js
     // Get metadata for this movie (only if we haven't fetched it before)
 
@@ -185,7 +183,6 @@ export default function Home(props) {
 
          // Save the current source (So we know what quality to play after seek)
          let currentQuality = video.currentSource().label;
-         console.log("CURRENT: " + currentQuality);
          let paused = video.paused();
          // Find the current active subtitle and save it so we know what to show after seek.
          let tracks = video.textTracks();
@@ -411,7 +408,6 @@ export async function getServerSideProps(context) {
   .then((r) => r.json())
   .then(async (data) =>{
     // TODO: Flytta till frontend
-    console.log(data);
     return await fetch(`http://${data.server.server_ip}:4000/api/subtitles/list?movie=${movieID}`, {
       method: 'GET',
       headers: {
@@ -420,7 +416,6 @@ export async function getServerSideProps(context) {
     })
     .then((r) => r.json())
     .then((subtitles) => {
-      console.log(subtitles);
       return {
         props: {
             server: data.server,

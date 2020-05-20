@@ -28,7 +28,6 @@ export default class Search extends React.Component {
         .then(content => {
             this.series = content.series;
             this.movies = content.movies;
-            console.log(this.movies);
         })
     }
 

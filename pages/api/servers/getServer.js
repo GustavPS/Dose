@@ -3,7 +3,6 @@ const db = require('../../../lib/db').default;
 
 export default async function handle(req, res) {
     let server = await db.any('SELECT server_name, server_ip, server_id FROM server WHERE server_id = $1', [req.body.id]);
-    console.log(server);
     if (server.length === 0) {
         res.status(200).json({
             status: 'error',

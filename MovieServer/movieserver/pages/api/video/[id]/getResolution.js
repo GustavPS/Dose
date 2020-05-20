@@ -39,7 +39,7 @@ export default async(req, res) => {
         if (err) {
           console.log(err);
         }
-        let highestResolution = metadata.streams[0].height;
+        let highestResolution = metadata.streams[0].width;
         let availableResolutions = []
         availableResolutions.push("1080P");
         availableResolutions.push("720P");

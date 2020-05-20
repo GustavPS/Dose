@@ -55,7 +55,6 @@ export default function Home(props) {
     })
     .then(r => r.json())
     .then(result => {
-        console.log(result);
       let meta = result.result;
       let finish_at = new Date(new Date().getTime() + meta.runtime * 60000);
       meta.finish_at = finish_at.getHours() + ":" + finish_at.getMinutes();
@@ -97,7 +96,6 @@ export default function Home(props) {
 
 
   const loadSources = (video, autoplay=false) => {
-    console.log("ID::::::::::" + episodeInformation.internalID);
     // Get the saved time for this video
     fetch(`http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}/currenttime/get?type=serie&token=${serverToken}`, {
         method: 'GET',
@@ -107,7 +105,6 @@ export default function Home(props) {
     })
     .then(r => r.json())
     .then(time => {
-        console.log(time);
       time = time.time;
         // Get the available resolutions for this video
         fetch(`http://${server.server_ip}:4000/api/video/${episodeInformation.internalID}/getResolution?type=serie`, {
@@ -118,8 +115,6 @@ export default function Home(props) {
         })
         .then(r => r.json())
         .then(result => {
-          console.log("RESOLUTION STUFF")
-          console.log(result);
           let sources = [];
 
 
@@ -145,7 +140,6 @@ export default function Home(props) {
 
 
           videoSources = sources;
-          console.log(videoSources);
           video.src(videoSources);
           video.currentTime(time);
 
@@ -183,7 +177,6 @@ export default function Home(props) {
       loadSources(video);
       loadSubtitles(video);
 
-    console.log(video);
     // Initiate video.js
     // Get metadata for this movie (only if we haven't fetched it before)
 
@@ -216,7 +209,6 @@ export default function Home(props) {
 
          // Save the current source (So we know what quality to play after seek)
          let currentQuality = video.currentSource().label;
-         console.log("CURRENT: " + currentQuality);
          let paused = video.paused();
          // Find the current active subtitle and save it so we know what to show after seek.
          let tracks = video.textTracks();
@@ -227,9 +219,7 @@ export default function Home(props) {
            }
          }
 
-         // Hack video.js start time (So we can see the videos playing time / current time)
-         video.start= time;
-         video.oldCurrentTime(0);
+
          // Set the new source (with the offset)
 
          for (let i = 0; i < videoSources.length; i++) {
@@ -242,10 +232,9 @@ export default function Home(props) {
          }
          
          video.src(videoSources);
-         console.log("KOLLA HÄR:")
-         console.log(videoSources);
-         console.log("INTERNAL: " + episodeInformation.internalID);
-
+         // Hack video.js start time (So we can see the videos playing time / current time)
+         video.start= time;
+         video.oldCurrentTime(0);
 
           // Add the subtitles again, and set "activeSub" to active.
           for (let subtitle of availableSubtitles) {
@@ -383,13 +372,11 @@ export default function Home(props) {
 
 
     
-    //  
   return (
     <>
         <Head>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
         <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
-
         <link href="https://unpkg.com/@silvermine/videojs-quality-selector/dist/css/quality-selector.css" rel="stylesheet" />
         <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
         <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
@@ -489,7 +476,6 @@ export async function getServerSideProps(context) {
   .then((r) => r.json())
   .then(async (data) =>{
     // TODO: Flytta till frontend
-    console.log(data);
     return await fetch(`http://${data.server.server_ip}:4000/api/subtitles/list?movie=${movieID}`, {
       method: 'GET',
       headers: {
@@ -498,7 +484,6 @@ export async function getServerSideProps(context) {
     })
     .then((r) => r.json())
     .then((subtitles) => {
-      console.log(subtitles);
       return {
         props: {
             server: data.server,

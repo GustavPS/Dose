@@ -37,6 +37,7 @@ export default (req, res) => {
 
           GROUP BY i.id, i.title
           ORDER BY ${orderBy}
+          DESC
           OFFSET $1
           LIMIT $2
           `, [offset, limit]).then(result => {
