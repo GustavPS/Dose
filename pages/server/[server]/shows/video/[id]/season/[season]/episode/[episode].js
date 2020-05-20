@@ -184,6 +184,11 @@ export default function Home(props) {
      video.duration= function() {return video.theDuration; };
      video.start= 0;
 
+
+     video.on("pause", () => {
+       video.currentTime(video.currentTime());
+     });
+
      // The original code for "currentTime"
      video.oldCurrentTime = function currentTime(seconds) {
       if (typeof seconds !== 'undefined') {
@@ -263,7 +268,6 @@ export default function Home(props) {
           if (!paused) {
             video.play();
           }
-
          return this;
      };
 
