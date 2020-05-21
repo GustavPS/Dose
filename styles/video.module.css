@@ -105,3 +105,44 @@
 .seasons div {
     margin: 0 5px;
 }
+
+.metadataBox {
+    position: absolute;
+    z-index: 100;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70vw;
+    min-width: 500px;
+    height: 80vh;
+    min-height: 500px;
+    background-color: #1b1b1bf2;
+    padding: 25px;
+    color: white;
+    overflow-y: auto;
+}
+
+.metadataBox form button {
+    float: right;
+}
+
+.metadataBox img {
+    width: 100px;
+}
+
+
+.metadataSearchRow {
+    background-color: inherit !important;
+}
+
+.metadataSearchRow div {
+}
+
+.metadataSearchRow img {
+    margin: 0 10px 10px 0;
+    float: left;
+}
+
+.metadataSearchRow button {
+    float: right;
+}

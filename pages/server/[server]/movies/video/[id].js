@@ -2,6 +2,7 @@ import Head from 'next/head'
 import Layout from '../../../../../components/layout';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router'
+import { Form, Button, ListGroup, Image } from 'react-bootstrap';
 import ReactPlayer from 'react-player'
 import Styles from '../../../../../styles/video.module.css';
 import fetch from 'node-fetch'
@@ -23,6 +24,12 @@ export default function Home(props) {
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
   const [startWatching, setStartWatchin] = useState(false);
+
+  // Used for manual metadata search
+  const [metadataBox, setMetadataBox] = useState(false);
+  const [metadataSearchResult, setMetadataSearchResult] = useState([]);
+  const metadataSearch = useRef(null);
+
   // Ugly hack to be able to access the videojs element outside of useEffect(). 
   // The videojs object will be inserted here.
   const [videoObj, setVideoObj] = useState(null);
@@ -306,6 +313,42 @@ export default function Home(props) {
       });
     }
 
+    const searchMetadata = (event) => {
+      let search = metadataSearch.current.value;
+      console.log(search);
+      fetch(`http://${server.server_ip}:4000/api/movies/searchMetadata?search=${search}`)
+      .then(r => r.json())
+      .then(result => {
+        console.log(result);
+        let metadataElements = [];
+        for (let movie of result) {
+          let img = movie.poster_path !== null ? `https://image.tmdb.org/t/p/w500/${movie.poster_path}` : 'https://via.placeholder.com/500x750' 
+          metadataElements.push(
+            <ListGroup.Item key={movie.id} className={Styles.metadataSearchRow} data-metadataid={movie.id}>
+              <Image src={img} />
+              <div>
+                <h5>{movie.title}</h5>
+                <p>{movie.overview}</p>
+              </div>
+              <Button onClick={() => updateMetadata(movie.id)}>Välj</Button>
+            </ListGroup.Item>
+          );        
+        }
+        setMetadataSearchResult(metadataElements);
+      });
+      event.preventDefault();
+    }
+
+    const updateMetadata = (metadataID) => {
+      fetch(`http://${server.server_ip}:4000/api/movies/${id}/updateMetadata?metadataID=${metadataID}`)
+      .then(r => r.json())
+      .then(json => {
+        if (json.success) {
+          Router.reload(window.location.pathname);
+        }
+      });
+    }
+
 
 
 
@@ -332,6 +375,26 @@ export default function Home(props) {
         <div id="container">
         <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
         <div className="backIcon" onClick={() => Router.back()}></div>
+
+
+        {metadataBox &&
+          <div className={Styles.metadataBox}>
+            <Form onSubmit={searchMetadata}>
+              <Form.Group controlId="formSearch">
+                <Form.Label>Sök efter filmen</Form.Label>
+                <Form.Control ref={metadataSearch} type="text" placeholder="Sök.." />
+              </Form.Group>
+              <Button variant="primary" type="submit">
+                Sök
+              </Button>
+            </Form>
+            <div style={{clear: 'both'}}></div>
+
+            <ListGroup id="metadataSearchResult">
+              {metadataSearchResult}
+            </ListGroup>
+          </div>
+        }
 
 
         <div className={Styles.top}>
@@ -369,11 +432,15 @@ export default function Home(props) {
               {!watched &&
               <>
                 <div style={{marginLeft: "15px"}}>
-                <div id="markAsWatched" style={{backgroundImage: "url('/images/eye.svg')"}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
-                <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
+                  <div id="markAsWatched" style={{backgroundImage: "url('/images/eye.svg')"}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
+                  <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
                 </div>
               </>
               }
+              <div>
+                <div style={{marginLeft: "15px", backgroundImage: "url('/images/search.svg')"}} className={Styles.playButton} onClick={() => setMetadataBox(true)}></div>
+                <p style={{marginLeft: "15px", marginTop: "5px", fontSize: '14px'}}>Uppdatera metadata</p>
+              </div>
 
             </div>
           </div>
