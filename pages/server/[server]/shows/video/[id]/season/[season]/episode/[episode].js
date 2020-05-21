@@ -345,12 +345,12 @@ export default function Home(props) {
         node.style.display = 'block';
         document.getElementById('video').appendChild(node);
 
-        let timeLeft = parseInt(videoObj.theDuration - videoObj.currentTime() - 1);
+        let timeLeft = parseInt(videoObj.theDuration - videoObj.currentTime() - 5);
         document.getElementById('timeToNextEpisode').innerHTML = timeLeft;
         let timer = setInterval(() => {
-        let timeLeft = parseInt(videoObj.theDuration - videoObj.currentTime() - 1);
+        let timeLeft = parseInt(videoObj.theDuration - videoObj.currentTime() - 5);
         document.getElementById('timeToNextEpisode').innerHTML = timeLeft;
-        if(timeLeft === 0) {
+        if(timeLeft === 5) {
             playNextEpisode();
             clearInterval(timer);
 
