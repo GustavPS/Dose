@@ -4,6 +4,12 @@ const SerieMetadata = require('../metadata/tvMetadata');
 const db = require('../db');
 var AsyncLock = require('async-lock');
 
+const MOVIE_FORMATS = [
+    'mp4', 'ts', 'mkv', 'webm', 'avi'
+];
+const SUB_FORMATS = [
+    'srt', 'vtt', 'sub'
+]
 
 class TvLibrary extends Library {
 
@@ -222,6 +228,14 @@ class TvLibrary extends Library {
 
     async newEntry(path) {
         return new Promise(async (resolve, reject) => {
+
+            let fileExtension = path.substring(path.lastIndexOf('.') + 1);
+            if (!MOVIE_FORMATS.includes(fileExtension) && !SUB_FORMATS.includes(fileExtension)) {
+                console.log("\x1b[33m", `> ${path} is not a supported format.`, "\x1b[0m");
+                resolve();
+                return;
+            }
+
             let t = this;
             // Lock so each library only can handle one serie at a time (for race condition with episodes)
             this.lock.acquire(this.id, async function(done) {
@@ -229,9 +243,9 @@ class TvLibrary extends Library {
                 let episodeNumber = t.getEpisodeNumber(path);
 
                 if (seasonNumber === false) {
-                    console.log(`Couldn't find a season number for ${path} (${seasonNumber}). Stopping.`);
+                    console.log(`> Couldn't find a season number for ${path} (${seasonNumber}). Stopping.`);
                 } else if (episodeNumber === false) {
-                    console.log(`Couldn't find a episode number for ${path}, Stopping.`);
+                    console.log(`> Couldn't find a episode number for ${path}, Stopping.`);
                 } else {
                     episodeNumber = parseInt(episodeNumber);
                     let showName = t.getShowName(path);

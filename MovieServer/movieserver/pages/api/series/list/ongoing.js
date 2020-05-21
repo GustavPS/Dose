@@ -44,7 +44,7 @@ export default (req, res) => {
                 FROM serie_episode_metadata i
     
                 INNER JOIN serie_season_metadata j
-                ON j.serie_id = i.serie_id
+                ON j.serie_id = i.serie_id AND j.season_id = i.season_number
     
                 -- Join with serie_image
                 INNER JOIN serie_image k

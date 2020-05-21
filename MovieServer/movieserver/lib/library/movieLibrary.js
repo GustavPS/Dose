@@ -95,7 +95,7 @@ class MovieLibrary extends Library {
             parentFolder = result.parentFolder;
         } catch(e) {
             if (e.name === 'UnsupportedFormat') {
-                console.log(`${path} is not a supported format.`);
+                console.log("\x1b[33m", `> ${path} is not a supported format.`, "\x1b[0m");
             } else {
                 console.log(e);
             }

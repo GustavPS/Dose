@@ -48,7 +48,7 @@ class Watcher {
         for (const library of libraries) {
             let exist = await pathExists(library.path);
             if (!exist) {
-                console.log(`Can't find ${library.name} (${library.path}), removing from the database.`);
+                console.log("\x1b[31m", ` > Can't find ${library.name} (${library.path}), removing from the database.`, "\x1b[0m");
                 await db.none('DELETE FROM movie WHERE library = $1', [library.id]);
                 await db.none('DELETE FROM library WHERE id = $1', [library.id]);
             }
@@ -61,8 +61,23 @@ class Watcher {
             }
             let exist = await pathExists(movie.library_path + movie.movie_path);
             if (!exist) {
-                console.log(`Can't find ${movie.movie_name} (${movie.library_path + movie.movie_path}), removing from the database.`);
+                console.log("\x1b[31m", ` > Can't find ${movie.movie_name} (${movie.library_path + movie.movie_path}), removing from the database.`, "\x1b[0m");
                 await db.none('DELETE FROM movie WHERE id = $1', [movie.movie_id]);
+            }
+        }
+
+        // Check if all the tv show paths are still present in the filesystem
+        const shows = await db.any("SELECT serie.path AS serie_path, serie.name AS serie_name, serie.id AS serie_id, library.path AS library_path, library.id AS library_id FROM serie, library WHERE serie.library = library.id");
+        for (const show of shows) {
+            if (show.serie_name === null) {
+                show.serie_name = "";
+            }
+
+            let exist = await pathExists(show.library_path + show.serie_path);
+
+            if (!exist) {
+                console.log("\x1b[31m", ` > Can't find ${show.serie_name} (${show.library_path + show.serie_path}), removing from the database.`, "\x1b[0m");
+                await db.none('DELETE FROM serie WHERE id = $1', [show.serie_id]);
             }
         }
 
@@ -70,7 +85,7 @@ class Watcher {
         for (const subtitle of subtitles) {
             let exist = await pathExists(subtitle.library_path + subtitle.subtitle_path);
             if (!exist) {
-                console.log(`Can't find ${subtitle.subtitle_path} in library ${subtitle.library_name}, removing from the databse (${subtitle.library_path + subtitle.subtitle_path})`);
+                console.log(` > Can't find ${subtitle.subtitle_path} in library ${subtitle.library_name}, removing from the databse (${subtitle.library_path + subtitle.subtitle_path})`, "\x1b[0m");
                 await db.none('DELETE FROM subtitle WHERE id = $1', [subtitle.subtitle_id]);
             }
         }
