@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 import { Carousel, Container, Row, Col } from 'react-bootstrap';
 import Link from 'next/link';
 
+import useWindowSize from '../../../components/hooks/WindowSize';
+
 
 import Styles from '../../../styles/server.module.css';
 
@@ -29,6 +31,9 @@ export default (props) => {
     const [ongoingShows, setOngoingShows] = useState([]);
     const [newlyAddedMovies, setNewlyAddedMovies] = useState([]);
     const [newlyAddedShows, setNewlyAddedShows] = useState([]);
+
+
+    const windowSize = useWindowSize();
     let allContent = [];
 
 
@@ -303,6 +308,7 @@ export default (props) => {
         });
     }, []);
 
+
     const selectMovie = (id) => {
         Router.push(`/server/${server.server_id}/movies/video/${id}`);
     }
@@ -345,7 +351,7 @@ export default (props) => {
                                 <div id="ongoingMovies" className={Styles.scrollable}>
                                     {ongoingMovies}
                                 </div>
-                                {ongoingMovies.length >= 5 &&
+                                {ongoingMovies.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
                                             <img src="/images/left.svg" width="70" />
@@ -367,7 +373,7 @@ export default (props) => {
                                 <div id="ongoingShows" className={Styles.scrollable}>
                                     {ongoingShows}
                                 </div>
-                                {ongoingShows.length >= 5 &&
+                                {ongoingShows.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingShows')}>
                                             <img src="/images/left.svg" width="70" />
@@ -389,7 +395,7 @@ export default (props) => {
                                 <div id="newlyAddedMovies" className={Styles.scrollable}>
                                     {newlyAddedMovies}
                                 </div>
-                                {newlyAddedMovies.length >= 5 &&
+                                {newlyAddedMovies.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedMovies')}>
                                             <img src="/images/left.svg" width="70" />
@@ -412,7 +418,7 @@ export default (props) => {
                                 <div id="newlyAddedShows" className={Styles.scrollable}>
                                     {newlyAddedShows}
                                 </div>
-                                {newlyAddedShows.length >= 5 &&
+                                {newlyAddedShows.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedShows')}>
                                             <img src="/images/left.svg" width="70" />
