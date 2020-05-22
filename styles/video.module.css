@@ -135,7 +135,10 @@
     background-color: inherit !important;
 }
 
-.metadataSearchRow div {
+.buttonMiddle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .metadataSearchRow img {
@@ -145,4 +148,9 @@
 
 .metadataSearchRow button {
     float: right;
+}
+
+
+.activeImage {
+    border: 10px solid #4ab54d;    
 }

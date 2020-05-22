@@ -2,7 +2,7 @@ import Head from 'next/head'
 import Layout from '../../../../../components/layout';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router'
-import { Form, Button, ListGroup, Image } from 'react-bootstrap';
+import { Form, Button, ListGroup, Image, Container, Row, Col } from 'react-bootstrap';
 import ReactPlayer from 'react-player'
 import Styles from '../../../../../styles/video.module.css';
 import fetch from 'node-fetch'
@@ -13,6 +13,7 @@ import cookies from 'next-cookies'
 
 // Fetcher for useSWR, redirect to login if not authorized
 let fetchedMetadata = false;
+let selectedImages = [];
 
 
 export default function Home(props) {
@@ -29,6 +30,11 @@ export default function Home(props) {
   const [metadataBox, setMetadataBox] = useState(false);
   const [metadataSearchResult, setMetadataSearchResult] = useState([]);
   const metadataSearch = useRef(null);
+
+  // Used for choosing the poster/backdrop picture
+  const [imageBox, setImageBox] = useState(false);
+  const [movieBackdropResult, setMovieBackdropResult] = useState([]);
+  const [moviePosterResult, setMoviePosterResult] = useState([]);
 
   // Ugly hack to be able to access the videojs element outside of useEffect(). 
   // The videojs object will be inserted here.
@@ -349,7 +355,92 @@ export default function Home(props) {
       });
     }
 
+    const updateImages = () => {
+      let poster;
+      let backdrop;
+      for (let image of selectedImages) {
+        if (image.type === 'POSTER') {
+          poster = image.id;
+        } else if (image.type === 'BACKDROP') {
+          backdrop = image.id;
+        }
+      }
+      console.log(selectedImages);
+      console.log(poster);
+      console.log(backdrop);
 
+      fetch(`http://${server.server_ip}:4000/api/movies/${id}/setImages?poster=${poster}&backdrop=${backdrop}`)
+      .then(r => r.json())
+      .then(json => {
+        if (json.success) {
+          Router.reload(window.location.pathname);
+        }
+      });
+    }
+
+    const selectImage = (imageID, type) => {
+      let selected = [];
+
+      // Add the other type that we did not select to the new selected list
+      for (let image of selectedImages) {
+        if (image.type !== type) {
+          selected.push(image);
+        } else {
+          // Remove the active class
+          document.body.querySelector(`img[data-imageid="${image.id}"]`).classList.remove(Styles.activeImage);
+        }
+      }
+
+      document.body.querySelector(`img[data-imageid="${imageID}"]`).classList.add(Styles.activeImage);
+
+      selected.push({
+        id: imageID,
+        type: type
+      })
+      selectedImages = [];
+      for (let image of selected) {
+        selectedImages.push(image);
+      }
+    }
+
+
+    const getImages = () => {
+      fetch(`http://${server.server_ip}:4000/api/movies/${id}/getImages`)
+      .then(r => r.json())
+      .then(images => {
+        let backdropElements = [];
+        let posterElements = [];
+        let count = 0;
+        selectedImages = [];
+        for (let image of images) {
+          let img = `https://image.tmdb.org/t/p/w500/${image.path}`
+          if (image.active) {
+            selectedImages.push({
+              id: image.id,
+              type: image.type
+            });
+          }
+          let active = image.active;
+          if (image.type === 'BACKDROP') {
+            backdropElements.push(
+              <Col key={count} className={Styles.metadataSearchRow}>
+                <Image style={{width: "500px"}} src={img} className={'imageSearchImg', active ? Styles.activeImage : ''} onClick={() => selectImage(image.id, image.type)} data-imageid={image.id}/>
+              </Col>
+            );
+          } else {
+            posterElements.push(
+              <Col key={count} className={Styles.metadataSearchRow}>
+                <Image style={{width: "200px"}} src={img} className={'imageSearchImg', active ? Styles.activeImage : ''} onClick={() => selectImage(image.id, image.type)} data-imageid={image.id}/>
+              </Col>
+            );
+          }
+          count++;
+        }
+        setMoviePosterResult(posterElements);
+        setMovieBackdropResult(backdropElements);
+        setImageBox(true);
+      });
+    }
 
 
 
@@ -396,6 +487,26 @@ export default function Home(props) {
           </div>
         }
 
+        {imageBox &&
+          <div className={Styles.metadataBox}>
+  
+            <Container>
+            <Button style={{display: 'table', margin: '0 auto'}} variant="primary" type="submit" onClick={() => updateImages()}>
+                Spara
+              </Button>
+              <h3>Backdrops</h3>
+              <Row>
+                {movieBackdropResult}
+              </Row>
+              <h3>Posters</h3>
+              <Row>
+                {moviePosterResult}
+              </Row>
+            </Container>
+            
+        </div>
+        }
+
 
         <div className={Styles.top}>
           <div className={Styles.poster} style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.poster}')`}} />
@@ -440,6 +551,11 @@ export default function Home(props) {
               <div>
                 <div style={{marginLeft: "15px", backgroundImage: "url('/images/search.svg')"}} className={Styles.playButton} onClick={() => setMetadataBox(true)}></div>
                 <p style={{marginLeft: "15px", marginTop: "5px", fontSize: '14px'}}>Uppdatera metadata</p>
+              </div>
+
+              <div>
+                <div style={{marginLeft: "15px", backgroundImage: "url('/images/search.svg')"}} className={Styles.playButton} onClick={() => getImages()}></div>
+                <p style={{marginLeft: "15px", marginTop: "5px", fontSize: '14px'}}>Välj bild</p>
               </div>
 
             </div>
