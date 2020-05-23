@@ -6,10 +6,10 @@ import Styles from '../../../../../../styles/video.module.css';
 import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
 import Router from 'next/router';
-
 import SeasonPoster from '../../../../../../components/seasonPoster';
-
 import cookies from 'next-cookies'
+
+import ChangeImages from '../../../../../../components/changeImages';
 
 // Fetcher for useSWR, redirect to login if not authorized
 let fetchedMetadata = false;
@@ -98,6 +98,8 @@ export default function Home(props) {
                 <p>{metadata.overview}</p>
             </div>
             <div className={Styles.actions}>
+            <ChangeImages id={id} server={server} type="series"></ChangeImages>
+
             </div>
           </div>
         </div>

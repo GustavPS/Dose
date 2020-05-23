@@ -7,7 +7,6 @@ import Styles from '../../../../../../../../../styles/video.module.css';
 import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
 import Router from 'next/router';
-
 import cookies from 'next-cookies'
 
 // Fetcher for useSWR, redirect to login if not authorized
@@ -446,6 +445,8 @@ export default function Home(props) {
                 </div>
               </>
               }
+
+
 
             </div>
           </div>
