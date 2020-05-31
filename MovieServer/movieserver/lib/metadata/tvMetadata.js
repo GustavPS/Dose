@@ -37,6 +37,10 @@ class TvMetadata extends Metadata {
     async insertEpisodeMetadata(metadata, internalSerieID, seasonNumber, episodeNumber) {
         return new Promise(async (resolve, reject) => {
             let d = new Date();
+            if (metadata.still_path == null) {
+                console.log(` > Didn't find a image for this episode, using dummyimage.`);
+                metadata.still_path = "";
+            }
 
             await db.none("INSERT INTO serie_episode_metadata (air_date, name, overview, image_path, vote_average, episode_number, season_number, serie_id, added_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", [
                 metadata.air_date,

@@ -73,12 +73,12 @@ function getMoviePath(movieID) {
 function getEpisodePath(showID) {
   return new Promise((resolve, reject) => {
 
-    db.one(`SELECT DISTINCT serie_episode.path AS subpath, library.path AS basepath FROM library
+    db.one(`SELECT DISTINCT serie_episode.path AS subpath, library.path AS basepath FROM serie_episode
             INNER JOIN serie
-            ON serie.library = library.id
+            ON serie.id = serie_episode.serie_id
 
-            INNER JOIN serie_episode
-            ON serie_episode.id = $1
+            INNER JOIN library
+            ON serie.library = library.id
 
             WHERE serie_episode.id = $1
     `, [showID]).then(result => {
