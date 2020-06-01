@@ -101,49 +101,6 @@ class MovieLibrary extends Library {
             }
         });
     }
-    
-    async convertSubtitles(movieName, path) {
-        return new Promise(resolve => {
-            let fullPath = pathLib.join(this.path, path);
-            ffmpeg
-            .ffprobe(fullPath, function(err, metadata) {
-                if (err) {
-                    //console.log(err);
-                    // TODO: Only resolve with false if the error is because it's bussy, else throw the error
-                    resolve(false);
-                    return;
-                }
-                let found = false;
-                for (let stream of metadata.streams) {
-                    if (stream.codec_type == 'subtitle' && stream.codec_name == 'subrip' && stream.tags != undefined) {
-                        found = true;
-                        let outputPath = pathLib.join(pathLib.dirname(fullPath), `_${stream.tags.language}_EXTRACTED_${Math.floor(Math.random() * 1000000000)}.srt`); // TODO: Check if this file exist first
-                        ffmpeg(fullPath)
-                        .outputOption([
-                            `-map 0:${stream.index}`
-                        ])
-                        .outputFormat('srt')
-                        .output(outputPath)
-                        .on('start', function(commandLine) {
-                            console.log(` > Found a subtitle (${stream.tags.language}) for movie ${movieName}. Converting it now.`)
-                        })
-                        .on('error', function(err, stdout, stderr) {
-                            console.log('an error happened converting subtitle: ' + err.message);
-                            console.log(stdout);
-                            console.log(stderr);
-                        })
-                        .run();
-                    }
-                }
-                if (!found) {
-                    console.log(` > No subtitles found in movie ${movieName}`);
-                }
-                resolve(true);
-            });
-        })
-
-
-    }
 
     /**
      * Add a new entry to the database about the movie PATH.

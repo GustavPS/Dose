@@ -85,6 +85,7 @@ class TvLibrary extends Library {
     }
 
     /**
+     * Adds a subtitle to the database if it is not already saved
      * 
      * @param {string} showName - The showname associated with the subtitle
      * @param {string} path  - The full path to the subtitle file
@@ -164,6 +165,20 @@ class TvLibrary extends Library {
                 if (result.length === 0) {
                     console.log(` > Found a new episode (Season ${seasonNumber} episode ${episodeNumber}) for the show ${serieName} in library ${this.name}`);
                     await t.none('INSERT INTO serie_episode (season_number, serie_id, episode, path) VALUES ($1, (SELECT id FROM serie WHERE name = $2 AND path = $3), $4, $5)', [seasonNumber, serieName, showPath, episodeNumber, episodePath]);
+
+                    console.log(` > Trying to convert subtitles, this may take a while...`);
+
+                    // Try to convert the subtitles from the movie
+                    new Promise(async (resolve, reject) => {
+                        // Add 0 before Season number and episode number if one digit
+                        let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                    
+                        // If the conversion failed (because the file was busy), try again.
+                        while(!subtitleConvertionResult) {
+                            subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                        }
+                        resolve();
+                    });
 
                     // Get the internal serie id for the episode
                     let internalSerieID = await t.one(`SELECT id FROM serie WHERE name = $1 AND path = $2`, [serieName, showPath], c => +c.id);
@@ -322,7 +337,7 @@ class TvLibrary extends Library {
                         // Remove the episodes metadata
                         await db.none('DELETE FROM serie_episode_metadata WHERE season_number = $1 AND serie_id = $2 AND episode_number = $3', [episodeInformation[0].season_number, episodeInformation[0].serie_id, episodeInformation[0].episode]);
                         // Remove the associated subtitle
-                        await db.none('DELETE FROM serie_episode_subtitle WHERE episode_id = $1 AND library_id = $2', [episodeInformation.id, this.id]);
+                        await db.none('DELETE FROM serie_episode_subtitle WHERE episode_id = $1 AND library_id = $2', [episodeInformation.id, t.id]);
 
 
                         // Check if there are no more episodes saved in the database after we removed this one, if that is the case: Remove the season from the database
