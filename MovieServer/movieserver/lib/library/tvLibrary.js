@@ -84,6 +84,39 @@ class TvLibrary extends Library {
         });
     }
 
+    /**
+     * 
+     * @param {string} showName - The showname associated with the subtitle
+     * @param {string} path  - The full path to the subtitle file
+     * @param {string} showPath  - The full path to the associated show
+     * @param {integer} seasonNumber - The season number for the subtitle
+     * @param {integer} episodeNumber  - the episode number for the subtitle
+     */
+    addSubtitleIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber) {
+        let fileName = pathLib.basename(path);
+        let language = null;
+        for (let lang of this.subLanguages) {
+            if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
+                language = lang.longName;
+                break;
+            }
+        }
+        db.one('SELECT * FROM serie_episode WHERE serie_id = (SELECT id FROM serie WHERE path = $1 AND library = $2) AND episode = $3 AND season_number = $4', [showPath, this.id, episodeNumber, seasonNumber])
+        .then(episode => {
+            db.any('SELECT * FROM serie_episode_subtitle WHERE episode_id = $1 AND path = $2 AND library_id = $3', [episode.id, path, this.id])
+            .then(result => {
+                if (result.length === 0) {
+                    console.log(` > Saving subtitle for ${showName} in library ${this.name}`);
+                    db.none('INSERT INTO serie_episode_subtitle (path, episode_id, library_id, language) VALUES ($1, $2, $3, $4)', [path, episode.id, this.id, language]);
+                }
+            });
+        })
+        .catch(err =>{
+            console.log(`Couldn't find any matching shows for subtitle ${path}`);
+            console.log(err);
+        });
+    }
+
     async addSeasonIfNotSaved(serieName, seasonPath, showPath, seasonNumber) {
         return new Promise(async (resolve, reject) => {
             await db.tx(async t => {
@@ -235,6 +268,7 @@ class TvLibrary extends Library {
                 resolve();
                 return;
             }
+            let type = MOVIE_FORMATS.includes(fileExtension) ? 'SHOW' : 'SUBTITLE'
 
             let t = this;
             // Lock so each library only can handle one serie at a time (for race condition with episodes)
@@ -250,10 +284,15 @@ class TvLibrary extends Library {
                     episodeNumber = parseInt(episodeNumber);
                     let showName = t.getShowName(path);
                     let showPath = t.getShowPath(path);
-                    let seasonPath = t.getSeasonPath(path);            
-                    await t.addSerieIfNotSaved(showName, showPath);
-                    await t.addSeasonIfNotSaved(showName, seasonPath, showPath, seasonNumber);
-                    await t.addEpisodeIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber);
+                    let seasonPath = t.getSeasonPath(path);
+                    if (type === 'SHOW') {
+                        await t.addSerieIfNotSaved(showName, showPath);
+                        await t.addSeasonIfNotSaved(showName, seasonPath, showPath, seasonNumber);
+                        await t.addEpisodeIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber);
+                    } else if (type === 'SUBTITLE') {
+                        await t.addSubtitleIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber);
+                    }
+
                 }
                 done();
             }, function() {
@@ -266,6 +305,15 @@ class TvLibrary extends Library {
         return new Promise(async (resolve, reject) => {
             let t = this;
             this.lock.acquire(this.id, async function(done) {
+                // Remove the subtitle if that is what we are removing
+                db.any('SELECT * FROM serie_episode_subtitle WHERE path = $1 AND library_id = $2', [path, t.id])
+                .then(result => {
+                    if (result.length > 0) {
+                        console.log(` > Removing a subtitle for episode ID ${result[0].id} from library '${t.name}'`);
+                        db.none('DELETE FROM serie_episode_subtitle WHERE path = $1 AND library_id = $2', [path, t.id]);
+                    }
+                });
+
                 db.any('SELECT * FROM serie_episode WHERE path = $1', [path]).then(async (episodeInformation) => {
                     if (episodeInformation.length > 0) {
                         console.log(` > Removing episode ${episodeInformation[0].episode} in season ${episodeInformation[0].season_number} for serie with ID ${episodeInformation[0].serie_id}`);
@@ -273,6 +321,9 @@ class TvLibrary extends Library {
                         await db.none('DELETE FROM serie_episode WHERE path = $1', [path]);
                         // Remove the episodes metadata
                         await db.none('DELETE FROM serie_episode_metadata WHERE season_number = $1 AND serie_id = $2 AND episode_number = $3', [episodeInformation[0].season_number, episodeInformation[0].serie_id, episodeInformation[0].episode]);
+                        // Remove the associated subtitle
+                        await db.none('DELETE FROM serie_episode_subtitle WHERE episode_id = $1 AND library_id = $2', [episodeInformation.id, this.id]);
+
 
                         // Check if there are no more episodes saved in the database after we removed this one, if that is the case: Remove the season from the database
                         db.any('SELECT * FROM serie_episode WHERE serie_id = $1 AND season_number = $2', [episodeInformation[0].serie_id, episodeInformation[0].season_number]).then(async (result) => {

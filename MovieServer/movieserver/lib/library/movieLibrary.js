@@ -77,7 +77,7 @@ class MovieLibrary extends Library {
         let fileName = pathLib.basename(path);
         let language = null;
         for (let lang of this.subLanguages) {
-            if (fileName.toString().toLocaleLowerCase().includes(lang.shortName)) {
+            if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
                 language = lang.longName;
                 break;
             }
@@ -117,7 +117,7 @@ class MovieLibrary extends Library {
                 for (let stream of metadata.streams) {
                     if (stream.codec_type == 'subtitle' && stream.codec_name == 'subrip' && stream.tags != undefined) {
                         found = true;
-                        let outputPath = pathLib.join(pathLib.dirname(fullPath), `${stream.tags.language}_EXTRACTED_${Math.floor(Math.random() * 1000000000)}.srt`); // TODO: Check if this file exist first
+                        let outputPath = pathLib.join(pathLib.dirname(fullPath), `_${stream.tags.language}_EXTRACTED_${Math.floor(Math.random() * 1000000000)}.srt`); // TODO: Check if this file exist first
                         ffmpeg(fullPath)
                         .outputOption([
                             `-map 0:${stream.index}`
