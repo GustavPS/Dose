@@ -108,12 +108,15 @@ class MovieLibrary extends Library {
             ffmpeg
             .ffprobe(fullPath, function(err, metadata) {
                 if (err) {
-                    console.log(err);
+                    //console.log(err);
                     // TODO: Only resolve with false if the error is because it's bussy, else throw the error
                     resolve(false);
+                    return;
                 }
+                let found = false;
                 for (let stream of metadata.streams) {
                     if (stream.codec_type == 'subtitle' && stream.codec_name == 'subrip' && stream.tags != undefined) {
+                        found = true;
                         let outputPath = pathLib.join(pathLib.dirname(fullPath), `${stream.tags.language}_EXTRACTED_${Math.floor(Math.random() * 1000000000)}.srt`); // TODO: Check if this file exist first
                         ffmpeg(fullPath)
                         .outputOption([
@@ -131,6 +134,9 @@ class MovieLibrary extends Library {
                         })
                         .run();
                     }
+                }
+                if (!found) {
+                    console.log(` > No subtitles found in movie ${movieName}`);
                 }
                 resolve(true);
             });

@@ -26,7 +26,6 @@ export default async (req, res) => {
       filename = await getEpisodePath(req.query.id); 
     } else {
     }
-    console.log(filename);
     var stat = fs.statSync(filename);
       var start = 0;
       var end = 0;
@@ -116,10 +115,6 @@ function startFFMPEG(filename, offset, req, res) {
   */
 
   let quality = req.query.quality;
-  console.log("FILE: ")
-  console.log(filename);
-  console.log(offset);
-  console.log(quality);
   if (!ALLOWED_QUALITIES.includes(quality)) {
     console.log("INTE TILLÅTEN");
     res.status(404).end();
@@ -138,8 +133,7 @@ function startFFMPEG(filename, offset, req, res) {
         ])
 
         .on('start', function(commandLine) {
-          console.log(commandLine)
-          console.log("started")
+          //console.log(commandLine)
         })
           // setup event handlers
         .on('end', function() {
@@ -154,15 +148,21 @@ function startFFMPEG(filename, offset, req, res) {
           //console.log('Processing: ' + progress.percent + '% done');
         })
         .on('error', function(err, stdout, stderr) {
-          console.log(stdout);
-          console.log(stderr);
+          if (stdout != undefined) {
+            console.log(stdout);
+          }
+          if (stderr != undefined) {
+            console.log(stderr);
+          }
           try {
             this.kill();
           } catch(e) {
             
           }
-          console.log('an error happened: ' + err.message);
 
+          if (err.message != 'Output stream closed') {
+            console.log('an error happened: ' + err.message);
+          }
         })
         .on('exit', function() {
           try {
@@ -170,7 +170,6 @@ function startFFMPEG(filename, offset, req, res) {
           } catch(e) {
 
           }
-          console.log("On exit");
         })
 
           
