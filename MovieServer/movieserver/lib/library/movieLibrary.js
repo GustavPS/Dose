@@ -21,11 +21,19 @@ class MovieLibrary extends Library {
         return 'MOVIES';
     }
 
-    addMovieIfNotSaved(movieName, path) {
+    async addMovieIfNotSaved(movieName, path) {
         db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
             if (result.length === 0) {
                 console.log(` > Found a new movie (${path} for library: '${this.name}')`);
-                this.convertSubtitles(movieName, path);
+                console.log(` > Trying to convert subtitles, this may take a while...`);
+
+                // Try to convert the subtitles from the movie
+                let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                
+                // If the conversion failed (because the file was busy), try again.
+                while(!subtitleConvertionResult) {
+                    subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                }
 
 
                 // Insert to the movie table (contining the path of the movie)
@@ -89,35 +97,42 @@ class MovieLibrary extends Library {
             }
         });
     }
-    convertSubtitles(movieName, path) {
-        let fullPath = pathLib.join(this.path, path);
-        console.log(fullPath);
-        ffmpeg
-        .ffprobe(fullPath, function(err, metadata) {
-            if (err) {
-              console.log(err);
-            }
-            for (let stream of metadata.streams) {
-                if (stream.codec_type == 'subtitle' && stream.codec_name == 'subrip' && stream.tags != undefined) {
-                    let outputPath = pathLib.join(pathLib.dirname(fullPath), `${stream.tags.language}_EXTRACTED_${Math.floor(Math.random() * 1000000000)}.srt`); // TODO: Check if this file exist first
-                    ffmpeg(fullPath)
-                    .outputOption([
-                        `-map 0:${stream.index}`
-                    ])
-                    .outputFormat('srt')
-                    .output(outputPath)
-                    .on('start', function(commandLine) {
-                        console.log(` > Found a subtitle (${stream.tags.language}) for movie ${movieName}. Converting it now.`)
-                      })
-                      .on('error', function(err, stdout, stderr) {
-                        console.log('an error happened converting subtitle: ' + err.message);
-                        console.log(stdout);
-                        console.log(stderr);
-                      })
-                    .run();
+    
+    async convertSubtitles(movieName, path) {
+        return new Promise(resolve => {
+            let fullPath = pathLib.join(this.path, path);
+            ffmpeg
+            .ffprobe(fullPath, function(err, metadata) {
+                if (err) {
+                    console.log(err);
+                    // TODO: Only resolve with false if the error is because it's bussy, else throw the error
+                    resolve(false);
                 }
-            }
-          });
+                for (let stream of metadata.streams) {
+                    if (stream.codec_type == 'subtitle' && stream.codec_name == 'subrip' && stream.tags != undefined) {
+                        let outputPath = pathLib.join(pathLib.dirname(fullPath), `${stream.tags.language}_EXTRACTED_${Math.floor(Math.random() * 1000000000)}.srt`); // TODO: Check if this file exist first
+                        ffmpeg(fullPath)
+                        .outputOption([
+                            `-map 0:${stream.index}`
+                        ])
+                        .outputFormat('srt')
+                        .output(outputPath)
+                        .on('start', function(commandLine) {
+                            console.log(` > Found a subtitle (${stream.tags.language}) for movie ${movieName}. Converting it now.`)
+                        })
+                        .on('error', function(err, stdout, stderr) {
+                            console.log('an error happened converting subtitle: ' + err.message);
+                            console.log(stdout);
+                            console.log(stderr);
+                        })
+                        .run();
+                    }
+                }
+                resolve(true);
+            });
+        })
+
+
     }
 
     /**
