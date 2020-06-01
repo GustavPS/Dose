@@ -138,6 +138,7 @@ function startFFMPEG(filename, offset, req, res) {
         ])
 
         .on('start', function(commandLine) {
+          console.log(commandLine)
           console.log("started")
         })
           // setup event handlers

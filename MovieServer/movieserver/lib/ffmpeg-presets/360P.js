@@ -4,6 +4,9 @@ exports.load = function(ffmpeg) {
     .withVideoBitrate(1000)
     .withAudioCodec('libmp3lame')
     .outputOption([
+      '-map 0:v',
+      '-map 0:m:language:eng',
+      '-sn',
       '-deadline realtime',
       '-lag-in-frames 0',
       '-static-thresh 0',
