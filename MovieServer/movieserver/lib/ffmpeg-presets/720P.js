@@ -4,8 +4,10 @@ exports.load = function(ffmpeg) {
     .withVideoBitrate(4000)
     .withAudioCodec('libmp3lame')
     .outputOption([
-      '-map 0:v',
-      '-map 0:m:language:eng',
+      '-map 0',
+      '-map -v',
+      '-map 0:V',
+      '-map 0:m:language:eng', // TODO: This should be an input parameter to be able to change language
       '-sn',
       '-deadline realtime',
       '-lag-in-frames 0',

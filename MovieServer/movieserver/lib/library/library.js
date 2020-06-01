@@ -15,6 +15,16 @@ class Library {
         this.path = path;
         this.id = id;
         this.metadata = metadata;
+        this.subLanguages = [
+            {
+                shortName: 'eng',
+                longName: 'English'
+            },
+            {
+                shortName: 'swe',
+                longName: 'Swedish'
+            }
+        ]
     }
 
     getPath() {
