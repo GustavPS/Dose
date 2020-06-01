@@ -1,5 +1,6 @@
 var ffmpeg = require('fluent-ffmpeg');
 const pathLib = require('path');
+const fs = require('fs');
 
 
 const MOVIE_FORMATS = [
@@ -81,13 +82,36 @@ class Library {
                             console.log(stdout);
                             console.log(stderr);
                         })
+                        .on('end', function(stdout, stderr) {
+                            console.log("END")
+                            // UNTESTED BLOCK START
+                            fs.readFile(outputPath, 'utf8', (err, data) => {
+                                if (err) {
+                                    console.log("Error reading subtitle file on extract");
+                                    console.log(err);
+                                }
+                                if (data.length === 0 || !data.trim()) {
+                                    console.log(' > Extracted subtitle file was empty, trying again.');
+                                    fs.unlink(outputPath, (err) => {
+                                        if (err) {
+                                            console.log(err);
+                                        }
+                                        resolve(false);
+                                        return;
+                                    });
+                                    return;
+                                } else {
+                                    resolve(true);
+                                }
+                            });
+                            // UNTESTED BLOCK END
+                        })
                         .run();
                     }
                 }
                 if (!found) {
                     console.log(` > No subtitles found in ${name}`);
                 }
-                resolve(true);
             });
         })
     }
