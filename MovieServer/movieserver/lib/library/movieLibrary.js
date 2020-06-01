@@ -28,12 +28,16 @@ class MovieLibrary extends Library {
                 console.log(` > Trying to convert subtitles, this may take a while...`);
 
                 // Try to convert the subtitles from the movie
-                let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                new Promise(async (resolve, reject) => {
+                    let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
                 
-                // If the conversion failed (because the file was busy), try again.
-                while(!subtitleConvertionResult) {
-                    subtitleConvertionResult = await this.convertSubtitles(movieName, path);
-                }
+                    // If the conversion failed (because the file was busy), try again.
+                    while(!subtitleConvertionResult) {
+                        subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                    }
+                    resolve();
+                });
+
 
 
                 // Insert to the movie table (contining the path of the movie)
