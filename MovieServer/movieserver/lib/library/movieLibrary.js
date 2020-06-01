@@ -97,7 +97,6 @@ class MovieLibrary extends Library {
             if (err) {
               console.log(err);
             }
-            console.log(metadata)
             for (let stream of metadata.streams) {
                 if (stream.codec_type == 'subtitle' && stream.codec_name == 'subrip' && stream.tags != undefined) {
                     let outputPath = pathLib.join(pathLib.dirname(fullPath), `${stream.tags.language}_EXTRACTED_${Math.floor(Math.random() * 1000000000)}.srt`); // TODO: Check if this file exist first

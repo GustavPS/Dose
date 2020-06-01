@@ -3,9 +3,11 @@ exports.load = function(ffmpeg) {
   //.withVideoCodec('h264_nvenc')
   .withVideoBitrate(8000)
   .withAudioCodec('libmp3lame')
+  .withVideoCodec('h264_nvenc')
   .outputOption([
     '-map 0',
     '-map -v',
+    '-map -a',
     '-map 0:V',
     '-map 0:m:language:eng', // TODO: This should be an input parameter to be able to change language
     '-deadline realtime',
@@ -16,8 +18,7 @@ exports.load = function(ffmpeg) {
     '-movflags frag_keyframe+faststart',
     '-pix_fmt yuv420p',
     '-sn',
-    '-c:v h264_nvenc'
-    //'-max_muxing_queue_size 1024'
+    '-max_muxing_queue_size 9999'
   ])
   .outputFormat('mp4')
 };
