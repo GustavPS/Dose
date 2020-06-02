@@ -15,7 +15,7 @@ let fetchedMetadata = false;
 
 export default function Home(props) {
   const server = props.server;
-  const availableSubtitles = props.subtitles;
+  //const availableSubtitles = props.subtitles;
   const router = useRouter();
   const { id } = router.query;
   //let {internalID} = router.query;
@@ -36,6 +36,7 @@ export default function Home(props) {
     internalID: router.query.internalID,
     season: router.query.season,
     episode: router.query.episode,
+    availableSubtitles: props.subtitles,
     hasChanged: false
   })
 
@@ -152,13 +153,13 @@ export default function Home(props) {
 
   const loadSubtitles = (video) => {
     // Load all the subtitles
-    for (let subtitle of availableSubtitles) {
+    for (let subtitle of episodeInformation.availableSubtitles) {
       console.log("LOADING SUBTITLE");
       video.addRemoteTextTrack({
         kind: 'subtitles',
         label: subtitle.language,
         language: subtitle.language,
-        src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}`
+        src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&type=serie`
       }, false);
     }
   }
@@ -241,13 +242,13 @@ export default function Home(props) {
          video.oldCurrentTime(0);
 
           // Add the subtitles again, and set "activeSub" to active.
-          for (let subtitle of availableSubtitles) {
+          for (let subtitle of episodeInformation.availableSubtitles) {
             if (subtitle.language === activeSub) {
               video.addRemoteTextTrack({
                 kind: 'subtitles',
                 label: subtitle.language,
                 language: subtitle.language,
-                src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}`,
+                src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}&type=serie`,
                 default: true
               }, false);
             } else {
@@ -255,7 +256,7 @@ export default function Home(props) {
                 kind: 'subtitles',
                 label: subtitle.language,
                 language: subtitle.language,
-                src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}`
+                src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}&type=serie`
               }, false);
             }
             try {
@@ -361,14 +362,25 @@ export default function Home(props) {
       fetch(`http://${server.server_ip}:4000/api/series/getNextEpisode?serie_id=${id}&season=${episodeInformation.season}&episode=${episodeInformation.episode}&token=${serverToken}`)
       .then(r => r.json())
       .then(result => {
-        videoObj.pause();
-        document.getElementById('nextepisode').style.display = 'none';
-        setEpisodeInformation({
-          internalID: result.internalID,
-          season: result.season,
-          episode: result.episode,
-          hasChanged: true
+        fetch(`http://${server.server_ip}:4000/api/subtitles/list?content=${result.internalID}&type=serie`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+        })
+        .then((r) => r.json())
+        .then((subtitles) => {
+                videoObj.pause();
+                document.getElementById('nextepisode').style.display = 'none';
+                setEpisodeInformation({
+                  internalID: result.internalID,
+                  season: result.season,
+                  episode: result.episode,
+                  availableSubtitles: subtitles.subtitles,
+                  hasChanged: true
+                });
         });
+
       });
     }
 
@@ -467,7 +479,7 @@ export default function Home(props) {
 // Get the information about the server and send it to the front end before render (this is server-side)
 export async function getServerSideProps(context) {
   let serverId = context.params.server;
-  let movieID = context.params.id;
+  let internalEpisodeID = context.query.internalID;
 
   return await fetch('http://88.129.86.234:3000/api/servers/getServer', {
       method: 'POST',
@@ -481,7 +493,7 @@ export async function getServerSideProps(context) {
   .then((r) => r.json())
   .then(async (data) =>{
     // TODO: Flytta till frontend
-    return await fetch(`http://${data.server.server_ip}:4000/api/subtitles/list?movie=${movieID}`, {
+    return await fetch(`http://${data.server.server_ip}:4000/api/subtitles/list?content=${internalEpisodeID}&type=serie`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

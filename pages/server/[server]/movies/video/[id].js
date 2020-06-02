@@ -145,7 +145,7 @@ export default function Home(props) {
         kind: 'subtitles',
         label: subtitle.language,
         language: subtitle.language,
-        src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}`
+        src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&type=movie`
       }, false);
     }
   }
@@ -225,7 +225,7 @@ export default function Home(props) {
                 kind: 'subtitles',
                 label: subtitle.language,
                 language: subtitle.language,
-                src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}`,
+                src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}&type=movie`,
                 default: true
               }, false);
             } else {
@@ -233,7 +233,7 @@ export default function Home(props) {
                 kind: 'subtitles',
                 label: subtitle.language,
                 language: subtitle.language,
-                src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}`
+                src: `http://${server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&start=${time}&type=movie`
               }, false);
             }
             try {
@@ -477,7 +477,7 @@ export async function getServerSideProps(context) {
   .then((r) => r.json())
   .then(async (data) =>{
     // TODO: Flytta till frontend
-    return await fetch(`http://${data.server.server_ip}:4000/api/subtitles/list?movie=${movieID}`, {
+    return await fetch(`http://${data.server.server_ip}:4000/api/subtitles/list?content=${movieID}&type=movie`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

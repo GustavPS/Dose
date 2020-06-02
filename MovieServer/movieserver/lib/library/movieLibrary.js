@@ -3,6 +3,9 @@ const db = require('../db');
 const MovieMetadata = require('../metadata/movieMetadata');
 const pathLib = require('path');
 var ffmpeg = require('fluent-ffmpeg');
+var AsyncLock = require('async-lock');
+const lock = require('../globalLock');
+
 
 class MovieLibrary extends Library {
 
@@ -22,55 +25,64 @@ class MovieLibrary extends Library {
     }
 
     async addMovieIfNotSaved(movieName, path) {
-        db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
-            if (result.length === 0) {
-                console.log(` > Found a new movie (${path} for library: '${this.name}')`);
-                console.log(` > Trying to convert subtitles, this may take a while...`);
-
-                // Try to convert the subtitles from the movie
-                new Promise(async (resolve, reject) => {
-                    let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
-                
-                    // If the conversion failed (because the file was busy), try again.
-                    while(!subtitleConvertionResult) {
-                        subtitleConvertionResult = await this.convertSubtitles(movieName, path);
-                    }
-                    resolve();
-                });
-
-
-
-                // Insert to the movie table (contining the path of the movie)
-                db.any('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3)', [path, this.id, movieName]).then(() => {
-                    db.one('SELECT id FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(result => {
-                        let internalMovieID = result.id;
-
-                        // Try to find metadata
-                        this.metadata.getMetadata(movieName).then(result => {
-                            let metadata = result.metadata;
-                            let images = result.images;
-                            let trailer = result.trailer;
-                            if (metadata === null) {
-                                console.log(` > Couldn't find any metadata for movie '${movieName}'`);
-                                images = {
-                                    backdrops: [],
-                                    posters: []
+        return new Promise(async (resolve) => {
+            db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
+                if (result.length === 0) {
+                    console.log(` > Found a new movie (${path} for library: '${this.name}')`);
+                    console.log(` > Trying to convert subtitles, this may take a while...`);
+    
+                    // Try to convert the subtitles from the movie
+                    //new Promise(async (resolve, reject) => {
+                        let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                    
+                        // If the conversion failed (because the file was busy), try again.
+                        while(!subtitleConvertionResult) {
+                            await new Promise(r => setTimeout(r, 2000));
+                            console.log("Inne i loop");
+                            subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                        }
+                     //   resolve();
+                    //});
+    
+    
+    
+                    // Insert to the movie table (contining the path of the movie)
+                    db.any('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3)', [path, this.id, movieName]).then(() => {
+                        db.one('SELECT id FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(result => {
+                            let internalMovieID = result.id;
+    
+                            // Try to find metadata
+                            this.metadata.getMetadata(movieName).then(result => {
+                                let metadata = result.metadata;
+                                let images = result.images;
+                                let trailer = result.trailer;
+                                if (metadata === null) {
+                                    console.log(` > Couldn't find any metadata for movie '${movieName}'`);
+                                    images = {
+                                        backdrops: [],
+                                        posters: []
+                                    }
+                                    metadata = this.metadata.getDummyMetadata(movieName);
+                                    trailer = "";
+                                    
+                                    this.metadata.insertMetadata(metadata, images, trailer, internalMovieID);
+                                    resolve();
+                                } else {
+                                    console.log(` > Saving metadata for movie '${movieName}'`);
+                                    // Insert metadata
+                                    this.metadata.insertMetadata(metadata, images, trailer, internalMovieID);
+                                    resolve();
                                 }
-                                metadata = this.metadata.getDummyMetadata(movieName);
-                                trailer = "";
-                                
-                                this.metadata.insertMetadata(metadata, images, trailer, internalMovieID);
-                            } else {
-                                console.log(` > Saving metadata for movie '${movieName}'`);
-                                // Insert metadata
-                                this.metadata.insertMetadata(metadata, images, trailer, internalMovieID);
-                            }
-                        })
+                            })
+                        });
                     });
-                });
-
-            }
-        })
+    
+                } else {
+                    resolve();
+                }
+            })
+        });
+      
     }
 
     addSubtitleIfNotSaved(movieName, path, parentFolder) {
@@ -124,13 +136,18 @@ class MovieLibrary extends Library {
             }
             return;
         }
+        let t = this;
+        lock.acquire("abcdefg", async function(done) {
 
         if (type === 'MOVIE') {
-            this.addMovieIfNotSaved(movieName, path);
+            await t.addMovieIfNotSaved(movieName, path);
         } else if (type === 'SUBTITLE') {
-            this.addSubtitleIfNotSaved(movieName, path, parentFolder);
+            t.addSubtitleIfNotSaved(movieName, path, parentFolder);
         }
-
+        done();
+    }, function() {
+        
+    });
     }
 
     /**

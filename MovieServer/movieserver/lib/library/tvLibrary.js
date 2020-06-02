@@ -2,7 +2,7 @@ const Library = require('./library');
 const pathLib = require('path');
 const SerieMetadata = require('../metadata/tvMetadata');
 const db = require('../db');
-var AsyncLock = require('async-lock');
+const lock = require('../globalLock');
 
 const MOVIE_FORMATS = [
     'mp4', 'ts', 'mkv', 'webm', 'avi'
@@ -23,7 +23,6 @@ class TvLibrary extends Library {
      */
     constructor(name, path, id) {
         super(name, path, id, new SerieMetadata());
-        this.lock = new AsyncLock();
     }
 
     getType() {
@@ -169,16 +168,18 @@ class TvLibrary extends Library {
                     console.log(` > Trying to convert subtitles, this may take a while...`);
 
                     // Try to convert the subtitles from the movie
-                    new Promise(async (resolve, reject) => {
+                    //new Promise(async (resolve, reject) => {
                         // Add 0 before Season number and episode number if one digit
                         let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
                     
                         // If the conversion failed (because the file was busy), try again.
                         while(!subtitleConvertionResult) {
+                            //await new Promise(r => setTimeout(r, 2000));
+                            console.log("INNE I FIN BUSY LOOP");
                             subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
                         }
-                        resolve();
-                    });
+                        //resolve();
+                    //});
 
                     // Get the internal serie id for the episode
                     let internalSerieID = await t.one(`SELECT id FROM serie WHERE name = $1 AND path = $2`, [serieName, showPath], c => +c.id);
@@ -287,7 +288,7 @@ class TvLibrary extends Library {
 
             let t = this;
             // Lock so each library only can handle one serie at a time (for race condition with episodes)
-            this.lock.acquire(this.id, async function(done) {
+            lock.acquire("abcdefg", async function(done) {
                 let seasonNumber = t.getSeasonNumber(path);
                 let episodeNumber = t.getEpisodeNumber(path);
 
@@ -319,7 +320,7 @@ class TvLibrary extends Library {
     async removeEntry(path) {
         return new Promise(async (resolve, reject) => {
             let t = this;
-            this.lock.acquire(this.id, async function(done) {
+            lock.acquire(this.id, async function(done) {
                 // Remove the subtitle if that is what we are removing
                 db.any('SELECT * FROM serie_episode_subtitle WHERE path = $1 AND library_id = $2', [path, t.id])
                 .then(result => {
