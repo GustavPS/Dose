@@ -99,9 +99,10 @@
 }
 
 .seasons {
-    display: inline-flex;
+    display: inline-block;
 }
 
 .seasons div {
     margin: 0 5px;
+    float: left;
 }

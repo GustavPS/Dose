@@ -97,7 +97,7 @@ class Library {
                                 process.stdout.write(` > Found a subtitle (${stream.tags.language}) for ${name}. Converting it now. - ${progress.percent}% \r`);
                             })
                             .on('end', function(stdout, stderr) {
-                                console.log("END")
+                                process.stdout.write(` > Found a subtitle (${stream.tags.language}) for ${name}. Converting it now. - 100% \r`);
                                 done(true);
                             })
                             .run();

@@ -5,7 +5,7 @@ const db = require('../db');
 const lock = require('../globalLock');
 
 const MOVIE_FORMATS = [
-    'mp4', 'ts', 'mkv', 'webm', 'avi'
+    'mp4', 'ts', 'mkv', 'webm', 'avi', 'm4v'
 ];
 const SUB_FORMATS = [
     'srt', 'vtt', 'sub'

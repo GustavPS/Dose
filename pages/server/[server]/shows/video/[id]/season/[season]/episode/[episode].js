@@ -301,7 +301,7 @@ export default function Home(props) {
         video = video;
     }
 
-});
+}, [startWatching]);
 
     const updateWatchTime = (time) => {
       if (videoObj.theDuration - time <= 40) {

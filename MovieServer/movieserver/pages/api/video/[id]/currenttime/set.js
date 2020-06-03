@@ -104,32 +104,32 @@ function setMovieProgress(movie_id, user_id, time, videoDuration) {
 // Episode ID is the internal ID.
 function setEpisodeProgress(episode_id, user_id, time, videoDuration) {
     return new Promise((resolve, reject) => {
-        db.one('SELECT serie_id, season_number, episode FROM serie_episode WHERE id = $1', [episode_id]).then(async (episodeInfo) => {
+        //console.log(`Episode_id: ${episode_id}, user_id: ${user_id}, time: ${time}, videoDuration: ${videoDuration}`);
+        db.tx(async t => {
+            let episodeInfo = await t.one('SELECT serie_id, season_number, episode FROM serie_episode WHERE id = $1', [episode_id]);
             // Set the run_time of the episode (the duration)
-            await db.none('UPDATE serie_episode_metadata SET run_time = $1 WHERE episode_number = $2 AND season_number = $3 AND serie_id = $4', [videoDuration, episodeInfo.episode, episodeInfo.season_number, episodeInfo.serie_id]);
+            await t.none('UPDATE serie_episode_metadata SET run_time = $1 WHERE episode_number = $2 AND season_number = $3 AND serie_id = $4', [videoDuration, episodeInfo.episode, episodeInfo.season_number, episodeInfo.serie_id]);
             // We've watched 90% of the episode, we should remove the serie_progress entry
             if (time / videoDuration >= 0.9) {
-                db.none('DELETE FROM user_episode_progress WHERE episode_id = $1 AND user_id = $2', [episode_id, user_id]);
+                t.none('DELETE FROM user_episode_progress WHERE episode_id = $1 AND user_id = $2', [episode_id, user_id]);
                 // Insert the next episode to watch in the database
-                getNextEpisodeID(episode_id, episodeInfo.serie_id, episodeInfo.season_number).then(id => {
-                    if (id !== false) {
-                        db.none('INSERT INTO user_next_episode (user_id, serie_id, episode_id) VALUES ($1, $2, $3) ON CONFLICT (user_id, serie_id) DO NOTHING', [user_id, episodeInfo.serie_id, id]);
-                    }
-                });
+                let id = await getNextEpisodeID(episode_id, episodeInfo.serie_id, episodeInfo.season_number);
+                if (id !== false) {
+                    t.none('INSERT INTO user_next_episode (user_id, serie_id, episode_id) VALUES ($1, $2, $3) ON CONFLICT (user_id, serie_id) DO NOTHING', [user_id, episodeInfo.serie_id, id]);
+                }
                 resolve();
             } else {
                 // If we havn't watched 90% of the episode, update the watchtime and remove the "next episode" row from the databsae
-                db.any('SELECT * FROM user_episode_progress WHERE user_id = $1 AND episode_id = $2',[user_id, episode_id]).then(result => {
-                    if (result.length === 0) {
-                        db.none('INSERT INTO user_episode_progress (user_id, episode_id, time) VALUES ($1, $2, $3)', [user_id, episode_id, time]);
-                    } else {
-                        db.none('UPDATE user_episode_progress SET time = $1 WHERE user_id = $2 AND episode_id = $3', [time, user_id, episode_id]);
-                    }
-                    // Remove the "next episode" row from the database (because the user is currently watching it)
-                    db.none('DELETE FROM user_next_episode WHERE user_id = $1 AND serie_id = $2', [user_id, episodeInfo.serie_id]);
-                    db.none('DELETE FROM user_episode_progress WHERE episode_id != $1 AND user_id = $2 AND episode_id IN (SELECT id FROM serie_episode WHERE serie_id = $3)', [episode_id, user_id, episodeInfo.serie_id]);
-                    resolve();
-                });
+                let result = await t.any('SELECT * FROM user_episode_progress WHERE user_id = $1 AND episode_id = $2',[user_id, episode_id]);
+                if (result.length === 0) {
+                    t.none('INSERT INTO user_episode_progress (user_id, episode_id, time) VALUES ($1, $2, $3)', [user_id, episode_id, time]);
+                } else {
+                    t.none('UPDATE user_episode_progress SET time = $1 WHERE user_id = $2 AND episode_id = $3', [time, user_id, episode_id]);
+                }
+                // Remove the "next episode" row from the database (because the user is currently watching it)
+                t.none('DELETE FROM user_next_episode WHERE user_id = $1 AND serie_id = $2', [user_id, episodeInfo.serie_id]);
+                t.none('DELETE FROM user_episode_progress WHERE episode_id != $1 AND user_id = $2 AND episode_id IN (SELECT id FROM serie_episode WHERE serie_id = $3)', [episode_id, user_id, episodeInfo.serie_id]);
+                resolve();
             }
 
         });
@@ -138,6 +138,7 @@ function setEpisodeProgress(episode_id, user_id, time, videoDuration) {
 
 function getNextEpisodeID(episode_id, serie_id, season_number) {
     return new Promise((resolve, reject) => {
+
         db.one('SELECT episode FROM serie_episode WHERE id = $1', [episode_id]).then(episodeNumber => {
             episodeNumber = episodeNumber.episode;
             db.any('SELECT id FROM serie_episode WHERE serie_id = $1 AND season_number = $2 AND episode = $3', [serie_id, season_number, episodeNumber+1]).then(result => {
