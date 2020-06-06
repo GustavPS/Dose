@@ -232,12 +232,12 @@ export default (props) => {
                                 className="d-block w-100"
                                 src={img}
                                 alt={movie.title}
-                                style={{objectFit: 'cover', height: '80vh', minHeight: '500px'}}
+                                style={{objectFit: 'cover', height: '90vh', minHeight: '500px', cursor: 'pointer'}}
                                 onClick={() => {selectMovie(movie.id)}}
                             />
                             <Carousel.Caption>
-                                <h3>{movie.title}</h3>
-                                <p>{movie.overview}</p>
+                                <h3 style={{textShadow: '0px 0px 6px #000'}}>{movie.title}</h3>
+                                <p style={{textShadow: '0px 0px 6px #000'}}>{movie.overview}</p>
                             </Carousel.Caption>
                         </Carousel.Item>
                     );

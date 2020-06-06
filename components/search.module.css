@@ -4,9 +4,14 @@
     transform: translateY(-50%);
     right: 20px;
     display: table;
+    
 }
 
 .searchForm input {
-    background-color: #173446;
+    background-color: #17344600;
     color: white;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
 }
