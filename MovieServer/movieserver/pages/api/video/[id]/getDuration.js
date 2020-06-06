@@ -15,7 +15,12 @@ export default (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', "*");
   res.setHeader('Access-Control-Allow-Headers', "*");
 
-  let type = req.query.type === undefined ? 'movie' : 'serie';
+  let type = req.query.type;
+  if (!['movie', 'serie'].includes(type)) {
+    res.status(404).end();
+    resolve();
+    return;
+  }
 
   // TODO: Error handling
   let filename = "";
@@ -24,8 +29,6 @@ export default (req, res) => {
   } else if (type === 'serie') {
     filename = await getShowPath(req.query.id);
   }
-  console.log(filename);
-  console.log(type);
   ffmpeg.ffprobe(filename, function(err, metadata) {
     if (err) {
       console.log(err);

@@ -9,45 +9,28 @@ import vtt from 'vtt-live-edit';
 import Router from 'next/router';
 import cookies from 'next-cookies'
 
-// Fetcher for useSWR, redirect to login if not authorized
-let fetchedMetadata = false;
+import VideoComponent from '../../../../../../../../../components/videoComponent';
 
+let internalID, season, episode;
 
 export default function Home(props) {
   const server = props.server;
-  //const availableSubtitles = props.subtitles;
   const router = useRouter();
   const { id } = router.query;
-  //let {internalID} = router.query;
   const serverToken = props.serverToken;
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
-  const [startWatching, setStartWatchin] = useState(false);
-  // Ugly hack to be able to access the videojs element outside of useEffect(). 
-  // The videojs object will be inserted here.
-  const [videoObj, setVideoObj] = useState(null);
 
-  /*
-  const [internalID, setInternalID] = useState(router.query.internalID);
-  const [season, setSeason] = useState(router.query.season);
-  const [episode, setEpisode] = useState(router.query.episode);
-*/
-  const [episodeInformation, setEpisodeInformation] = useState({
-    internalID: router.query.internalID,
-    season: router.query.season,
-    episode: router.query.episode,
-    availableSubtitles: props.subtitles,
-    hasChanged: false
-  })
+  internalID = router.query.internalID;
+  season = router.query.season;
+  episode = router.query.episode;
 
-  let video = undefined;
-  let videoSources = [];
-
+  const videoRef = useRef();
 
 
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
-    fetch(`http://${server.server_ip}:4000/api/series/${id}/season/${episodeInformation.season}/episode/${episodeInformation.episode}?token=${serverToken}`, {
+    fetch(`http://${server.server_ip}:4000/api/series/${id}/season/${season}/episode/${episode}?token=${serverToken}`, {
       method: 'GET',
       headers: {
           'Content-Type': 'application/json'
@@ -86,14 +69,10 @@ export default function Home(props) {
 
       setWatched(meta.watched);
       setMetadata(meta);
-      return () => {
-        video = video;
-        
-      }
     });
   }, []);
 
-
+/*
 
   const loadSources = (video, autoplay=false) => {
     // Get the saved time for this video
@@ -210,7 +189,6 @@ export default function Home(props) {
              return video.oldCurrentTime() + video.start;
          }
 
-         /* THE CODE BELOW WILL RUN WHEN THE USER SEEKS THE VIDEO */
 
          // Save the current source (So we know what quality to play after seek)
          let currentQuality = video.currentSource().label;
@@ -385,6 +363,24 @@ export default function Home(props) {
     }
 
 
+          <video disablePictureInPicture id="video" className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto">
+        </video>
+
+
+        */
+
+  const getNextEpisodeID = (cb) => {
+    fetch(`http://${server.server_ip}:4000/api/series/getNextEpisode?serie_id=${id}&season=${season}&episode=${episode}&token=${serverToken}`)
+    .then(r => r.json())
+    .then(result => {
+      console.log("RESULT")
+      console.log(result);
+      season = result.season;
+      episode = result.episode;
+      internalID = result.internalID;
+      cb(result.internalID);
+    });
+  }
 
     
   return (
@@ -401,21 +397,17 @@ export default function Home(props) {
         <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
         </Head>
-        <video disablePictureInPicture id="video" className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto">
-        </video>
 
-        <div id="nextepisode">
-          <h3>Nästa avsnitt spelas upp om <span id="timeToNextEpisode"></span> sekunder</h3>
-          <button id="playNextEpisode" onClick={() => playNextEpisode()}>Starta nu</button>
-          <button id="cancelNextEpisode">Avbryt</button>
-        </div>
-
-
+  
 
         <div id="container">
         <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
         <div className="backIcon" onClick={() => Router.back()}></div>
-
+        <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
+                        internalID={internalID}
+                        getNextEpisodeID={(cb) => getNextEpisodeID(cb)}
+                        >
+        </VideoComponent>
 
         <div className={Styles.top}>
           <div className={Styles.poster} style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.poster}')`}} />
@@ -433,12 +425,12 @@ export default function Home(props) {
             <div className={Styles.actions}>
               {metadata.currentTimeSeconds > 0 &&
               <div style={{marginRight: "15px"}}>
-                <div className={Styles.playButton} onClick={() => setStartWatchin(metadata.currentTimeSeconds)}></div>
+                <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
               </div>
               }
               <div>
-                <div className={Styles.playButton} onClick={() => setStartWatchin(0)}></div>
+                <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
               </div>
               {watched &&
@@ -492,23 +484,11 @@ export async function getServerSideProps(context) {
   })
   .then((r) => r.json())
   .then(async (data) =>{
-    // TODO: Flytta till frontend
-    return await fetch(`http://${data.server.server_ip}:4000/api/subtitles/list?content=${internalEpisodeID}&type=serie`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-    })
-    .then((r) => r.json())
-    .then((subtitles) => {
-      return {
-        props: {
-            server: data.server,
-            subtitles: subtitles.subtitles,
-            serverToken: cookies(context).serverToken || ''
-        }
+    return {
+      props: {
+          server: data.server,
+          serverToken: cookies(context).serverToken || ''
       }
+    }
     })
-
-  });
 }

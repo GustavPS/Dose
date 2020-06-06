@@ -47,6 +47,7 @@ export default (req, res) => {
 
         let folderName = path.dirname(subPath);
         let output = path.join(folderName, crypto.randomBytes(20).toString('hex')+'.vtt');
+        console.log(output);
 
         // Transcode the subtitle to vtt, with offset according the variables hours, minutes and seconds
         ffmpeg(subPath)
@@ -55,7 +56,6 @@ export default (req, res) => {
         ])
         .output(output)
         .on('end', function() {
-            console.log(`Converted subtitle with ${hours} hours, ${minutes} minutes and ${seconds} seconds offset`)
             // Read the new subtitle file and send it to the user
             fs.readFile(output, (err, data) => {
                 if (err) {

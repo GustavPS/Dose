@@ -59,7 +59,6 @@ export default (req, res) => {
 
             `, [seasonID, serieID, seasonID, episodeID]).then(result => {
                 db.any('SELECT time FROM user_episode_progress WHERE user_id = $1 AND episode_id = $2', [user_id, result.internalepisodeid]).then(progress => {
-                    console.log(progress);
                     let response = {
                         result: result
                     }

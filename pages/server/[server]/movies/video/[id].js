@@ -10,6 +10,8 @@ import vtt from 'vtt-live-edit';
 import Router from 'next/router';
 import cookies from 'next-cookies'
 
+import VideoComponent from '../../../../../components/videoComponent';
+
 import ChangeImages from '../../../../../components/changeImages';
 
 // Fetcher for useSWR, redirect to login if not authorized
@@ -18,25 +20,19 @@ let fetchedMetadata = false;
 
 export default function Home(props) {
   const server = props.server;
-  const availableSubtitles = props.subtitles;
   const router = useRouter();
   const { id } = router.query;
   const serverToken = props.serverToken;
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
-  const [startWatching, setStartWatchin] = useState(false);
+
+  const videoRef = useRef();
+
 
   // Used for manual metadata search
   const [metadataBox, setMetadataBox] = useState(false);
   const [metadataSearchResult, setMetadataSearchResult] = useState([]);
   const metadataSearch = useRef(null);
-
-  // Ugly hack to be able to access the videojs element outside of useEffect(). 
-  // The videojs object will be inserted here.
-  const [videoObj, setVideoObj] = useState(null);
-
-  let video = undefined;
-  let videoSources = [];
 
 
 
@@ -86,6 +82,7 @@ export default function Home(props) {
       }
     });
   }, []);
+  /*
 
 
 
@@ -187,7 +184,6 @@ export default function Home(props) {
              return video.oldCurrentTime() + video.start;
          }
 
-         /* THE CODE BELOW WILL RUN WHEN THE USER SEEKS THE VIDEO */
 
          // Save the current source (So we know what quality to play after seek)
          let currentQuality = video.currentSource().label;
@@ -349,12 +345,12 @@ export default function Home(props) {
         }
       });
     }
-
+*/
 
 
 
     
-    //  
+    //   <video disablePictureInPicture id="video" className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto"></video>
   return (
     <>
         <Head>
@@ -370,7 +366,12 @@ export default function Home(props) {
         <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
         </Head>
-        <video disablePictureInPicture id="video" className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto"></video>
+
+        <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
+                        internalID={id} Movie
+                        >
+        </VideoComponent>
+        
 
         <div id="container">
         <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
@@ -413,12 +414,12 @@ export default function Home(props) {
             <div className={Styles.actions}>
               {metadata.currentTimeSeconds > 0 &&
               <div style={{marginRight: "15px"}}>
-                <div className={Styles.playButton} onClick={() => setStartWatchin(metadata.currentTimeSeconds)}></div>
+                <div className={Styles.playButton} onClick={() => videoRef.current.show(metadata.currentTimeSeconds)}></div>
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
               </div>
               }
               <div>
-                <div className={Styles.playButton} onClick={() => setStartWatchin(0)}></div>
+                <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
               </div>
               {watched &&

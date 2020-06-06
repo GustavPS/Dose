@@ -10,9 +10,6 @@ export default (req, res) => {
         let movieID = req.query.movie;
         let poster = req.query.poster;
         let backdrop = req.query.backdrop;
-        console.log(movieID);
-        console.log(poster);
-        console.log(backdrop);
         res = cors(res);
 
         // TODO: Error handling when imageID or movieID does not exist

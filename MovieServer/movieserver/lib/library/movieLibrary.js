@@ -38,7 +38,6 @@ class MovieLibrary extends Library {
                         // If the conversion failed (because the file was busy), try again.
                         while(!subtitleConvertionResult) {
                             await new Promise(r => setTimeout(r, 2000));
-                            console.log("Inne i loop");
                             subtitleConvertionResult = await this.convertSubtitles(movieName, path);
                         }
                      //   resolve();

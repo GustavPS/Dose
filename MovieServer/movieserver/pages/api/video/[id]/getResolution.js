@@ -25,7 +25,11 @@ export default async(req, res) => {
     res.setHeader('Access-Control-Allow-Origin', "*");
     res.setHeader('Access-Control-Allow-Headers', "*");
   
-    let type = req.query.type === undefined ? 'movie' : 'serie';
+    let type = req.query.type;
+    if (!['movie', 'serie'].includes(type)) {
+      res.status(404).end();
+      return;
+    }
   
       // TODO: Error handling
       let filename = "";

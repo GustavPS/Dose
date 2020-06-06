@@ -18,7 +18,11 @@ const ALLOWED_QUALITIES = [
 ];
 
 export default async (req, res) => {
-    let type = req.query.type === undefined ? 'movie' : 'serie';
+    let type = req.query.type;
+    if (!['movie', 'serie'].includes(type)) {
+      res.status(404).end();
+      return;
+    }
     let filename = "";
     if (type === 'movie') {
       filename = await getMoviePath(req.query.id);
@@ -94,7 +98,6 @@ function killOtherInstances(serverToken) {
       remove.push(count);
       try {
         t.process.kill();
-        console.log("Killing a transcoding")
       } catch(e) {
         console.log("Tried to kill a transcoding but the process was already killed.");
       }
@@ -116,7 +119,7 @@ function startFFMPEG(filename, offset, req, res) {
 
   let quality = req.query.quality;
   if (!ALLOWED_QUALITIES.includes(quality)) {
-    console.log("INTE TILLÅTEN");
+    console.log(`${quality} is not a valid quality selector`);
     res.status(404).end();
     return;
   }
@@ -142,25 +145,23 @@ function startFFMPEG(filename, offset, req, res) {
           } catch(e) {
 
           }
-          console.log('file has been converted succesfully');
         })
         .on('progress', function(progress) {
           //console.log('Processing: ' + progress.percent + '% done');
         })
         .on('error', function(err, stdout, stderr) {
-          if (stdout != undefined) {
-            console.log(stdout);
-          }
-          if (stderr != undefined) {
-            console.log(stderr);
-          }
-          try {
-            this.kill();
-          } catch(e) {
-            
-          }
-
-          if (err.message != 'Output stream closed') {
+          if (err.message != 'Output stream closed' && err.message != 'ffmpeg was killed with signal SIGKILL') {
+            if (stdout != undefined) {
+              console.log(stdout);
+            }
+            if (stderr != undefined) {
+              console.log(stderr);
+            }
+            try {
+              this.kill();
+            } catch(e) {
+              
+            }
             console.log('an error happened: ' + err.message);
           }
         })

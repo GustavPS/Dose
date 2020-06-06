@@ -1,0 +1,519 @@
+import Styles from './videoComponent.module.css';
+
+
+
+export default class VideoComponent extends React.Component {
+    constructor(props) {
+        super(props);
+        // Video element
+        this.video = undefined;
+        // Source element
+        this.source = undefined;
+        // Subtitle element
+        this.subtitle = undefined;
+        // Control timeout
+        this.controlTimeout = undefined;
+        // Update currenttime interval (for the server)
+        this.updateCurrentTimeInterval = undefined;
+        // Used for unique keys on elements.
+        this.elementCounter = 0;
+        // Function to call on time change events
+        this.onTimeChange = props.onTimeChange;
+        this.getNextEpisodeID = props.getNextEpisodeID;
+
+        this.server = props.server;
+        this.serverToken = props.serverToken;
+        this.type = props.Movie != undefined ? 'movie' : 'serie'
+        this.internalID = props.internalID;
+        this.state = {
+            subtitles: {
+                availableSubtitles: [],
+                activeSubtitle: undefined
+            },
+            resolutions: {
+                availableResolutions: [],
+                activeResolution: ''
+            },
+            settings: {
+                show: false,
+                standardControl: false,
+                audioControl: false,
+                resolutionControl: false,
+                subtitleControl: false
+            },
+            nextEpisode: this.type === 'serie' ? {
+                timeLeft: null,
+                internalID: null,
+                show: false
+            } : undefined,
+            videoPaused: true
+        }
+
+        this.enterFullScreen      = this.enterFullScreen.bind(this);
+        this.togglePlay           = this.togglePlay.bind(this);
+        this.seek                 = this.seek.bind(this);
+        this.startSeek            = this.startSeek.bind(this);
+        this.toggleSettings       = this.toggleSettings.bind(this);
+        this.updateSeekTime       = this.updateSeekTime.bind(this);
+        this.pause                = this.pause.bind(this);
+        this.play                 = this.play.bind(this);
+        this.showResolutions      = this.showResolutions.bind(this);
+        this.showSubtitles        = this.showSubtitles.bind(this);
+        this.showStandardSettings = this.showStandardSettings.bind(this);
+        this.changeVolume         = this.changeVolume.bind(this);
+        this.showControls         = this.showControls.bind(this);
+        this.setNextEpisodeID     = this.setNextEpisodeID.bind(this);
+        this.playNextEpisode      = this.playNextEpisode.bind(this);
+    }
+
+    componentDidMount() {
+        this.video = document.getElementById('video');
+        this.video.isFullscreen = false;
+
+        // The duration of the movie
+        this.video.realDuration = -1;
+        // The watchtime offset for the seekbar (since we change source on seek and HTML do not know the correct watchtime after we change source)
+        this.video.watchTimeOffset = 0;
+        this.video.isSeeking = false;
+        this.video.controls = false;
+
+
+        this.source = document.createElement('source');
+        this.video.appendChild(this.source);
+
+        this.subtitle = document.getElementById('subtitle');
+
+        this.loadSources();
+        this.loadSubtitles();
+
+
+        this.video.ontimeupdate = () => {
+            if (!this.video.isSeeking) {
+                let percentage = ((this.video.currentTime + this.video.watchTimeOffset) / this.video.realDuration) * 100;
+                document.getElementById('seekbar').value = percentage
+                this.updateSeekTime();
+                
+                if (this.type === 'serie' && this.video.getRealWatchtime() >= this.video.realDuration - 40) {
+                    // If we havn't gotten the ID for the next episode yet, call the function from the parent
+                    if (this.getNextEpisodeID != undefined && !this.state.nextEpisode.show) {
+                        this.getNextEpisodeID(this.setNextEpisodeID);
+                    }
+                    this.displayNextEpisodeBox();
+                }
+            }
+        }
+
+        // Returns the 'real' current time
+        this.video.getRealWatchtime = () => {
+            return this.video.watchTimeOffset + this.video.currentTime;
+        }
+
+        this.video.onpause = () => {
+            this.setState({videoPaused: true});
+        }
+        this.video.onplay = () => {
+            this.setState({videoPaused: false});
+        }
+    }
+
+    show(time=0) {
+        document.getElementById('videoContainer').style.display = 'block';
+        this.video.play();
+    }
+
+    setNextEpisodeID(id) {
+        console.log("ID: " + id)
+        let nextEpisode = this.state.nextEpisode;
+        nextEpisode.internalID = id;
+        this.setState({nextEpisode: nextEpisode});
+    }
+
+    displayNextEpisodeBox() {
+        let nextEpisode = this.state.nextEpisode;
+        let timeLeft = Math.floor(this.video.realDuration - this.video.getRealWatchtime());
+        if (timeLeft === 0) {
+            this.playNextEpisode();
+        } else {
+            nextEpisode.timeLeft = timeLeft;
+            nextEpisode.show = true;
+        }
+
+        this.setState({nextEpisode: nextEpisode});
+    }
+
+    playNextEpisode() {
+        let nextEpisode = this.state.nextEpisode;
+        this.internalID = this.state.nextEpisode.internalID;
+        nextEpisode.timeLeft = null;
+        nextEpisode.internalID = null;
+        nextEpisode.show = false;
+        this.video.watchTimeOffset = 0;
+        this.loadSources(true).then(() => {
+            this.loadSubtitles();
+        });
+        this.setState({nextEpisode: nextEpisode});
+    }
+
+    loadSubtitles() {
+        return new Promise(resolve => {
+            fetch(`http://${this.server.server_ip}:4000/api/subtitles/list?content=${this.internalID}&type=${this.type}`)
+            .then(r => r.json())
+            .then(result => {
+                let stateSubs = this.state.subtitles;
+                stateSubs.availableSubtitles = result.subtitles;
+
+                // If a subtitle was already selected (on automatic change episode), try to find a subtitle with the same language and set that as active.
+                if (this.state.subtitles.activeSubtitle !== undefined) {
+                    for (let subtitle of result.subtitles) {
+                        if (this.state.subtitles.activeSubtitle.language === subtitle.language) {
+                            this.changeSubtitle(subtitle);
+                            break;
+                        }
+                    }
+                }
+
+
+                this.setState({subtitles: stateSubs});
+                resolve();
+            })
+            .catch(e => {
+                // TODO: Error handling
+                console.log(e);
+                resolve();
+            })
+        });
+    }
+    
+    loadSources(autoplay = false) {
+        return new Promise(resolve => {
+            // Set the duration of the video
+            fetch(`http://${this.server.server_ip}:4000/api/video/${this.internalID}/getDuration?type=${this.type}`)
+            .then(r => r.json())
+            .then(data => {
+                this.video.realDuration = data.duration;
+            });
+
+            // Get the current time for this video
+            fetch(`http://${this.server.server_ip}:4000/api/video/${this.internalID}/currenttime/get?type=${this.type}&token=${this.serverToken}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(r => r.json())
+            .then(time => {
+                time = time.time;
+                this.video.watchTimeOffset = time;
+
+                // Get the available resolutions for this video
+                fetch(`http://${this.server.server_ip}:4000/api/video/${this.internalID}/getResolution?type=${this.type}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(r => r.json())
+                .then(result => {
+
+                    // Change the available resolutions
+                    let resolutions = this.state.resolutions;
+                    resolutions.availableResolutions = result.resolutions;
+
+                    if (result.directplay) {
+                        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=directplay`)
+                        resolutions.activeResolution = 'directplay';
+                    } else {
+                        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=1080P`);
+                        resolutions.activeResolution = '1080P';
+
+                    }
+
+                    // Save the new resolution state
+                    this.setState({resolutions: resolutions});
+    
+    
+                    this.video.load();
+                    if (autoplay) {
+                        this.video.play();
+                    }
+                    resolve();
+                });
+            })
+        });
+
+    }
+
+    getSettingElements() {
+        let elements = [];
+
+        // If we should display resulution controls
+        if (this.state.settings.resolutionControl) {
+            console.log(this.state.resolutions)
+            for (let resolution of this.state.resolutions.availableResolutions) {
+                elements.push(
+                    <a href="#" key={this.elementCounter} className={resolution === this.state.resolutions.activeResolution ? Styles.active : ''} onClick={() => this.changeResolution(resolution)}>{resolution}</a>
+                )
+                this.elementCounter++;
+            }
+
+
+        } else if (this.state.settings.subtitleControl) {
+            for (let subtitle of this.state.subtitles.availableSubtitles) {
+                console.log(subtitle);
+                elements.push(
+                    <a href="#" key={this.elementCounter} className={this.state.subtitles.activeSubtitle != undefined && subtitle.id === this.state.subtitles.activeSubtitle.id ? Styles.active : ''} onClick={() => this.changeSubtitle(subtitle)}>{subtitle.language}</a>
+                )
+                this.elementCounter++;
+            }
+
+        // If we should display standard controls
+        } else {
+            elements.push(
+                <a href="#" key={this.elementCounter} onClick={this.showResolutions}>Quality</a>
+            );
+            this.elementCounter++;
+            elements.push(
+                <a href="#" key={this.elementCounter} >Audio</a>
+            );
+            this.elementCounter++;
+            elements.push(
+                <a href="#" key={this.elementCounter} onClick={this.showSubtitles}>Subtitles</a>
+            );
+            this.elementCounter++;
+        }
+
+        return elements;
+    }
+
+    changeResolution(resolution) {
+        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${this.video.getRealWatchtime()}&quality=${resolution}`);
+        // Change the watchTimeOffset to proberly sync subtitles and seekbar.
+        this.video.watchTimeOffset = this.video.getRealWatchtime();
+        this.changeSubtitle(this.state.subtitles.activeSubtitle);
+        this.video.load();
+        this.video.play();
+
+        // Change the active resolution in the state
+        let resolutions = this.state.resolutions;
+        resolutions.activeResolution = resolution;
+        this.setState({resolutions: resolutions});
+    }
+
+    changeSubtitle(subtitle) {
+        if (subtitle == undefined) {
+            return;
+        }
+        this.subtitle.setAttribute('src', `http://${this.server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&type=${this.type}&start=${this.video.getRealWatchtime() - this.video.currentTime}`);
+        this.video.textTracks[0].mode = 'showing';
+        let stateSubs = this.state.subtitles;
+        stateSubs.activeSubtitle = subtitle;
+        this.setState({subtitles: stateSubs});
+    }
+
+    enterFullScreen() {
+        let videoContainer = document.getElementById('videoContainer');
+        try {
+            if (!this.video.isFullscreen) {
+                if (this.video.requestFullscreen) {
+                    videoContainer.requestFullscreen();
+                } else if (this.video.mozRequestFullScreen) { /* Firefox */
+                    videoContainer.mozRequestFullScreen();
+                } else if (this.video.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                    videoContainer.webkitRequestFullscreen();
+                } else if (this.video.msRequestFullscreen) { /* IE/Edge */
+                    videoContainer.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                  } else if (document.mozCancelFullScreen) { /* Firefox */
+                    document.mozCancelFullScreen();
+                  } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+                    document.webkitExitFullscreen();
+                  } else if (document.msExitFullscreen) { /* IE/Edge */
+                    document.msExitFullscreen();
+                  }
+            }
+            this.video.isFullscreen = !this.video.isFullscreen;
+        } catch(e) {
+
+        }
+
+
+    }
+
+    togglePlay() {
+        if (this.video.paused) {
+            this.video.play();
+
+            if (this.updateCurrentTimeInterval !== undefined) {
+                clearInterval(this.updateCurrentTimeInterval);
+            }
+    
+            this.updateCurrentTimeInterval = setInterval(() => {
+                fetch(`http://${this.server.server_ip}:4000/api/video/${this.internalID}/currenttime/set?type=${this.type}&time=${this.video.getRealWatchtime()}&videoDuration=${this.video.realDuration}&token=${this.serverToken}`);
+            }, 5000);
+
+        } else {
+            this.video.pause();
+        }
+    }
+
+    seek(e) {
+        let vidTime = document.getElementById('seekbar').value / 100 * this.video.realDuration;
+        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${vidTime}&quality=1080P`);
+        this.video.load();
+        this.video.play();
+        this.video.watchTimeOffset = vidTime;
+        this.video.isSeeking = false;
+
+        this.changeSubtitle(this.state.subtitles.activeSubtitle);
+    }
+
+    startSeek() {
+        this.video.isSeeking = true;
+    }
+
+    toggleSettings() {
+        let settings = this.state.settings;
+        settings.show = !settings.show;
+        settings.resolutionControl = false;
+        settings.audioControl      = false;
+        settings.subtitleControl   = false;
+        this.setState({settings: settings});
+    }
+
+    showResolutions() {
+        let settings = this.state.settings;
+        settings.resolutionControl = true;
+        this.setState({settings: settings});
+    }
+
+    showSubtitles() {
+        let settings = this.state.settings;
+        settings.subtitleControl = true;
+        this.setState({settings: settings});
+    }
+
+    showStandardSettings() {
+        let settings = this.state.settings;
+        settings.resolutionControl = false;
+        settings.audioControl      = false;
+        settings.subtitleControl   = false;
+        this.setState({settings: settings});
+    }
+
+    updateSeekTime() {
+        let range = document.getElementById('seekbar');
+        let rangeV = document.getElementById('seekTime');
+        let newValue = range.value;
+        let newPosition = 10 - (newValue * 0.2);
+
+        let seconds = Math.floor(range.value / 100 * this.video.realDuration);
+        let minutes = Math.floor(seconds / 60);
+        let hours   = Math.floor(minutes / 60);
+        minutes = minutes % 60;
+        seconds = seconds % 60;
+
+        seconds = seconds >= 10 ? seconds : `0${seconds}`;
+        minutes = minutes >= 10 ? minutes : `0${minutes}`;
+        hours = hours >= 10 ? hours : `0${hours}`;
+
+        let time = hours !== 0 ? hours + ':' : '';
+        time += minutes + ':' + seconds;
+
+
+        rangeV.innerHTML = `<span>${time}</span>`;
+        rangeV.style.left = `calc(${newValue}% + (${newPosition}px))`;
+    }
+
+    play() {
+        this.video.play();
+    }
+    pause() {
+        this.video.pause();
+    }
+
+    getActiveSettingsName() {
+        if (this.state.settings.subtitleControl) {
+            return 'Subtitles';
+        }
+        if (this.state.settings.audioControl) {
+            return 'Audio';
+        }
+        if (this.state.settings.resolutionControl) {
+            return 'Quality';
+        }
+    }
+
+    changeVolume(e) {
+        this.video.volume = e.target.value / 100;
+    }
+
+    showControls() {
+        document.getElementById('controls').classList.add(Styles.controlsActive);
+        document.getElementById('videoContainer').style.cursor = 'auto';
+
+        if (this.controlTimeout != undefined) {
+            clearTimeout(this.controlTimeout);
+        }
+
+        this.controlTimeout = setTimeout(() => {
+            document.getElementById('controls').classList.remove(Styles.controlsActive);
+            document.getElementById('videoContainer').style.cursor = 'none';
+        }, 5000);
+
+    }
+
+    render() {
+        return (
+            <div className={Styles.videoContainer} id="videoContainer" onMouseMove={this.showControls}>
+                <video crossOrigin="anonymous" onClick={this.togglePlay} onDoubleClick={this.enterFullScreen} id="video" className={Styles.videoPlayer}>
+                    <track id="subtitle" kind="subtitles" />
+                </video>
+
+                {this.state.nextEpisode != undefined && this.state.nextEpisode.show &&
+                    <div className={Styles.nextEpisode}>
+                        <h3>Nästa avsnitt spelas upp om <span id="timeToNextEpisode">{this.state.nextEpisode.timeLeft}</span> sekunder</h3>
+                        <button id="playNextEpisode" onClick={this.playNextEpisode}>Starta nu</button>
+                        <button id="cancelNextEpisode">Avbryt</button>
+                    </div>
+                }
+
+                <div className={Styles.controller} id="controls">
+                    {this.state.videoPaused &&
+                        <div className={`${Styles.playButton} ${Styles.playPause}`} onClick={this.play}></div>
+                    }
+                    {!this.state.videoPaused && 
+                        <div className={`${Styles.pauseButton} ${Styles.playPause}`} onClick={this.pause}></div>
+                    }
+                    <div className={Styles.seekWrapper}>
+                        <div className={Styles.seekTime} id="seekTime"></div>
+                        <input type="range" id="seekbar" name="seekbar"
+                        min="0" max="100" step="0.01" className={Styles.seekbar} onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime}/>
+                    </div>
+
+
+                    <div className={Styles.settingsBox}>
+                        <div className={Styles.audioImage}></div>
+                        <input className={Styles.volumeControl} type="range" id="volumeControl" name="volume"
+                        min="0" max="100" step="0.01" onChange={this.changeVolume} />
+
+                        <div onClick={this.toggleSettings} className={Styles.settingsButton}></div>
+                        <div className={Styles.fullscreenImage} onClick={this.enterFullScreen}></div>
+
+                        {this.state.settings.show &&
+                            <div className={Styles.settings}>
+                                <div className={Styles.settingsBack} onClick={this.showStandardSettings}><strong>{this.getActiveSettingsName()}</strong></div>
+                                <hr style={{margin: 0}}/>
+                                {this.getSettingElements()}
+                            </div>
+                        }
+                    </div>
+
+                </div>
+
+            </div>
+        )
+    }
+}
