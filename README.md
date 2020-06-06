@@ -19,6 +19,8 @@ Client -> MainServer -> Client -> MovieServer -> Client
 The client loads the webpage without any information from the MainServer. The client then sends a request to the MovieServer to get the movie information.
 
 ### Main Server
+Import the file `dose` to a postgresql database called `dose`.
+
 To start the main server run:
 
 `$env:NODE_ENV="production"`
@@ -28,6 +30,8 @@ To start the main server run:
 `npm run start`
 
 ### Movie Server
+Import the file `movieserver_dump` to a postgresql database called `MovieServer`
+
 To start the movie server run the following commands in the `MovieServer` folder.
 
 `$env:NODE_ENV="production"`
