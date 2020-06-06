@@ -7,7 +7,8 @@ A complete library solution for movies and TV Shows. Display and view your purch
 * Support for multiple libraries
 * Track current time on movies and TV Shows
 * Track next episode for TV Show
-* Displays Movie and TV Show metadata (images, title, release date, overview etc..)
+* Automatically fetches Movie and TV Show metadata (images, title, release date, overview etc..)
+* Support for manually changing Movie and TV Show metadata.
 * Subtitle support
 * Advanced Movie name matching
 * Advanced TV Show, season and episode name matching
@@ -29,6 +30,10 @@ To start the main server run:
 
 `npm run start`
 
+There is currently no admin dashboard, so to setup you have to change the following values in the database:
+Add a server to the table `server` containing the server ip of the `Movie Server`, set the `ID` to whatever you want.
+Start the server and go to `/register` to create an account. Then go to the table `user_server` and create a new row containing the new user ID and the server id from the step before.
+
 ### Movie Server
 Import the file `movieserver_dump` to a postgresql database called `MovieServer`
 
@@ -39,3 +44,6 @@ To start the movie server run the following commands in the `MovieServer` folder
 `npm run build`
 
 `npm run start`
+
+To setup a library open the table `library` and enter the name and the path to the movie/tv show library. The path must end with a `\` if you are on windows, or a `/` if you are on linux. `TYPE` should either be `MOVIES` or `SERIES` (you can't have movies and tv shows in the same library).
+Open the table `users` and add the username that you created on the MainServer. `has_access` should be set to true.
