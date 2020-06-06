@@ -222,10 +222,10 @@ export default class VideoComponent extends React.Component {
                     if (result.directplay) {
                         this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=directplay`)
                         resolutions.activeResolution = 'directplay';
+                        resolutions.availableResolutions.push('directplay');
                     } else {
                         this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=1080P`);
                         resolutions.activeResolution = '1080P';
-
                     }
 
                     // Save the new resolution state

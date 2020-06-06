@@ -346,7 +346,7 @@ export default (props) => {
                 <Container fluid>
                     {ongoingMovies.length > 0 &&
                         <>
-                            <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Pågående filmer</h2></a></Link>   
+                            <h2 style={{textTransform: 'capitalize'}}>Pågående filmer</h2>  
                             <div className={Styles.movieRow}>
                                 <div id="ongoingMovies" className={Styles.scrollable}>
                                     {ongoingMovies}
@@ -390,7 +390,7 @@ export default (props) => {
 
                     {newlyAddedMovies.length > 0 &&
                         <>
-                            <h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2>    
+                            <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
                             <div className={Styles.movieRow}>
                                 <div id="newlyAddedMovies" className={Styles.scrollable}>
                                     {newlyAddedMovies}
@@ -413,7 +413,7 @@ export default (props) => {
                     
                     {newlyAddedShows.length > 0 &&
                         <>
-                            <h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda serier</h2>    
+                            <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda serier</h2></a></Link>
                             <div className={Styles.movieRow}>
                                 <div id="newlyAddedShows" className={Styles.scrollable}>
                                     {newlyAddedShows}
