@@ -47,3 +47,6 @@ To start the movie server run the following commands in the `MovieServer` folder
 
 To setup a library open the table `library` and enter the name and the path to the movie/tv show library. The path must end with a `\` if you are on windows, or a `/` if you are on linux. `TYPE` should either be `MOVIES` or `SERIES` (you can't have movies and tv shows in the same library).
 Open the table `users` and add the username that you created on the MainServer. `has_access` should be set to true.
+
+## DISCLAIMER
+I am not responsible or liable in any manner for any illegal content that people uses DOSE to view and/or host. I do not control and are not responsible for what people host, transmit, share or view using DOSE. I am not responsible for any illegal, offensive, inappropriate, obscene, unlawful or otherwise objectionable content that people host or view using DOSE.
