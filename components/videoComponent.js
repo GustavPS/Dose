@@ -1,4 +1,5 @@
 import Styles from './videoComponent.module.css';
+import Head from 'next/head'
 
 
 
@@ -64,9 +65,25 @@ export default class VideoComponent extends React.Component {
         this.showControls         = this.showControls.bind(this);
         this.setNextEpisodeID     = this.setNextEpisodeID.bind(this);
         this.playNextEpisode      = this.playNextEpisode.bind(this);
+
+
     }
+    initializeCastApi = function() {
+        cast.framework.CastContext.getInstance().setOptions({
+          receiverApplicationId: applicationId,
+          autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+        });
+      };
 
     componentDidMount() {
+        window['__onGCastApiAvailable'] = function(isAvailable) {
+            console.log("NOOB");
+            if (isAvailable) {
+                console.log("NOOB2")
+              this.initializeCastApi();
+            }
+          };
+
         this.video = document.getElementById('video');
         this.video.isFullscreen = false;
 
@@ -467,6 +484,11 @@ export default class VideoComponent extends React.Component {
 
     render() {
         return (
+            <>
+            <Head>
+                <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+                
+            </Head>
             <div className={Styles.videoContainer} id="videoContainer" onMouseMove={this.showControls}>
                 <video crossOrigin="anonymous" onClick={this.togglePlay} onDoubleClick={this.enterFullScreen} id="video" className={Styles.videoPlayer}>
                     <track id="subtitle" kind="subtitles" />
@@ -493,7 +515,6 @@ export default class VideoComponent extends React.Component {
                         min="0" max="100" step="0.01" className={Styles.seekbar} onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime}/>
                     </div>
 
-
                     <div className={Styles.settingsBox}>
                         <div className={Styles.audioImage}></div>
                         <input className={Styles.volumeControl} type="range" id="volumeControl" name="volume"
@@ -514,6 +535,7 @@ export default class VideoComponent extends React.Component {
                 </div>
 
             </div>
+            </>
         )
     }
 }
