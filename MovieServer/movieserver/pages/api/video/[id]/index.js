@@ -136,6 +136,7 @@ function startFFMPEG(filename, offset, language, req, res) {
     //audioSettings.push(`-map 0:m:language:${language}?`);
     audioSettings.push(`-map 0:${language}?`);
   }
+  //audioSettings.push('-metadata ')
   
 
   // crf = constant rate factor, lower is better
@@ -164,6 +165,9 @@ function startFFMPEG(filename, offset, language, req, res) {
           //console.log('Processing: ' + progress.percent + '% done');
         })
         .on('error', function(err, stdout, stderr) {
+          //console.log(err);
+          //console.log(stdout);
+          //console.log(stderr);
           if (err.message != 'Output stream closed' && err.message != 'ffmpeg was killed with signal SIGKILL') {
             if (stdout != undefined) {
               console.log(stdout);

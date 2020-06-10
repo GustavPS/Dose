@@ -8,6 +8,6 @@ exports.load = function(ffmpeg) {
         '-map -v',
         '-map 0:V',
         '-sn',
-        "-movflags frag_keyframe+faststart"
+        '-movflags frag_keyframe+faststart',
     ])
 };

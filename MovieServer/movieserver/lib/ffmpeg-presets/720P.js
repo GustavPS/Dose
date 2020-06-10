@@ -3,7 +3,11 @@ exports.load = function(ffmpeg) {
     .withVideoCodec('h264_nvenc')
     .withVideoBitrate(4000)
     .withAudioCodec('libmp3lame')
+    .inputOption([
+      '-re'
+    ])
     .outputOption([
+      '-g 52',
       '-map 0',
       '-map -v',
       '-map 0:V',
@@ -14,7 +18,7 @@ exports.load = function(ffmpeg) {
       '-frame-parallel 1',
       '-crf 4',
       '-vf scale=-1:720',
-      '-movflags frag_keyframe+faststart',
+      '-movflags frag_keyframe+empty_moov+faststart',
       '-pix_fmt yuv420p'
     ])
     .outputFormat('mp4')
