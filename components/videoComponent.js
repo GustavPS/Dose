@@ -84,8 +84,10 @@ export default class VideoComponent extends React.Component {
         this.video.realDuration = -1;
         // The watchtime offset for the seekbar (since we change source on seek and HTML do not know the correct watchtime after we change source)
         this.video.watchTimeOffset = 0;
+        // True if we are currently seeking (Draging the seekbar);
         this.video.isSeeking = false;
         this.video.controls = false;
+        this.video.pauseTime = undefined;
 
 
         this.source = document.createElement('source');
@@ -120,9 +122,19 @@ export default class VideoComponent extends React.Component {
         }
 
         this.video.onpause = () => {
+            this.video.pauseTime = new Date();
             this.setState({videoPaused: true});
         }
         this.video.onplay = () => {
+            if (this.video.pauseTime != undefined) {
+                let currentTime = new Date();
+                let secondsSincePause = (currentTime.getTime() - this.video.pauseTime.getTime()) / 1000;
+                // This value needs to be checked, not sure what is needed
+                if (secondsSincePause > 15) {
+                    this.video.pauseTime = undefined;
+                    this.seek();
+                }
+            }
             this.setState({videoPaused: false});
         }
     }
