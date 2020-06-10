@@ -86,6 +86,11 @@ export default function Home(props) {
     });
   }
 
+  const onChangeEpisode = () => {
+    // Change the URL so if the user reloads the page they get to the new episode
+    window.history.replaceState('state', 'Video', `/server/${server.server_id}/shows/video/${id}/season/${season}/episode/${episode}?internalID=${internalID}`);
+  }
+
     
   return (
     <>
@@ -110,6 +115,7 @@ export default function Home(props) {
         <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
                         internalID={internalID}
                         getNextEpisodeID={(cb) => getNextEpisodeID(cb)}
+                        onChangeEpisode={() => onChangeEpisode()}
                         >
         </VideoComponent>
 

@@ -19,47 +19,52 @@ const ALLOWED_QUALITIES = [
 
 export default async (req, res) => {
     let type = req.query.type;
+    let language = req.query.audio;
+
     if (!['movie', 'serie'].includes(type)) {
       res.status(404).end();
       return;
     }
+
     let filename = "";
     if (type === 'movie') {
       filename = await getMoviePath(req.query.id);
     } else if (type === 'serie') {
       filename = await getEpisodePath(req.query.id); 
-    } else {
     }
+
     var stat = fs.statSync(filename);
-      var start = 0;
-      var end = 0;
-      var range = req.headers.range;
-      if (range != null) {
-        start = parseInt(range.slice(range.indexOf('bytes=')+6,
-        range.indexOf('-')));
-        end = parseInt(range.slice(range.indexOf('-')+1,
-        range.length));
-      }
-      if (isNaN(end) || end == 0) {
-        end = stat.size-1;
-        //end = start + 1000;
+    var start = 0;
+    var end = 0;
+    var range = req.headers.range;
+    if (range != null) {
+      start = parseInt(range.slice(range.indexOf('bytes=')+6,
+      range.indexOf('-')));
+      end = parseInt(range.slice(range.indexOf('-')+1,
+      range.length));
+    }
 
-      }
-      var duration = (end / 1024) * 8 / 1024;
+    if (isNaN(end) || end == 0) {
+      end = stat.size-1;
+      //end = start + 1000;
+    }
 
-      res.writeHead(200, { // NOTE: a partial http response
-          'Accept-Ranges': 'bytes',
-          'Connection':'keep-alive', // Maybe should be keep-alive? To prevent ERR_INCOMPLETE_CHUNKED_ENCODING 200 after video paus
-          'Content-Range':'bytes '+start+'-'+end+'/*',
-          'Transfer-Encoding':'chunked',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': '*',
-          "Content-Disposition":"inline",
-          "Content-Transfer-Enconding":"binary",
-          'Content-Type': 'video/mp4'
-      });
-        let offset = req.query.start ? req.query.start : 0;
-        startFFMPEG(filename, offset, req, res);
+    var duration = (end / 1024) * 8 / 1024;
+
+    res.writeHead(200, { // NOTE: a partial http response
+        'Accept-Ranges': 'bytes',
+        'Connection':'keep-alive', // Maybe should be keep-alive? To prevent ERR_INCOMPLETE_CHUNKED_ENCODING 200 after video paus
+        'Content-Range':'bytes '+start+'-'+end+'/*',
+        'Transfer-Encoding':'chunked',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': '*',
+        "Content-Disposition":"inline",
+        "Content-Transfer-Enconding":"binary",
+        'Content-Type': 'video/mp4'
+    });
+
+    let offset = req.query.start ? req.query.start : 0;
+    startFFMPEG(filename, offset, language, req, res);
 }
 
 function getMoviePath(movieID) {
@@ -110,7 +115,7 @@ function killOtherInstances(serverToken) {
   }
 }
 
-function startFFMPEG(filename, offset, req, res) {
+function startFFMPEG(filename, offset, language, req, res) {
   /*
   Direct play: https://stackoverflow.com/questions/40077681/ffmpeg-converting-from-mkv-to-mp4-without-re-encoding ?
 
@@ -123,6 +128,14 @@ function startFFMPEG(filename, offset, req, res) {
     res.status(404).end();
     return;
   }
+
+  // Create the output optins array according to the language
+  let audioSettings = []
+  if (language !== null && language !== undefined && language !== 'unknown') {
+    audioSettings.push('-map -a');
+    //audioSettings.push(`-map 0:m:language:${language}?`);
+    audioSettings.push(`-map 0:${language}?`);
+  }
   
 
   // crf = constant rate factor, lower is better
@@ -134,6 +147,7 @@ function startFFMPEG(filename, offset, req, res) {
           `-ss ${offset}`,
           '-threads 3'
         ])
+        .outputOptions(audioSettings)
 
         .on('start', function(commandLine) {
           //console.log(commandLine)

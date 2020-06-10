@@ -6,6 +6,8 @@ var ffmpeg = require('fluent-ffmpeg');
 var AsyncLock = require('async-lock');
 const lock = require('../globalLock');
 
+const LANGUAGE_LIST = require('../../lib/languages');
+
 
 class MovieLibrary extends Library {
 
@@ -29,24 +31,34 @@ class MovieLibrary extends Library {
             db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
                 if (result.length === 0) {
                     console.log(` > Found a new movie (${path} for library: '${this.name}')`);
-                    console.log(` > Trying to convert subtitles, this may take a while...`);
     
                     // Try to convert the subtitles from the movie
                     //new Promise(async (resolve, reject) => {
-                        let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
-                    
-                        // If the conversion failed (because the file was busy), try again.
-                        while(!subtitleConvertionResult) {
-                            await new Promise(r => setTimeout(r, 2000));
-                            subtitleConvertionResult = await this.convertSubtitles(movieName, path);
-                        }
                      //   resolve();
                     //});
     
     
     
                     // Insert to the movie table (contining the path of the movie)
-                    db.any('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3)', [path, this.id, movieName]).then(() => {
+                    db.one('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3) RETURNING id', [path, this.id, movieName]).then(async (internal_movie_id) => {
+                        internal_movie_id = internal_movie_id.id;
+
+                        console.log(` > Trying to convert subtitles, this may take a while...`);
+                        let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+
+                        // If the conversion failed (because the file was busy), try again.
+                        while(!subtitleConvertionResult) {
+                            await new Promise(r => setTimeout(r, 2000));
+                            subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                        }
+
+                        // Find all the audio streams (languages) for the movie
+                        let audio_streams = await this.findAudioStreams(movieName, path);
+                        console.log(audio_streams);
+                        for (let stream of audio_streams) {
+                            db.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internal_movie_id, stream.language, stream.stream]);
+                        }
+
                         db.one('SELECT id FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(result => {
                             let internalMovieID = result.id;
     
@@ -87,7 +99,7 @@ class MovieLibrary extends Library {
     addSubtitleIfNotSaved(movieName, path, parentFolder) {
         let fileName = pathLib.basename(path);
         let language = null;
-        for (let lang of this.subLanguages) {
+        for (let lang of LANGUAGE_LIST) {
             if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
                 language = lang.longName;
                 break;

@@ -4,6 +4,9 @@ const SerieMetadata = require('../metadata/tvMetadata');
 const db = require('../db');
 const lock = require('../globalLock');
 
+const LANGUAGE_LIST = require('../../lib/languages');
+
+
 const MOVIE_FORMATS = [
     'mp4', 'ts', 'mkv', 'webm', 'avi', 'm4v'
 ];
@@ -95,7 +98,7 @@ class TvLibrary extends Library {
     addSubtitleIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber) {
         let fileName = pathLib.basename(path);
         let language = null;
-        for (let lang of this.subLanguages) {
+        for (let lang of LANGUAGE_LIST) {
             if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
                 language = lang.longName;
                 break;
@@ -163,22 +166,23 @@ class TvLibrary extends Library {
                 let result = await t.any('SELECT * FROM serie_episode WHERE season_number = $1 AND episode = $2 AND serie_id IN (SELECT id FROM serie WHERE name = $3 AND path = $4)', [seasonNumber, episodeNumber, serieName, showPath]);
                 if (result.length === 0) {
                     console.log(` > Found a new episode (Season ${seasonNumber} episode ${episodeNumber}) for the show ${serieName} in library ${this.name}`);
-                    await t.none('INSERT INTO serie_episode (season_number, serie_id, episode, path) VALUES ($1, (SELECT id FROM serie WHERE name = $2 AND path = $3), $4, $5)', [seasonNumber, serieName, showPath, episodeNumber, episodePath]);
-
-                    console.log(` > Trying to convert subtitles, this may take a while...`);
-
-                    // Try to convert the subtitles from the movie
-                    //new Promise(async (resolve, reject) => {
-                        // Add 0 before Season number and episode number if one digit
-                        let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                    let internal_episode_id = await t.one('INSERT INTO serie_episode (season_number, serie_id, episode, path) VALUES ($1, (SELECT id FROM serie WHERE name = $2 AND path = $3), $4, $5) RETURNING id', [seasonNumber, serieName, showPath, episodeNumber, episodePath]);
+                    internal_episode_id = internal_episode_id.id;
                     
-                        // If the conversion failed (because the file was busy), try again.
-                        while(!subtitleConvertionResult) {
-                            //await new Promise(r => setTimeout(r, 2000));
-                            subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
-                        }
-                        //resolve();
-                    //});
+                    console.log(` > Trying to convert subtitles, this may take a while...`);
+                    // Try to convert the subtitles from the movie
+                    let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                
+                    // If the conversion failed (because the file was busy), try again.
+                    while(!subtitleConvertionResult) {
+                        subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                    }
+
+                    let audio_streams = await this.findAudioStreams(serieName, episodePath);
+                    console.log(audio_streams);
+                    for (let stream of audio_streams) {
+                        db.none('INSERT INTO serie_episode_language (serie_episode_id, language, stream_index) VALUES ($1, $2, $3)', [internal_episode_id, stream.language, stream.stream]);
+                    }
 
                     // Get the internal serie id for the episode
                     let internalSerieID = await t.one(`SELECT id FROM serie WHERE name = $1 AND path = $2`, [serieName, showPath], c => +c.id);

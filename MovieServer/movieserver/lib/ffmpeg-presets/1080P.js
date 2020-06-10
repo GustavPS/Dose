@@ -7,9 +7,7 @@ exports.load = function(ffmpeg) {
   .outputOption([
     '-map 0',
     '-map -v',
-    //'-map -a',
     '-map 0:V',
-    '-map 0:m:language:eng?', // TODO: This should be an input parameter to be able to change language
     '-deadline realtime',
     '-lag-in-frames 0',
     '-static-thresh 0',

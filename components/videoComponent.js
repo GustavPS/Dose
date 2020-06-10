@@ -22,6 +22,8 @@ export default class VideoComponent extends React.Component {
         this.onTimeChange = props.onTimeChange;
         this.getNextEpisodeID = props.getNextEpisodeID;
 
+        this.onChangeEpisode = props.onChangeEpisode;
+
         this.server = props.server;
         this.serverToken = props.serverToken;
         this.type = props.Movie != undefined ? 'movie' : 'serie'
@@ -34,6 +36,10 @@ export default class VideoComponent extends React.Component {
             resolutions: {
                 availableResolutions: [],
                 activeResolution: ''
+            },
+            audioStreams: {
+                availableStreams: [],
+                activeStream: undefined
             },
             settings: {
                 show: false,
@@ -59,6 +65,7 @@ export default class VideoComponent extends React.Component {
         this.pause                = this.pause.bind(this);
         this.play                 = this.play.bind(this);
         this.showResolutions      = this.showResolutions.bind(this);
+        this.showAudioStreams     = this.showAudioStreams.bind(this);
         this.showSubtitles        = this.showSubtitles.bind(this);
         this.showStandardSettings = this.showStandardSettings.bind(this);
         this.changeVolume         = this.changeVolume.bind(this);
@@ -68,22 +75,8 @@ export default class VideoComponent extends React.Component {
 
 
     }
-    initializeCastApi = function() {
-        cast.framework.CastContext.getInstance().setOptions({
-          receiverApplicationId: applicationId,
-          autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-        });
-      };
 
     componentDidMount() {
-        window['__onGCastApiAvailable'] = function(isAvailable) {
-            console.log("NOOB");
-            if (isAvailable) {
-                console.log("NOOB2")
-              this.initializeCastApi();
-            }
-          };
-
         this.video = document.getElementById('video');
         this.video.isFullscreen = false;
 
@@ -102,6 +95,7 @@ export default class VideoComponent extends React.Component {
 
         this.loadSources();
         this.loadSubtitles();
+        this.loadAudioStreams();
 
 
         this.video.ontimeupdate = () => {
@@ -158,17 +152,23 @@ export default class VideoComponent extends React.Component {
         this.setState({nextEpisode: nextEpisode});
     }
 
-    playNextEpisode() {
+    async playNextEpisode() {
         let nextEpisode = this.state.nextEpisode;
         this.internalID = this.state.nextEpisode.internalID;
         nextEpisode.timeLeft = null;
         nextEpisode.internalID = null;
         nextEpisode.show = false;
         this.video.watchTimeOffset = 0;
+
+        await this.loadAudioStreams();
         this.loadSources(true).then(() => {
             this.loadSubtitles();
+            if (this.onChangeEpisode != undefined) {
+                this.onChangeEpisode();
+            }
         });
         this.setState({nextEpisode: nextEpisode});
+        
     }
 
     loadSubtitles() {
@@ -198,6 +198,21 @@ export default class VideoComponent extends React.Component {
                 console.log(e);
                 resolve();
             })
+        });
+    }
+
+    loadAudioStreams() {
+        return new Promise(resolve => {
+            fetch(`http://${this.server.server_ip}:4000/api/video/${this.internalID}/getLanguages?type=${this.type}`)
+            .then(r => r.json())
+            .then(result => {
+                console.log(result);
+                let currentState = this.state.audioStreams;
+                currentState.availableStreams = result;
+
+                this.setState({audioStreams: currentState}, () => resolve());
+            })
+
         });
     }
     
@@ -232,21 +247,40 @@ export default class VideoComponent extends React.Component {
                 .then(r => r.json())
                 .then(result => {
 
+                    // If we already have selected an audio stream, change to that one.
+                    let audio = '';
+                    let audioState = this.state.audioStreams;
+                    if (this.state.audioStreams.activeStream !== undefined) {
+                        for (let stream of this.state.audioStreams.availableStreams) {
+                            if (this.state.audioStreams.activeStream.shortName === stream.shortName) {
+                                audio = `&audio=${stream.stream_index}`;
+                                audioState.activeStream = stream;
+                                break;
+                            }
+                        }
+                    }
+
+
+                    // If we didn't find a match for the langauges, (maybe this video don't have that language): Set the activeAudioStream to undefined (which will give us default audio for the file)
+                    if (audio === '') {
+                        audioState.activeStream = undefined
+                    }
+
                     // Change the available resolutions
                     let resolutions = this.state.resolutions;
                     resolutions.availableResolutions = result.resolutions;
 
                     if (result.directplay) {
-                        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=directplay`)
+                        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=directplay${audio}`)
                         resolutions.activeResolution = 'directplay';
                         resolutions.availableResolutions.push('directplay');
                     } else {
-                        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=1080P`);
+                        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=1080P${audio}`);
                         resolutions.activeResolution = '1080P';
                     }
 
-                    // Save the new resolution state
-                    this.setState({resolutions: resolutions});
+                    // Save the new resolution state and audioState
+                    this.setState({resolutions: resolutions, audioStreams: audioState});
     
     
                     this.video.load();
@@ -274,12 +308,22 @@ export default class VideoComponent extends React.Component {
             }
 
 
+        // If we should display subtitle controls
         } else if (this.state.settings.subtitleControl) {
             for (let subtitle of this.state.subtitles.availableSubtitles) {
-                console.log(subtitle);
                 elements.push(
                     <a href="#" key={this.elementCounter} className={this.state.subtitles.activeSubtitle != undefined && subtitle.id === this.state.subtitles.activeSubtitle.id ? Styles.active : ''} onClick={() => this.changeSubtitle(subtitle)}>{subtitle.language}</a>
                 )
+                this.elementCounter++;
+            }
+
+        // If we should display audio controls
+        } else if (this.state.settings.audioControl) {
+            for (let stream of this.state.audioStreams.availableStreams) {
+                console.log(stream);
+                elements.push(
+                    <a href="#" key={this.elementCounter} className={this.state.audioStreams.activeStream != undefined && stream.id === this.state.audioStreams.activeStream.id ? Styles.active : ''} onClick={() => this.changeAudioStream(stream)}>{stream.longName}</a>
+                );
                 this.elementCounter++;
             }
 
@@ -290,7 +334,7 @@ export default class VideoComponent extends React.Component {
             );
             this.elementCounter++;
             elements.push(
-                <a href="#" key={this.elementCounter} >Audio</a>
+                <a href="#" key={this.elementCounter} onClick={this.showAudioStreams} >Audio</a>
             );
             this.elementCounter++;
             elements.push(
@@ -325,6 +369,23 @@ export default class VideoComponent extends React.Component {
         let stateSubs = this.state.subtitles;
         stateSubs.activeSubtitle = subtitle;
         this.setState({subtitles: stateSubs});
+    }
+
+    changeAudioStream(stream) {
+        // If we changed to the same audio stream
+        if (this.state.audioStreams.activeStream !== undefined && stream.id === this.state.audioStreams.activeStream.id) {
+            return;
+        }
+
+        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${this.video.getRealWatchtime()}&quality=${this.state.resolutions.activeResolution}&audio=${stream.stream_index}`);
+        this.video.watchTimeOffset = this.video.getRealWatchtime();
+        this.changeSubtitle(this.state.subtitles.activeSubtitle);
+        this.video.load();
+        this.video.play();
+
+        let streams = this.state.audioStreams;
+        streams.activeStream = stream;
+        this.setState({audioStreams: streams});
     }
 
     enterFullScreen() {
@@ -378,7 +439,10 @@ export default class VideoComponent extends React.Component {
 
     seek(e) {
         let vidTime = document.getElementById('seekbar').value / 100 * this.video.realDuration;
-        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${vidTime}&quality=1080P`);
+        let quality = this.state.resolutions.activeResolution !== '' ? this.state.resolutions.activeResolution : '1080P';
+        let audio = this.state.audioStreams.activeStream !== undefined ? `&audio=${this.state.audioStreams.activeStream.stream_index}` : ''
+
+        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${vidTime}&quality=${quality}${audio}`);
         this.video.load();
         this.video.play();
         this.video.watchTimeOffset = vidTime;
@@ -409,6 +473,12 @@ export default class VideoComponent extends React.Component {
     showSubtitles() {
         let settings = this.state.settings;
         settings.subtitleControl = true;
+        this.setState({settings: settings});
+    }
+
+    showAudioStreams() {
+        let settings = this.state.settings;
+        settings.audioControl = true;
         this.setState({settings: settings});
     }
 
@@ -490,6 +560,7 @@ export default class VideoComponent extends React.Component {
                 
             </Head>
             <div className={Styles.videoContainer} id="videoContainer" onMouseMove={this.showControls}>
+                
                 <video crossOrigin="anonymous" onClick={this.togglePlay} onDoubleClick={this.enterFullScreen} id="video" className={Styles.videoPlayer}>
                     <track id="subtitle" kind="subtitles" />
                 </video>

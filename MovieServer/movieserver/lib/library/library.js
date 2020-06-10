@@ -19,6 +19,7 @@ class Library {
         this.id = id;
         this.metadata = metadata;
         this.lock = new AsyncLock();
+        /*
         this.subLanguages = [
             {
                 shortName: 'eng',
@@ -43,8 +44,48 @@ class Library {
             {
                 shortName: 'pol',
                 longName: 'Polish'
+            }, {
+                shortName: 'unknown',
+                longName: 'Unknown'
             }
         ]
+        */
+    }
+
+    async findAudioStreams(name, path) {
+        return new Promise(resolve => {
+            let fullPath = pathLib.join(this.path, path);
+            ffmpeg.ffprobe(fullPath, (err, metadata) => {
+                if (err) {
+                    resolve(false);
+                    return;
+                }
+                let audio_streams = [];
+                for (let stream of metadata.streams) {
+                    if (stream.codec_type === 'audio') {
+                        if (stream.tags != undefined && stream.tags.language != undefined) {
+                            audio_streams.push({
+                                language: stream.tags.language,
+                                stream: stream.index
+                            });
+                        } else {
+                            audio_streams.push({
+                                language: 'Unknown',
+                                stream: stream.index
+                            });
+                        }
+
+                    }
+                }
+                if (audio_streams.length === 0) {
+                    audio_streams.push({
+                        language: 'Unknown',
+                        stream: -1
+                    });
+                }
+                resolve(audio_streams);
+            });
+        });
     }
 
     /**
