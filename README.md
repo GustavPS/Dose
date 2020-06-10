@@ -13,6 +13,7 @@ A complete library solution for movies and TV Shows. Display and view your purch
 * Advanced Movie name matching
 * Advanced TV Show, season and episode name matching
 * Automatically extract subtitles from video files
+* Support for videos with multiple audio streams
 
 ## Setup
 DOSE is made up of two parts, the main server and then one or multiple movie servers. Each movie server connects to a main server. A movie request looks like this:
