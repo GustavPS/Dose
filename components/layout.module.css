@@ -9,3 +9,12 @@
 .SearchResultOpen {
     max-height: 500px;
 }
+
+.logo {
+    width: 198px;
+    filter: invert(1);
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 15px;
+}

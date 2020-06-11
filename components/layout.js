@@ -62,9 +62,13 @@ export default function Layout({ children, home, searchEnabled, server, relative
   return (
     <div>
       <Head>
+        <link rel="icon" 
+        type="image/png" 
+        href="/images/favicon.png" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
       </Head>
       <header style={relative !== undefined ? {position: 'relative'} : {}}>
+        <img className={styles.logo} src="/images/logo.png"></img>
         <Search searchEnabled={searchEnabled} server={server} onSearch={(result) => onSearch(result)}></Search>
       </header>
       <div id="searchRow" className={styles.SearchResult}>
