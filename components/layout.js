@@ -6,7 +6,7 @@ import MovieBackdrop from './movieBackdrop';
 import Router from 'next/router';
 
 
-export default function Layout({ children, home, searchEnabled, server}) {
+export default function Layout({ children, home, searchEnabled, server, relative}) {
 
   const [searchResults, setSearchResults] = useState([]);
   let currentResults = [];
@@ -64,7 +64,7 @@ export default function Layout({ children, home, searchEnabled, server}) {
       <Head>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
       </Head>
-      <header>
+      <header style={relative !== undefined ? {position: 'relative'} : {}}>
         <Search searchEnabled={searchEnabled} server={server} onSearch={(result) => onSearch(result)}></Search>
       </header>
       <div id="searchRow" className={styles.SearchResult}>

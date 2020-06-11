@@ -31,7 +31,7 @@ export default function Home() {
   const { data, error } = useSWR('/api/servers/getServers', fetcher);
 
   return (
-    <Layout home>
+    <Layout home relative>
       <Head>
       </Head>
       {data && data.servers &&
@@ -39,6 +39,7 @@ export default function Home() {
         {data.servers.map((server, i) => <ServerBox onClick={() => chooseServer(server)} name={server.server_name} adress={server.server_ip}></ServerBox>)}
       </div>
       }
+
 
       {!data &&
       <h1>Loading</h1>

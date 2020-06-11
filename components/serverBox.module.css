@@ -2,9 +2,41 @@
     display: table;
     background-color: rgb(54, 45, 45);
     color: white;
-    padding: 15px;
     margin: 10px;
+    cursor: pointer;
 }
+
+.server h5 {
+    margin: 0;
+    padding: 15px 30px 15px 30px;
+    background-color: rgba(25, 30, 33, 0.88);
+}
+
 .server p {
     font-size: 12px;
+    font-size: 12px;
+    margin: 0;
+    padding: 5px;
+    background-color: #1c1f22;
+}
+
+.statusBox {
+    background: rgb(25,30,33);
+    background: linear-gradient(90deg, rgba(25,30,33,1) 0%, rgba(54,45,45,1) 39%, rgba(54,45,45,1) 63%, rgba(25,30,33,1) 100%);
+}
+
+.statusImage {
+    content:url('/images/loading.gif');
+    margin: 10px;
+    width: 50px;
+    height: 50px;
+}
+
+.statusSuccess {
+    content:url('/images/success.svg');
+}
+
+.statusError {
+    content:url('/images/error.svg');
+
 }
