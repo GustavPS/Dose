@@ -1,8 +1,33 @@
 .loginForm {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: table;
     width: 30rem;
+    background-color: #151515d1;
+    color: white;
+    padding: 20px;
+    border-radius: 26px;
+    -webkit-box-shadow: 0px 0px 21px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: 0px 0px 21px 0px rgba(0,0,0,0.75);
+    box-shadow: 0px 0px 21px 0px rgba(0,0,0,0.75);
+}
+
+.container {
+    position: relative;
+    justify-content: center;
+    align-items: center;
+    height: 75vh;
+    display: flex;
+}
+
+.loginForm button {
+    background-color: #20475f !important;
+    border-color: #20475f !important;
+}
+
+.loginForm h1 {
+    float: left;
+}
+
+.registerLink {
+    float: right;
+    line-height: 45px;
+    font-size: 12px;
 }

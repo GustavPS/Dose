@@ -1,4 +1,5 @@
 import Head from 'next/head'
+import Link from 'next/link';
 import Layout from '../components/layout'
 import LoginStyle from '../styles/login.module.css';
 import { Form, Button } from 'react-bootstrap';
@@ -17,7 +18,8 @@ export default class Login extends React.Component {
     this.login = this.login.bind(this);
 }
 
-login() {
+login(e) {
+  e.preventDefault();
     fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -41,34 +43,34 @@ login() {
 
   render() {
     return (
-      <Layout home>
+      <Layout home relative>
         <Head>
           <title>Login</title>
         </Head>
 
+        <div className={LoginStyle.container}>
         <div className={LoginStyle.loginForm}>
             <h1>Login</h1>
-            <Form>
+            <Link href="/register"><a className={LoginStyle.registerLink}>Don't have an account? Register now!</a></Link>
+            <div style={{clear: 'both'}}></div>
+            <Form onSubmit={this.login}>
           <Form.Group controlId="formBasicUsername">
-              <Form.Label>Email address</Form.Label>
+              <Form.Label>Username</Form.Label>
               <Form.Control type="text" placeholder="Enter username" onChange={(e) => this.setState({username: e.target.value})}/>
-              <Form.Text className="text-muted">
-              We'll never share your email with anyone else.
-              </Form.Text>
           </Form.Group>
 
           <Form.Group controlId="formBasicPassword">
               <Form.Label>Password</Form.Label>
               <Form.Control type="password" placeholder="Password" onChange={(e) => this.setState({password: e.target.value})}/>
           </Form.Group>
-          <Form.Group controlId="formBasicCheckbox">
-              <Form.Check type="checkbox" label="Check me out" />
-          </Form.Group>
           <Button variant="primary" onClick={this.login}>
-              Submit
+              Login
           </Button>
+          <input type="submit" style={{display: 'none'}} />
       </Form>
         </div>
+        </div>
+
       </Layout>
     )
   }
