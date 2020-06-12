@@ -16,6 +16,8 @@ export default class Search extends React.Component {
         if (this.enabled) {
             this.getAllContent();
         }
+
+        this.onClose = props.onClose;
         this.onSearch = props.onSearch;
     }
 
@@ -34,35 +36,31 @@ export default class Search extends React.Component {
     search(event) {
         let query = event.target.value;
         if (query === "") {
-            this.onSearch([]);
+            this.onClose();
+            //this.onSearch([]);
             return;
         }
         let found = [];
         for (let movie of this.movies) {
-            if (movie.title.toLowerCase().includes(query)) {
+            if (movie.title.toLowerCase().includes(query.toLowerCase())) {
+                movie.type = 'movie'
                 found.push(movie);
             }
         }
         for (let serie of this.series) {
-            if (serie.title.toLowerCase().includes(quer)) {
+            if (serie.title.toLowerCase().includes(query.toLowerCase())) {
+                serie.type = 'serie';
                 found.push(serie);
             }
         }
-        /*
-        if (found.length === 0) {
-            let didYouMeanResult = didYouMean(query, this.movies, 'title');
-            if (didYouMeanResult != null) {
-                found.push(didYouMeanResult);
-            }
-        }
-        */
+        console.log(found);
        this.onSearch(found);
     }
 
     render() {
         return (
-            <Form className={Style.searchForm}>
-                <Form.Control onChange={this.search} type="text" placeholder="Sök.." />
+            <Form autoComplete="off" className={Style.searchForm}>
+                <Form.Control onInput={this.search} type="text" placeholder="Sök.." />
             </Form>
         )
     }

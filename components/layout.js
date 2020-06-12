@@ -4,19 +4,26 @@ import Search from './search';
 import {useState} from 'react'
 import MovieBackdrop from './movieBackdrop';
 import Router from 'next/router';
+import useWindowSize from './hooks/WindowSize';
 
 
 export default function Layout({ children, home, searchEnabled, server, relative}) {
-
+  const windowSize = useWindowSize();
   const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   let currentResults = [];
   let count = 0;
 
   const selectMovie = (id) => {
-      Router.push(`/server/${server.server_id}/video/${id}`);
+      Router.push(`/server/${server.server_id}/movies/video/${id}`);
+  }
+
+  const selectShow = (id) => {
+    Router.push(`/server/${server.server_id}/shows/video/${id}`);
   }
 
   const onSearch = (result) => {
+    console.log(result);
       let elements = []
       for (let content of result) {
           let img;
@@ -26,35 +33,35 @@ export default function Layout({ children, home, searchEnabled, server, relative
                   break;
               }
           }
-          elements.push(
-            <MovieBackdrop showTitle key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectMovie(content.id)}></MovieBackdrop>
-          );
+          if (content.type === 'movie') {
+            elements.push(
+              <MovieBackdrop showTitle key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectMovie(content.id)}></MovieBackdrop>
+            );
+          } else if (content.type === 'serie') {
+            elements.push(
+              <MovieBackdrop showTitle key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectShow(content.id)}></MovieBackdrop>
+            );
+          }
+
           count++;
       }
+      setIsSearching(true);
+      setSearchResults(elements);
+  }
 
-      let shouldReRender = false;
-      for (let obj of currentResults) {
-          let found = false;
-          for (let content of result) {
-              if (obj.id === content.id) {
-                  found = true;
-                  break;
-              }
-          }
-          if (!found) {
-              shouldReRender = true;
-              break;
-          }
-      }
-      currentResults = result;
-      if (result.length > 0) {
-        document.getElementById('searchRow').classList.add(styles.SearchResultOpen);
-      } else {
-        document.getElementById('searchRow').classList.remove(styles.SearchResultOpen);
-      }
-      if (shouldReRender) {
-        setSearchResults(elements);
-      }
+  const onClose = () => {
+    setIsSearching(false);
+  }
+
+  const scrollLeft = (id) => {
+    document.getElementById(id).scrollLeft -= (window.innerWidth)*0.8;
+    window.scrollTo(window.scrollX, window.scrollY - 1);
+    window.scrollTo(window.scrollX, window.scrollY + 1);
+  }
+  const scrollRight = (id) => {
+      document.getElementById(id).scrollLeft += (window.innerWidth)*0.8;
+      window.scrollTo(window.scrollX, window.scrollY - 1);
+      window.scrollTo(window.scrollX, window.scrollY + 1);
   }
 
 
@@ -69,12 +76,32 @@ export default function Layout({ children, home, searchEnabled, server, relative
       </Head>
       <header style={relative !== undefined ? {position: 'relative'} : {}}>
         <img className={styles.logo} src="/images/logo.png"></img>
-        <Search searchEnabled={searchEnabled} server={server} onSearch={(result) => onSearch(result)}></Search>
+        <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} onSearch={(result) => onSearch(result)}></Search>
       </header>
-      <div id="searchRow" className={styles.SearchResult}>
-        {searchResults}
-      </div>
-      <main>{children}</main>
+      {isSearching &&
+      <div style={{position: 'relative', top: '115px'}}>
+          <h2 style={{textTransform: 'capitalize', margin: '0 0 15px 15px', color: 'white'}}>Sökresultat</h2>  
+        <div className={styles.searchResultBox}>
+          <div id="searchRow" className={styles.SearchResult}>
+            {searchResults}
+          </div>
+          {searchResults.length * 480 > windowSize.width &&
+                                        <>
+                                            <div className={styles.scrollButton} onClick={() => scrollLeft('searchRow')}>
+                                                <img src="/images/left.svg" width="70" />
+                                            </div>
+                                            <div className={styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('searchRow')}>
+                                                <img src="/images/right.svg" width="70" />
+                                            </div>
+                                        </>
+          }
+        </div>
+        </div>
+      }
+
+      {!isSearching &&
+        <main>{children}</main>
+      }
     </div>
   )
 }

@@ -1,13 +1,30 @@
 .SearchResult {
     width: 100%;
-    max-height: 0;
     color: white;
-    display: flex;
-    max-height: 0;
+    overflow: auto;
+    overflow-y: visible;
+    -ms-overflow-style: none;
+    white-space: nowrap;
+    scroll-behavior: smooth;
+    position: relative;
 }
 
-.SearchResultOpen {
-    max-height: 500px;
+.SearchResult::-webkit-scrollbar { width: 0 !important }
+
+.searchResultBox {
+    width: 100%;
+    height: auto;
+    color: white;
+    position: relative;
+    height: 235px;
+}
+
+.scrollButton {
+    filter: invert(1);
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
 }
 
 .logo {

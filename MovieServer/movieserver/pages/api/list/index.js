@@ -11,6 +11,10 @@ const ORDERBY = [
 export default (req, res) => {
     return new Promise(resolve => {
         res = cors(res);
+        let response = {
+            movies: [],
+            series: []
+        }
         db.any(`
         SELECT i.movie_id AS id, i.title, i.overview, json_agg(json_build_object('path', k.path, 'type', j.type)) AS images
         FROM movie_metadata i
@@ -24,13 +28,25 @@ export default (req, res) => {
         WHERE j.active = true
 
         GROUP BY i.movie_id, i.title, i.overview
-        `).then(result => {
-            let response = {
-                movies: result,
-                series: []
-            }
-            res.status(200).json(response);
-            resolve();
+        `).then(movies => {
+            response.movies = movies;
+            db.any(`
+            SELECT i.serie_id AS id, i.title, i.overview, json_agg(json_build_object('path', k.path, 'type', j.type)) AS images
+            FROM serie_metadata i
+
+            INNER JOIN serie_image j
+            ON i.serie_id = j.serie_id
+            INNER JOIN image k
+            on j.image_id = k.id
+
+            WHERE j.active = true
+
+            GROUP BY i.serie_id, i.title, i.overview
+            `).then(series => {
+                response.series = series;
+                res.status(200).json(response);
+                resolve();
+            })
         });
     });
 }
