@@ -91,6 +91,35 @@ export default function Home(props) {
     window.history.replaceState('state', 'Video', `/server/${server.server_id}/shows/video/${id}/season/${season}/episode/${episode}?internalID=${internalID}`);
   }
 
+  const markAsWatched = () => {
+    fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
+    .then(r => r.json())
+    .then(status => {
+      if (status.success) {
+        setWatched(true);
+      } else {
+        console.log("ERROR MARKING AS WATCHED: " + status);
+      }
+    })      .catch(err => {
+      console.log(err);
+    });
+  }
+
+  const markAsNotWatched = () => {
+    fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
+    .then(r => r.json())
+    .then(status => {
+      if (status.success) {
+        setWatched(false);
+      } else {
+        console.log("ERROR MARKING AS WATCHED: " + status);
+      }
+    })
+    .catch(err => {
+      console.log(err);
+    });
+  }
+
     
   return (
     <>

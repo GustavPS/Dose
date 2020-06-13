@@ -79,6 +79,71 @@ export default function Home(props) {
     });
   }, []);
 
+  const markAsWatched = () => {
+    fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
+    .then(r => r.json())
+    .then(status => {
+      if (status.success) {
+        setWatched(true);
+      } else {
+        console.log("ERROR MARKING AS WATCHED: " + status);
+      }
+    })      .catch(err => {
+      console.log(err);
+    });
+  }
+
+  const markAsNotWatched = () => {
+    fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
+    .then(r => r.json())
+    .then(status => {
+      if (status.success) {
+        setWatched(false);
+      } else {
+        console.log("ERROR MARKING AS WATCHED: " + status);
+      }
+    })
+    .catch(err => {
+      console.log(err);
+    });
+  }
+
+  const searchMetadata = (event) => {
+    let search = metadataSearch.current.value;
+    console.log(search);
+    fetch(`http://${server.server_ip}:4000/api/movies/searchMetadata?search=${search}`)
+    .then(r => r.json())
+    .then(result => {
+      console.log(result);
+      let metadataElements = [];
+      for (let movie of result) {
+        let img = movie.poster_path !== null ? `https://image.tmdb.org/t/p/w500/${movie.poster_path}` : 'https://via.placeholder.com/500x750' 
+        metadataElements.push(
+          <ListGroup.Item key={movie.id} className={Styles.metadataSearchRow} data-metadataid={movie.id}>
+            <Image src={img} />
+            <div>
+              <h5>{movie.title}</h5>
+              <p>{movie.overview}</p>
+            </div>
+            <Button onClick={() => updateMetadata(movie.id)}>Välj</Button>
+          </ListGroup.Item>
+        );        
+      }
+      setMetadataSearchResult(metadataElements);
+    });
+    event.preventDefault();
+  }
+
+  const updateMetadata = (metadataID) => {
+    fetch(`http://${server.server_ip}:4000/api/movies/${id}/updateMetadata?metadataID=${metadataID}`)
+    .then(r => r.json())
+    .then(json => {
+      if (json.success) {
+        Router.reload(window.location.pathname);
+      }
+    });
+  }
+
 
 
     
