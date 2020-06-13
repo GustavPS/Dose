@@ -141,7 +141,8 @@ export default class VideoComponent extends React.Component {
 
     show(time=0) {
         document.getElementById('videoContainer').style.display = 'block';
-        this.video.play();
+        //this.video.play();
+        this.togglePlay();
     }
 
     setNextEpisodeID(id) {
@@ -445,6 +446,7 @@ export default class VideoComponent extends React.Component {
             }, 5000);
 
         } else {
+            clearInterval(this.updateCurrentTimeInterval);
             this.video.pause();
         }
     }
@@ -587,10 +589,10 @@ export default class VideoComponent extends React.Component {
 
                 <div className={Styles.controller} id="controls">
                     {this.state.videoPaused &&
-                        <div className={`${Styles.playButton} ${Styles.playPause}`} onClick={this.play}></div>
+                        <div className={`${Styles.playButton} ${Styles.playPause}`} onClick={this.togglePlay}></div>
                     }
                     {!this.state.videoPaused && 
-                        <div className={`${Styles.pauseButton} ${Styles.playPause}`} onClick={this.pause}></div>
+                        <div className={`${Styles.pauseButton} ${Styles.playPause}`} onClick={this.togglePlay}></div>
                     }
                     <div className={Styles.seekWrapper}>
                         <div className={Styles.seekTime} id="seekTime"></div>
