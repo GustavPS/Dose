@@ -28,8 +28,6 @@ export default class VideoComponent extends React.Component {
         this.serverToken = props.serverToken;
         this.type = props.Movie != undefined ? 'movie' : 'serie'
         this.internalID = props.internalID;
-        this.season = props.season;
-        this.episode = props.episode;
 
         this.state = {
             subtitles: {
@@ -57,7 +55,9 @@ export default class VideoComponent extends React.Component {
                 show: false
             } : undefined,
             videoPaused: true,
-            title: props.title
+            title: props.title,
+            season: props.season,
+            episode: props.episode
         }
 
         this.enterFullScreen      = this.enterFullScreen.bind(this);
@@ -577,6 +577,14 @@ export default class VideoComponent extends React.Component {
         this.setState({title: title});
     }
 
+    setEpisode(episode) {
+        this.setState({episode: episode});
+    }
+
+    setSeason(season) {
+        this.setState({season: season});
+    }
+
     render() {
         return (
             <>
@@ -606,7 +614,7 @@ export default class VideoComponent extends React.Component {
                     {this.type === 'serie' &&
                         <>
                             <h1>{this.state.title}</h1>
-                            <p>Season {this.season} - episode {this.episode}</p>
+                            <p>Season {this.state.season} - episode {this.state.episode}</p>
                         </>
                     }
                     {this.type === 'movie' &&
