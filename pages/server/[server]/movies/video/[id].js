@@ -74,6 +74,8 @@ export default function Home(props) {
       currentTime += `${minutes}:${seconds}`
       meta.currentTimeSeconds = meta.currentTime;
       meta.currentTime = currentTime;
+      videoRef.current.setTitle(meta.title);
+
       setWatched(meta.watched);
       setMetadata(meta);
     });

@@ -66,7 +66,9 @@ export default function Home(props) {
       currentTime += `${minutes}:${seconds}`
       meta.currentTimeSeconds = meta.currentTime;
       meta.currentTime = currentTime;
+      console.log(meta.show_name);
 
+      videoRef.current.setTitle(meta.show_name);
       setWatched(meta.watched);
       setMetadata(meta);
     });
@@ -77,8 +79,6 @@ export default function Home(props) {
     fetch(`http://${server.server_ip}:4000/api/series/getNextEpisode?serie_id=${id}&season=${season}&episode=${episode}&token=${serverToken}`)
     .then(r => r.json())
     .then(result => {
-      console.log("RESULT")
-      console.log(result);
       season = result.season;
       episode = result.episode;
       internalID = result.internalID;
@@ -143,6 +143,8 @@ export default function Home(props) {
         <div className="backIcon" onClick={() => Router.back()}></div>
         <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
                         internalID={internalID}
+                        season={season}
+                        episode={episode}
                         getNextEpisodeID={(cb) => getNextEpisodeID(cb)}
                         onChangeEpisode={() => onChangeEpisode()}
                         >

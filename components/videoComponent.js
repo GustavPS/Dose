@@ -28,6 +28,9 @@ export default class VideoComponent extends React.Component {
         this.serverToken = props.serverToken;
         this.type = props.Movie != undefined ? 'movie' : 'serie'
         this.internalID = props.internalID;
+        this.season = props.season;
+        this.episode = props.episode;
+
         this.state = {
             subtitles: {
                 availableSubtitles: [],
@@ -53,7 +56,8 @@ export default class VideoComponent extends React.Component {
                 internalID: null,
                 show: false
             } : undefined,
-            videoPaused: true
+            videoPaused: true,
+            title: props.title
         }
 
         this.enterFullScreen      = this.enterFullScreen.bind(this);
@@ -141,7 +145,6 @@ export default class VideoComponent extends React.Component {
 
     show(time=0) {
         document.getElementById('videoContainer').style.display = 'block';
-        //this.video.play();
         this.togglePlay();
     }
 
@@ -553,6 +556,8 @@ export default class VideoComponent extends React.Component {
 
     showControls() {
         document.getElementById('controls').classList.add(Styles.controlsActive);
+        document.getElementById('overlay').classList.add(Styles.controlsActive);
+        document.getElementById('transparentOverlay').classList.add(Styles.controlsActive);
         document.getElementById('videoContainer').style.cursor = 'auto';
 
         if (this.controlTimeout != undefined) {
@@ -561,9 +566,15 @@ export default class VideoComponent extends React.Component {
 
         this.controlTimeout = setTimeout(() => {
             document.getElementById('controls').classList.remove(Styles.controlsActive);
+            document.getElementById('overlay').classList.remove(Styles.controlsActive);
+            document.getElementById('transparentOverlay').classList.remove(Styles.controlsActive);
             document.getElementById('videoContainer').style.cursor = 'none';
         }, 5000);
 
+    }
+
+    setTitle(title) {
+        this.setState({title: title});
     }
 
     render() {
@@ -575,9 +586,13 @@ export default class VideoComponent extends React.Component {
             </Head>
             <div className={Styles.videoContainer} id="videoContainer" onMouseMove={this.showControls}>
                 
-                <video crossOrigin="anonymous" onClick={this.togglePlay} onDoubleClick={this.enterFullScreen} id="video" className={Styles.videoPlayer}>
+                <video crossOrigin="anonymous" id="video" className={Styles.videoPlayer}>
                     <track id="subtitle" kind="subtitles" />
                 </video>
+
+                <div className={Styles.transparentOverlay} id="transparentOverlay" onClick={this.togglePlay} onDoubleClick={this.enterFullScreen}>
+
+                </div>
 
                 {this.state.nextEpisode != undefined && this.state.nextEpisode.show &&
                     <div className={Styles.nextEpisode}>
@@ -586,6 +601,18 @@ export default class VideoComponent extends React.Component {
                         <button id="cancelNextEpisode">Avbryt</button>
                     </div>
                 }
+
+                <div className={Styles.overlay} id="overlay">
+                    {this.type === 'serie' &&
+                        <>
+                            <h1>{this.state.title}</h1>
+                            <p>Season {this.season} - episode {this.episode}</p>
+                        </>
+                    }
+                    {this.type === 'movie' &&
+                        <h1>{this.state.title}</h1>
+                    }
+                </div>
 
                 <div className={Styles.controller} id="controls">
                     {this.state.videoPaused &&

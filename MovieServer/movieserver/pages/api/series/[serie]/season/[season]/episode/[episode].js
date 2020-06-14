@@ -36,7 +36,7 @@ export default (req, res) => {
         if (decoded) {
             let user_id = decoded.user_id;
             db.one(`
-            SELECT i.name, i.air_date, i.overview, i.vote_average, i.added_date, i.air_date, j.poster_path AS season_poster, n.id AS internalEpisodeID,
+            SELECT i.name, o.name AS show_name, i.air_date, i.overview, i.vote_average, i.added_date, i.air_date, j.poster_path AS season_poster, n.id AS internalEpisodeID,
             jsonb_agg(DISTINCT jsonb_build_object('path', m.path, 'active', k.active, 'type', k.type)) AS images
             FROM serie_episode_metadata i
 
@@ -52,10 +52,13 @@ export default (req, res) => {
             INNER JOIN serie_episode n
             ON i.serie_id = n.serie_id AND i.season_number = n.season_number AND i.episode_number = n.episode
 
+            INNER JOIN serie o
+            ON n.serie_id = o.id
+
 
             WHERE i.serie_id = $2 AND i.season_number = $3 AND i.episode_number = $4
 
-            GROUP BY i.name, i.air_date, i.overview, i.vote_average, i.added_date, j.poster_path, n.id
+            GROUP BY i.name, i.air_date, i.overview, i.vote_average, i.added_date, j.poster_path, n.id, o.name
 
             `, [seasonID, serieID, seasonID, episodeID]).then(result => {
                 db.any('SELECT time FROM user_episode_progress WHERE user_id = $1 AND episode_id = $2', [user_id, result.internalepisodeid]).then(progress => {
