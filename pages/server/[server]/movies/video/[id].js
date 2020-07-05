@@ -265,7 +265,7 @@ export async function getServerSideProps(context) {
   let serverId = context.params.server;
   let movieID = context.params.id;
 
-  return await fetch('http://88.129.86.234:3000/api/servers/getServer', {
+  return await fetch('http://localhost:3000/api/servers/getServer', {
       method: 'POST',
       headers: {
           'Content-Type': 'application/json'
@@ -276,23 +276,12 @@ export async function getServerSideProps(context) {
   })
   .then((r) => r.json())
   .then(async (data) =>{
-    // TODO: Flytta till frontend
-    return await fetch(`http://${data.server.server_ip}:4000/api/subtitles/list?content=${movieID}&type=movie`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-    })
-    .then((r) => r.json())
-    .then((subtitles) => {
-      return {
-        props: {
-            server: data.server,
-            subtitles: subtitles.subtitles,
-            serverToken: cookies(context).serverToken || ''
-        }
+    return {
+      props: {
+          server: data.server,
+          serverToken: cookies(context).serverToken || ''
       }
-    })
+    }
 
   });
 }

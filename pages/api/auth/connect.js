@@ -6,6 +6,8 @@ const jwt = require('jsonwebtoken');
 
 export default async function handle(req, res) {
     return new Promise(resolve => {
+        res.setHeader('Access-Control-Allow-Origin', "*");
+        res.setHeader('Access-Control-Allow-Headers', "*");
         let code = req.body.code;
 
         db.any('SELECT users.id, users.username, users.email FROM users, user_code WHERE user_code.code = $1 AND user_code.confirmed = true AND users.id = user_code.user_id', [code])

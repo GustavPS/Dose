@@ -448,7 +448,7 @@ export default (props) => {
 // Get the information about the server and send it to the front end before render (this is server-side)
 export async function getServerSideProps(context) {
     let serverId = context.params.server;
-    return await fetch('http://88.129.86.234:3000/api/servers/getServer', {
+    return await fetch('http://localhost:3000/api/servers/getServer', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
