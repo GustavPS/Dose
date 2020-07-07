@@ -192,20 +192,27 @@ export default class VideoComponent extends React.Component {
             fetch(`http://${this.server.server_ip}:4000/api/subtitles/list?content=${this.internalID}&type=${this.type}`)
             .then(r => r.json())
             .then(result => {
+                let noSub = {id: -1, language: 'None'};
                 let stateSubs = this.state.subtitles;
                 stateSubs.availableSubtitles = result.subtitles;
+                stateSubs.availableSubtitles.push(noSub);
 
                 // If a subtitle was already selected (on automatic change episode), try to find a subtitle with the same language and set that as active.
+                let found = false;
                 if (this.state.subtitles.activeSubtitle !== undefined) {
                     for (let subtitle of result.subtitles) {
                         if (this.state.subtitles.activeSubtitle.language === subtitle.language) {
+                            found = true;
                             this.changeSubtitle(subtitle);
                             break;
                         }
                     }
                 }
 
-
+                
+                if (!found) {
+                    this.changeSubtitle(noSub);
+                }
                 this.setState({subtitles: stateSubs});
                 resolve();
             })
@@ -377,12 +384,18 @@ export default class VideoComponent extends React.Component {
     }
 
     changeSubtitle(subtitle) {
+        let stateSubs = this.state.subtitles;
         if (subtitle == undefined) {
+            return;
+        }
+        if (subtitle.id === -1) {
+            this.video.textTracks[0].mode = 'hidden';
+            stateSubs.activeSubtitle = subtitle;
+            this.setState({subtitles: stateSubs});
             return;
         }
         this.subtitle.setAttribute('src', `http://${this.server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&type=${this.type}&start=${this.video.getRealWatchtime() - this.video.currentTime}`);
         this.video.textTracks[0].mode = 'showing';
-        let stateSubs = this.state.subtitles;
         stateSubs.activeSubtitle = subtitle;
         this.setState({subtitles: stateSubs});
     }
