@@ -103,8 +103,8 @@ function setMovieProgress(movie_id, user_id, time, videoDuration) {
 
 // Episode ID is the internal ID.
 function setEpisodeProgress(episode_id, user_id, time, videoDuration) {
+    let epochTime = Date.now();
     return new Promise((resolve, reject) => {
-        //console.log(`Episode_id: ${episode_id}, user_id: ${user_id}, time: ${time}, videoDuration: ${videoDuration}`);
         db.tx(async t => {
             let episodeInfo = await t.one('SELECT serie_id, season_number, episode FROM serie_episode WHERE id = $1', [episode_id]);
             // Set the run_time of the episode (the duration)
@@ -115,16 +115,16 @@ function setEpisodeProgress(episode_id, user_id, time, videoDuration) {
                 // Insert the next episode to watch in the database
                 let id = await getNextEpisodeID(episode_id, episodeInfo.serie_id, episodeInfo.season_number);
                 if (id !== false) {
-                    t.none('INSERT INTO user_next_episode (user_id, serie_id, episode_id) VALUES ($1, $2, $3) ON CONFLICT (user_id, serie_id) DO NOTHING', [user_id, episodeInfo.serie_id, id]);
+                    t.none('INSERT INTO user_next_episode (user_id, serie_id, episode_id, last_watched) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, serie_id) DO NOTHING', [user_id, episodeInfo.serie_id, id, epochTime]);
                 }
                 resolve();
             } else {
                 // If we havn't watched 90% of the episode, update the watchtime and remove the "next episode" row from the databsae
                 let result = await t.any('SELECT * FROM user_episode_progress WHERE user_id = $1 AND episode_id = $2',[user_id, episode_id]);
                 if (result.length === 0) {
-                    t.none('INSERT INTO user_episode_progress (user_id, episode_id, time) VALUES ($1, $2, $3)', [user_id, episode_id, time]);
+                    t.none('INSERT INTO user_episode_progress (user_id, episode_id, time, last_watched) VALUES ($1, $2, $3, $4)', [user_id, episode_id, time, epochTime]);
                 } else {
-                    t.none('UPDATE user_episode_progress SET time = $1 WHERE user_id = $2 AND episode_id = $3', [time, user_id, episode_id]);
+                    t.none('UPDATE user_episode_progress SET time = $1, last_watched = $2 WHERE user_id = $3 AND episode_id = $4', [time, epochTime, user_id, episode_id]);
                 }
                 // Remove the "next episode" row from the database (because the user is currently watching it)
                 t.none('DELETE FROM user_next_episode WHERE user_id = $1 AND serie_id = $2', [user_id, episodeInfo.serie_id]);
