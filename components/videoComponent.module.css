@@ -144,6 +144,21 @@
     cursor: pointer;
 }
 
+.back {
+    background-image: url('/images/left_arrow.svg');
+    background-repeat: no-repeat;
+    filter: invert(1);
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    position: relative;
+    background-size: 50px;
+    z-index: 1000;
+    background-position: center;
+    float: left;
+    margin-right: 10px;
+}
+
 .active {
     background-color: #0000002e;
 }
@@ -204,6 +219,10 @@
     margin: 25px 50px;
     opacity: 0;
     transition: opacity 0.2s;
+}
+
+.overlay p {
+    margin-left: 63px;
 }
 
 .transparentOverlay {

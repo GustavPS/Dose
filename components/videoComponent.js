@@ -1,5 +1,6 @@
 import Styles from './videoComponent.module.css';
 import Head from 'next/head'
+import Router from 'next/router';
 
 
 
@@ -624,10 +625,11 @@ export default class VideoComponent extends React.Component {
                 }
 
                 <div className={Styles.overlay} id="overlay">
+                    <div className={Styles.back} onClick={() => Router.reload(window.location.pathname)}></div>
                     {this.type === 'serie' &&
                         <>
                             <h1>{this.state.title}</h1>
-                            <p>Season {this.state.season} - episode {this.state.episode}</p>
+                            <p>Season {this.state.season} - Episode {this.state.episode}</p>
                         </>
                     }
                     {this.type === 'movie' &&
