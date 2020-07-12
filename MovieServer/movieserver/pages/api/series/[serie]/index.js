@@ -57,6 +57,7 @@ export default (req, res) => {
             GROUP BY i.serie_id, i.title, i.overview, i.first_air_date, i.popularity, i.added_date, i.trailer
 
             `, [serieID]).then(result => {
+                result.seasons.sort((a, b) => parseInt(a.season_id) - parseInt(b.season_id));
                 let response = {
                     result: result
                 }
