@@ -273,8 +273,6 @@ export default (props) => {
 
             // Get newly added shows
             getShowList(null, 'added_date', 20).then(shows => {
-                shows.reverse();
-
                 let showElements = [];
                 for (let show of shows) {
                     let img = show.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${show.backdrop}` : 'https://via.placeholder.com/2000x1000' 

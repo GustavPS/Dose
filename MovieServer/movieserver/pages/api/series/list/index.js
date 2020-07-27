@@ -36,7 +36,7 @@ export default (req, res) => {
           ON j.image_id = k.id
 
           GROUP BY i.id, i.title
-          ORDER BY ${orderBy}
+          ORDER BY ${orderBy} DESC
           OFFSET $1
           LIMIT $2
           `, [offset, limit]).then(result => {
