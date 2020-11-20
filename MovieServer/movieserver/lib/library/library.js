@@ -1,6 +1,7 @@
 var ffmpeg = require('fluent-ffmpeg');
 const pathLib = require('path');
 const fs = require('fs');
+const glob = require('glob');
 
 
 const MOVIE_FORMATS = [
@@ -100,59 +101,82 @@ class Library {
         return new Promise(resolve => {
             let fullPath = pathLib.join(this.path, path);
             let t = this;
-            ffmpeg
-            .ffprobe(fullPath, function(err, metadata) {
-                if (err) {
-                    //console.log(err);
-                    // TODO: Only resolve with false if the error is because it's bussy, else throw the error
-                    resolve(false);
-                    return;
-                }
-                let found = false;
-                for (let stream of metadata.streams) {
-                    if (stream.codec_type == 'subtitle' && stream.codec_name == 'subrip' && stream.tags != undefined && ['eng', 'swe'].includes(stream.tags.language)) {
-                        found = true;
-                        let outputPath = pathLib.join(pathLib.dirname(fullPath), `S${seasonNumber}E${episodeNumber}_${stream.tags.language}_EXTRACTED_${Math.floor(Math.random() * 1000000000)}.srt`); // TODO: Check if this file exist first
-                        
-                        t.lock.acquire("subconvert", async function(done) {
-                            ffmpeg(fullPath)
-                            .noAudio()
-                            .noVideo()
-                            .inputOption([
-                                '-threads 3'
-                            ])
-                            .outputOption([
-                                `-map 0:${stream.index}`,
-                                '-c copy'
-                            ])
-                            .output(outputPath)
-                            .on('start', function(commandLine) {
-                            })
-                            .on('error', function(err, stdout, stderr) {
-                                console.log('an error happened converting subtitle: ' + err.message);
-                                console.log(stdout);
-                                console.log(stderr);
-                                done(true);
-                            })
-                            .on('progress', function(progress) {
-                                process.stdout.write(` > Found a subtitle (${stream.tags.language}) for ${name}. Converting it now. - ${progress.percent}% \r`);
-                            })
-                            .on('end', function(stdout, stderr) {
-                                console.log(` > Found a subtitle (${stream.tags.language}) for ${name}. Converting it now. - 100% (done)                            `);
-                                done(true);
-                            })
-                            .run();
-                        }, function(status) {
-                            resolve(status);
-                        });
+            let shouldExtractSubs = true;
 
+            // Don't extract if we have already extracted sub(s) from this video
+            console.log(pathLib.dirname(fullPath))
+            fs.readdirSync(pathLib.dirname(fullPath)).forEach(file => {
+                if (file.includes("EXTRACTED") && file.includes(".srt")) {
+                    if ((episodeNumber != "" && seasonNumber != "" && file.includes(`S${seasonNumber}E${episodeNumber}`)) ||
+                    episodeNumber == "" && seasonNumber == "") {
+                        console.log(` > Found already extracted subtitles for this show, will use those instead. (To extract new files, create a new folder and put the video-file there)`);
+                        shouldExtractSubs = false;
+                        resolve(true);
+                        return;
                     }
                 }
-                if (!found) {
-                    console.log(` > No subtitles found in ${name}`);
-                    resolve(true);
-                }
+                console.log(file);
             });
+
+
+            if (shouldExtractSubs) {
+                ffmpeg
+                .ffprobe(fullPath, function(err, metadata) {
+                    if (err) {
+                        //console.log(err);
+                        // TODO: Only resolve with false if the error is because it's bussy, else throw the error
+                        resolve(false);
+                        return;
+                    }
+                    let found = false;
+                    for (let stream of metadata.streams) {
+                        if (stream.codec_type == 'subtitle' && stream.codec_name == 'subrip' && stream.tags != undefined && ['eng', 'swe'].includes(stream.tags.language)) {
+                            found = true;
+                            let outputPath = pathLib.join(pathLib.dirname(fullPath), `S${seasonNumber}E${episodeNumber}_${stream.tags.language}_EXTRACTED_${Math.floor(Math.random() * 1000000000)}.srt`); // TODO: Check if this file exist first
+                            
+                            t.lock.acquire("subconvert", async function(done) {
+                                ffmpeg(fullPath)
+                                .noAudio()
+                                .noVideo()
+                                .inputOption([
+                                    '-threads 3'
+                                ])
+                                .outputOption([
+                                    `-map 0:${stream.index}`,
+                                    '-c copy'
+                                ])
+                                .output(outputPath)
+                                .on('start', function(commandLine) {
+                                })
+                                .on('error', function(err, stdout, stderr) {
+                                    console.log('an error happened converting subtitle: ' + err.message);
+                                    console.log(stdout);
+                                    console.log(stderr);
+                                    done(true);
+                                })
+                                .on('progress', function(progress) {
+                                    process.stdout.write(` > Found a subtitle (${stream.tags.language}) for ${name}. Converting it now. - ${progress.percent}% \r`);
+                                })
+                                .on('end', function(stdout, stderr) {
+                                    console.log(` > Found a subtitle (${stream.tags.language}) for ${name}. Converting it now. - 100% (done)                            `);
+                                    done(true);
+                                })
+                                .run();
+                            }, function(status) {
+                                resolve(status);
+                            });
+    
+                        }
+                    }
+                    if (!found) {
+                        console.log(` > No subtitles found in ${name}`);
+                        resolve(true);
+                    }
+                });
+            } else {
+                resolve(true);
+            }
+
         })
     }
 
