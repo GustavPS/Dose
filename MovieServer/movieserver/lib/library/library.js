@@ -1,6 +1,7 @@
 var ffmpeg = require('fluent-ffmpeg');
 const pathLib = require('path');
 const fs = require('fs');
+const glob = require('glob');
 
 
 const MOVIE_FORMATS = [
@@ -100,6 +101,21 @@ class Library {
         return new Promise(resolve => {
             let fullPath = pathLib.join(this.path, path);
             let t = this;
+
+            // Don't extract if we have already extracted sub(s) from this video
+            glob("**/*+(EXTRACTED)*.+(srt|vtt|sub)", {"cwd": pathLib.dirname(fullPath)}, (err, files) => {
+                if (files && files.length > 0) { 
+                    for (let file of files) {
+                        if ((episodeNumber != "" && seasonNumber != "" && file.includes(`S${seasonNumber}E${episodeNumber}`)) ||
+                            episodeNumber == "" && seasonNumber == "") {
+                            console.log(` > Found already extracted subtitles for this show, will use those instead. (To extract new files, create a new folder and put the video-file there)`);
+                            resolve(true);
+                            return;
+                        }
+                    }
+                }
+            });
+
             ffmpeg
             .ffprobe(fullPath, function(err, metadata) {
                 if (err) {

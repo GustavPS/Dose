@@ -5,7 +5,6 @@ const pathExists = require('path-exists');
 const MovieLibrary = require('./library/movieLibrary');
 const TvLibrary = require('./library/tvLibrary');
 
-
 class Watcher {
     /**
      * Initialize the watcher object
