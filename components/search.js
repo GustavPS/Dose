@@ -13,12 +13,9 @@ export default class Search extends React.Component {
         this.movies = [];
         this.enabled = props.searchEnabled;
         this.search = this.search.bind(this);
-        if (this.enabled) {
-            this.getAllContent();
-        }
-
         this.onClose = props.onClose;
         this.onSearch = props.onSearch;
+        this.dataDownloaded = false;
     }
 
     /**
@@ -34,6 +31,10 @@ export default class Search extends React.Component {
     }
 
     search(event) {
+        if (!this.dataDownloaded && this.enabled) {
+            this.getAllContent();
+            this.dataDownloaded = true;
+        }
         let query = event.target.value;
         if (query === "") {
             this.onClose();

@@ -98,24 +98,22 @@ class Library {
      * @param {string} seasonNumber - If a episode is provided, this is the episodes season
      */
     async convertSubtitles(name, path, episodeNumber = "", seasonNumber = "") {
+        // TODO: Change default episode/season to something else then an empty string
         return new Promise(resolve => {
             let fullPath = pathLib.join(this.path, path);
             let t = this;
             let shouldExtractSubs = true;
 
             // Don't extract if we have already extracted sub(s) from this video
-            console.log(pathLib.dirname(fullPath))
             fs.readdirSync(pathLib.dirname(fullPath)).forEach(file => {
                 if (file.includes("EXTRACTED") && file.includes(".srt")) {
                     if ((episodeNumber != "" && seasonNumber != "" && file.includes(`S${seasonNumber}E${episodeNumber}`)) ||
                     episodeNumber == "" && seasonNumber == "") {
-                        console.log(` > Found already extracted subtitles for this show, will use those instead. (To extract new files, create a new folder and put the video-file there)`);
                         shouldExtractSubs = false;
                         resolve(true);
                         return;
                     }
                 }
-                console.log(file);
             });
 
 

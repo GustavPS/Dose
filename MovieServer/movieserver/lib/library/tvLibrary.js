@@ -81,7 +81,6 @@ class TvLibrary extends Library {
                 } else {
                     resolve();
                 }
-                return;
             });
         });
     }
@@ -96,27 +95,33 @@ class TvLibrary extends Library {
      * @param {integer} episodeNumber  - the episode number for the subtitle
      */
     addSubtitleIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber) {
-        let fileName = pathLib.basename(path);
-        let language = null;
-        for (let lang of LANGUAGE_LIST) {
-            if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
-                language = lang.longName;
-                break;
-            }
-        }
-        db.one('SELECT * FROM serie_episode WHERE serie_id = (SELECT id FROM serie WHERE path = $1 AND library = $2) AND episode = $3 AND season_number = $4', [showPath, this.id, episodeNumber, seasonNumber])
-        .then(episode => {
-            db.any('SELECT * FROM serie_episode_subtitle WHERE episode_id = $1 AND path = $2 AND library_id = $3', [episode.id, path, this.id])
-            .then(result => {
-                if (result.length === 0) {
-                    console.log(` > Saving subtitle for ${showName} in library ${this.name}`);
-                    db.none('INSERT INTO serie_episode_subtitle (path, episode_id, library_id, language) VALUES ($1, $2, $3, $4)', [path, episode.id, this.id, language]);
+        //console.log("hh")
+        return new Promise(async (resolve, reject) => {
+            let fileName = pathLib.basename(path);
+            let language = null;
+            for (let lang of LANGUAGE_LIST) {
+                if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
+                    language = lang.longName;
+                    break;
                 }
+            }
+            await db.one('SELECT * FROM serie_episode WHERE serie_id = (SELECT id FROM serie WHERE path = $1 AND library = $2) AND episode = $3 AND season_number = $4', [showPath, this.id, episodeNumber, seasonNumber])
+            .then(episode => {
+                db.any('SELECT * FROM serie_episode_subtitle WHERE episode_id = $1 AND path = $2 AND library_id = $3', [episode.id, path, this.id])
+                .then(async (result) => {
+                    if (result.length === 0) {
+                        console.log(` > Saving subtitle for ${showName} in library ${this.name}`);
+                        await db.none('INSERT INTO serie_episode_subtitle (path, episode_id, library_id, language) VALUES ($1, $2, $3, $4)', [path, episode.id, this.id, language]);
+                        console.log("inne här")
+                    }
+                    resolve();
+                });
+            })
+            .catch(err => {
+                console.log(`Couldn't find any matching shows for subtitle ${path}`);
+                console.log(err);
+                resolve();
             });
-        })
-        .catch(err =>{
-            console.log(`Couldn't find any matching shows for subtitle ${path}`);
-            console.log(err);
         });
     }
 
@@ -154,6 +159,7 @@ class TvLibrary extends Library {
                         }
                     });
                 } else {
+                    //console.log("season result was not 0.....")
                     resolve();
                 }
             });
@@ -198,6 +204,7 @@ class TvLibrary extends Library {
                         } else {
                             console.log(` > Saving metadata for season ${seasonNumber} episode ${episodeNumber} of serie ${serieName}`);
                             this.metadata.insertEpisodeMetadata(metadata, internalSerieID, seasonNumber, episodeNumber).then(() => {
+                                console.log("Resolving");
                                 resolve();
                             });
                         }
@@ -280,43 +287,52 @@ class TvLibrary extends Library {
 
     async newEntry(path) {
         return new Promise(async (resolve, reject) => {
-
             let fileExtension = path.substring(path.lastIndexOf('.') + 1);
             if (!MOVIE_FORMATS.includes(fileExtension) && !SUB_FORMATS.includes(fileExtension)) {
                 console.log("\x1b[33m", `> ${path} is not a supported format.`, "\x1b[0m");
                 resolve();
-                return;
-            }
-            let type = MOVIE_FORMATS.includes(fileExtension) ? 'SHOW' : 'SUBTITLE'
-
-            let t = this;
-            // Lock so each library only can handle one serie at a time (for race condition with episodes)
-            lock.acquire("abcdefg", async function(done) {
-                let seasonNumber = t.getSeasonNumber(path);
-                let episodeNumber = t.getEpisodeNumber(path);
-
-                if (seasonNumber === false) {
-                    console.log(`> Couldn't find a season number for ${path} (${seasonNumber}). Stopping.`);
-                } else if (episodeNumber === false) {
-                    console.log(`> Couldn't find a episode number for ${path}, Stopping.`);
-                } else {
-                    episodeNumber = parseInt(episodeNumber);
-                    let showName = t.getShowName(path);
-                    let showPath = t.getShowPath(path);
-                    let seasonPath = t.getSeasonPath(path);
-                    if (type === 'SHOW') {
-                        await t.addSerieIfNotSaved(showName, showPath);
-                        await t.addSeasonIfNotSaved(showName, seasonPath, showPath, seasonNumber);
-                        await t.addEpisodeIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber);
-                    } else if (type === 'SUBTITLE') {
-                        await t.addSubtitleIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber);
+            } else {
+                let type = MOVIE_FORMATS.includes(fileExtension) ? 'SHOW' : 'SUBTITLE'
+                //console.log(type);
+                let t = this;
+                // Lock so each library only can handle one serie at a time (for race condition with episodes)
+               // lock.acquire("abcdefg", async function(done) {
+                lock.enter(async function (token) {
+                    if (path == "Family Guy\Season 8 V2 Remaster HEVC\Family Guy - S08E04 - Brian`s Got a Brand New Bag-4.mkv") {
+                        print("Låst");
                     }
+                    let seasonNumber = t.getSeasonNumber(path);
+                    let episodeNumber = t.getEpisodeNumber(path);
+    
+                    if (seasonNumber === false) {
+                        console.log(`> Couldn't find a season number for ${path} (${seasonNumber}). Stopping.`);
+                    } else if (episodeNumber === false) {
+                        console.log(`> Couldn't find a episode number for ${path}, Stopping.`);
+                    } else {
+                        episodeNumber = parseInt(episodeNumber);
+                        let showName = t.getShowName(path);
+                        let showPath = t.getShowPath(path);
+                        let seasonPath = t.getSeasonPath(path);
+                        if (type === 'SHOW') {
+                            await t.addSerieIfNotSaved(showName, showPath);
+                            await t.addSeasonIfNotSaved(showName, seasonPath, showPath, seasonNumber);
+                            await t.addEpisodeIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber);
+                            //console.log("efter");
+                        } else if (type === 'SUBTITLE') {
+                            await t.addSubtitleIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber);
+                            //console.log("kk");
+                        }
+                    }
+                    lock.leave(token);
+                });
 
-                }
-                done();
-            }, function() {
-                resolve();
-            });
+                    //done();
+                //}, function() {
+                //    console.log("LOCK RESOLVE" + path)
+                //    resolve();
+                //});
+            }
+
         });
     }
 

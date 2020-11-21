@@ -134,11 +134,13 @@ class Watcher {
           ignoreInitial: false
         })
         .on('add', async (filePath, event) => {
+            //console.log(filePath)
             filePath = this.cleanPath(filePath, relativePath);
             if (library.getType() === 'SERIES') {
                 await library.newEntry(filePath);
+                //console.log("mer efter")
             } else {
-                library.newEntry(filePath);
+                //library.newEntry(filePath);
             }
         })
         .on('unlink', (filePath) => {

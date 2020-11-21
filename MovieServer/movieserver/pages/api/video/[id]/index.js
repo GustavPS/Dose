@@ -151,7 +151,7 @@ function startFFMPEG(filename, offset, language, req, res) {
         .outputOptions(audioSettings)
 
         .on('start', function(commandLine) {
-          //console.log(commandLine)
+          console.log(commandLine)
         })
           // setup event handlers
         .on('end', function() {
