@@ -74,7 +74,7 @@ export default function ChangeImages(props) {
           let count = 0;
           selectedImages = [];
           for (let image of images) {
-            let img = `image.tmdb.org/t/p/w500/${image.path}`
+            let img = `https://image.tmdb.org/t/p/w500/${image.path}`
             if (image.active) {
               selectedImages.push({
                 id: image.id,
