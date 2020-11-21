@@ -18,7 +18,7 @@
     "mime": "^2.4.5",
     "next": "9.3.6",
     "node-async-locks": "^2.0.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "opensubtitles-api": "^5.1.2",
     "path-exists": "^4.0.0",
     "pg-promise": "^10.5.5",
