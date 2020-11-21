@@ -30,7 +30,7 @@ export default function Home(props) {
 
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
-    fetch(`http://${server.server_ip}:4000/api/series/${id}/season/${season}/episode/${episode}?token=${serverToken}`, {
+    fetch(`${server.server_ip}:4000/api/series/${id}/season/${season}/episode/${episode}?token=${serverToken}`, {
       method: 'GET',
       headers: {
           'Content-Type': 'application/json'
@@ -76,7 +76,7 @@ export default function Home(props) {
 
 
   const getNextEpisodeID = (cb) => {
-    fetch(`http://${server.server_ip}:4000/api/series/getNextEpisode?serie_id=${id}&season=${season}&episode=${episode}&token=${serverToken}`)
+    fetch(`${server.server_ip}:4000/api/series/getNextEpisode?serie_id=${id}&season=${season}&episode=${episode}&token=${serverToken}`)
     .then(r => r.json())
     .then(result => {
       season = result.season;
@@ -94,7 +94,7 @@ export default function Home(props) {
   }
 
   const markAsWatched = () => {
-    fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
+    fetch(`${server.server_ip}:4000/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
     .then(r => r.json())
     .then(status => {
       if (status.success) {
@@ -108,7 +108,7 @@ export default function Home(props) {
   }
 
   const markAsNotWatched = () => {
-    fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
+    fetch(`${server.server_ip}:4000/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
     .then(r => r.json())
     .then(status => {
       if (status.success) {

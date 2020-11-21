@@ -190,7 +190,7 @@ export default class VideoComponent extends React.Component {
 
     loadSubtitles() {
         return new Promise(resolve => {
-            fetch(`http://${this.server.server_ip}:4000/api/subtitles/list?content=${this.internalID}&type=${this.type}`)
+            fetch(`${this.server.server_ip}:4000/api/subtitles/list?content=${this.internalID}&type=${this.type}`)
             .then(r => r.json())
             .then(result => {
                 let noSub = {id: -1, language: 'None'};
@@ -227,7 +227,7 @@ export default class VideoComponent extends React.Component {
 
     loadAudioStreams() {
         return new Promise(resolve => {
-            fetch(`http://${this.server.server_ip}:4000/api/video/${this.internalID}/getLanguages?type=${this.type}`)
+            fetch(`${this.server.server_ip}:4000/api/video/${this.internalID}/getLanguages?type=${this.type}`)
             .then(r => r.json())
             .then(result => {
                 console.log(result);
@@ -243,14 +243,14 @@ export default class VideoComponent extends React.Component {
     loadSources(autoplay = false) {
         return new Promise(resolve => {
             // Set the duration of the video
-            fetch(`http://${this.server.server_ip}:4000/api/video/${this.internalID}/getDuration?type=${this.type}`)
+            fetch(`${this.server.server_ip}:4000/api/video/${this.internalID}/getDuration?type=${this.type}`)
             .then(r => r.json())
             .then(data => {
                 this.video.realDuration = data.duration;
             });
 
             // Get the current time for this video
-            fetch(`http://${this.server.server_ip}:4000/api/video/${this.internalID}/currenttime/get?type=${this.type}&token=${this.serverToken}`, {
+            fetch(`${this.server.server_ip}:4000/api/video/${this.internalID}/currenttime/get?type=${this.type}&token=${this.serverToken}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -262,7 +262,7 @@ export default class VideoComponent extends React.Component {
                 this.video.watchTimeOffset = time;
 
                 // Get the available resolutions for this video
-                fetch(`http://${this.server.server_ip}:4000/api/video/${this.internalID}/getResolution?type=${this.type}`, {
+                fetch(`${this.server.server_ip}:4000/api/video/${this.internalID}/getResolution?type=${this.type}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
@@ -295,11 +295,11 @@ export default class VideoComponent extends React.Component {
                     resolutions.availableResolutions = result.resolutions;
 
                     if (result.directplay) {
-                        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=directplay${audio}`)
+                        this.source.setAttribute('src', `${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=directplay${audio}`)
                         resolutions.activeResolution = 'directplay';
                         resolutions.availableResolutions.push('directplay');
                     } else {
-                        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=1080P${audio}`);
+                        this.source.setAttribute('src', `${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=1080P${audio}`);
                         resolutions.activeResolution = '1080P';
                     }
 
@@ -371,7 +371,7 @@ export default class VideoComponent extends React.Component {
     }
 
     changeResolution(resolution) {
-        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${this.video.getRealWatchtime()}&quality=${resolution}`);
+        this.source.setAttribute('src', `${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${this.video.getRealWatchtime()}&quality=${resolution}`);
         // Change the watchTimeOffset to proberly sync subtitles and seekbar.
         this.video.watchTimeOffset = this.video.getRealWatchtime();
         this.changeSubtitle(this.state.subtitles.activeSubtitle);
@@ -395,7 +395,7 @@ export default class VideoComponent extends React.Component {
             this.setState({subtitles: stateSubs});
             return;
         }
-        this.subtitle.setAttribute('src', `http://${this.server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&type=${this.type}&start=${this.video.getRealWatchtime() - this.video.currentTime}`);
+        this.subtitle.setAttribute('src', `${this.server.server_ip}:4000/api/subtitles/get?id=${subtitle.id}&type=${this.type}&start=${this.video.getRealWatchtime() - this.video.currentTime}`);
         this.video.textTracks[0].mode = 'showing';
         stateSubs.activeSubtitle = subtitle;
         this.setState({subtitles: stateSubs});
@@ -407,7 +407,7 @@ export default class VideoComponent extends React.Component {
             return;
         }
 
-        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${this.video.getRealWatchtime()}&quality=${this.state.resolutions.activeResolution}&audio=${stream.stream_index}`);
+        this.source.setAttribute('src', `${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${this.video.getRealWatchtime()}&quality=${this.state.resolutions.activeResolution}&audio=${stream.stream_index}`);
         this.video.watchTimeOffset = this.video.getRealWatchtime();
         this.changeSubtitle(this.state.subtitles.activeSubtitle);
         this.video.load();
@@ -459,7 +459,7 @@ export default class VideoComponent extends React.Component {
             }
     
             this.updateCurrentTimeInterval = setInterval(() => {
-                fetch(`http://${this.server.server_ip}:4000/api/video/${this.internalID}/currenttime/set?type=${this.type}&time=${this.video.getRealWatchtime()}&videoDuration=${this.video.realDuration}&token=${this.serverToken}`);
+                fetch(`${this.server.server_ip}:4000/api/video/${this.internalID}/currenttime/set?type=${this.type}&time=${this.video.getRealWatchtime()}&videoDuration=${this.video.realDuration}&token=${this.serverToken}`);
             }, 5000);
 
         } else {
@@ -473,7 +473,7 @@ export default class VideoComponent extends React.Component {
         let quality = this.state.resolutions.activeResolution !== '' ? this.state.resolutions.activeResolution : '1080P';
         let audio = this.state.audioStreams.activeStream !== undefined ? `&audio=${this.state.audioStreams.activeStream.stream_index}` : ''
 
-        this.source.setAttribute('src', `http://${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${vidTime}&quality=${quality}${audio}`);
+        this.source.setAttribute('src', `${this.server.server_ip}:4000/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${vidTime}&quality=${quality}${audio}`);
         this.video.load();
         this.video.play();
         this.video.watchTimeOffset = vidTime;

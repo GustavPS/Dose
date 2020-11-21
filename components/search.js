@@ -25,7 +25,7 @@ export default class Search extends React.Component {
      * This is used to get all the movies/series from the server
      */
     getAllContent() {
-        fetch(`http://${this.server.server_ip}:4000/api/list`)
+        fetch(`${this.server.server_ip}:4000/api/list`)
         .then(r => r.json())
         .then(content => {
             this.series = content.series;

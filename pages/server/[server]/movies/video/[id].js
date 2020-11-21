@@ -38,7 +38,7 @@ export default function Home(props) {
 
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
-    fetch(`http://${server.server_ip}:4000/api/movies/${id}?token=${serverToken}`, {
+    fetch(`${server.server_ip}:4000/api/movies/${id}?token=${serverToken}`, {
       method: 'GET',
       headers: {
           'Content-Type': 'application/json'
@@ -82,7 +82,7 @@ export default function Home(props) {
   }, []);
 
   const markAsWatched = () => {
-    fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
+    fetch(`${server.server_ip}:4000/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
     .then(r => r.json())
     .then(status => {
       if (status.success) {
@@ -96,7 +96,7 @@ export default function Home(props) {
   }
 
   const markAsNotWatched = () => {
-    fetch(`http://${server.server_ip}:4000/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
+    fetch(`${server.server_ip}:4000/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
     .then(r => r.json())
     .then(status => {
       if (status.success) {
@@ -113,7 +113,7 @@ export default function Home(props) {
   const searchMetadata = (event) => {
     let search = metadataSearch.current.value;
     console.log(search);
-    fetch(`http://${server.server_ip}:4000/api/movies/searchMetadata?search=${search}`)
+    fetch(`${server.server_ip}:4000/api/movies/searchMetadata?search=${search}`)
     .then(r => r.json())
     .then(result => {
       console.log(result);
@@ -137,7 +137,7 @@ export default function Home(props) {
   }
 
   const updateMetadata = (metadataID) => {
-    fetch(`http://${server.server_ip}:4000/api/movies/${id}/updateMetadata?metadataID=${metadataID}`)
+    fetch(`${server.server_ip}:4000/api/movies/${id}/updateMetadata?metadataID=${metadataID}`)
     .then(r => r.json())
     .then(json => {
       if (json.success) {

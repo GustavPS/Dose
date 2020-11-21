@@ -41,7 +41,7 @@ export default (props) => {
 
     // Check if user have access to this server
     const validateAccess = async (cb) => {
-        return await fetch(`http://${server.server_ip}:4000/api/auth/validate`, {
+        return await fetch(`${server.server_ip}:4000/api/auth/validate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -73,9 +73,9 @@ export default (props) => {
         return new Promise((resolve, reject) => {
             let url;
             if (ongoing) {
-                url = `http://${server.server_ip}:4000/api/movies/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                url = `${server.server_ip}:4000/api/movies/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             } else {
-                url = `http://${server.server_ip}:4000/api/movies/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                url = `${server.server_ip}:4000/api/movies/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             }
             fetch(url, {
                 method: 'POST',
@@ -121,9 +121,9 @@ export default (props) => {
         return new Promise((resolve, reject) => {
             let url;
             if (ongoing) {
-                url = `http://${server.server_ip}:4000/api/series/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                url = `${server.server_ip}:4000/api/series/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             } else {
-                url = `http://${server.server_ip}:4000/api/series/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                url = `${server.server_ip}:4000/api/series/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             }
             fetch(url, {
                 method: 'POST',

@@ -28,7 +28,7 @@ export default function Home(props) {
 
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
-    fetch(`http://${server.server_ip}:4000/api/series/${id}?token=${serverToken}`, {
+    fetch(`${server.server_ip}:4000/api/series/${id}?token=${serverToken}`, {
       method: 'GET',
       headers: {
           'Content-Type': 'application/json'

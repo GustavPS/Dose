@@ -31,7 +31,7 @@ export default function ChangeImages(props) {
         console.log(poster);
         console.log(backdrop);
   
-        fetch(`http://${server.server_ip}:4000/api/${type}/${id}/setImages?poster=${poster}&backdrop=${backdrop}`)
+        fetch(`${server.server_ip}:4000/api/${type}/${id}/setImages?poster=${poster}&backdrop=${backdrop}`)
         .then(r => r.json())
         .then(json => {
           if (json.success) {
@@ -66,7 +66,7 @@ export default function ChangeImages(props) {
       }
 
     const getImages = () => {
-        fetch(`http://${server.server_ip}:4000/api/${type}/${id}/getImages`)
+        fetch(`${server.server_ip}:4000/api/${type}/${id}/getImages`)
         .then(r => r.json())
         .then(images => {
           let backdropElements = [];
@@ -74,7 +74,7 @@ export default function ChangeImages(props) {
           let count = 0;
           selectedImages = [];
           for (let image of images) {
-            let img = `https://image.tmdb.org/t/p/w500/${image.path}`
+            let img = `image.tmdb.org/t/p/w500/${image.path}`
             if (image.active) {
               selectedImages.push({
                 id: image.id,
