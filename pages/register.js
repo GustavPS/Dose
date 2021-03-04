@@ -20,7 +20,7 @@ export default class Register extends React.Component {
 
 login(e) {
   e.preventDefault();
-    fetch('/api/auth/register', {
+    fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ login(e) {
         <div className={LoginStyle.container} style={{height: '100vh'}}>
           <div className={LoginStyle.loginForm}>
               <h1>Register</h1>
-              <Link href="/login"><a className={LoginStyle.registerLink}>Already have an account? Login now!</a></Link>
+              <Link href={process.env.NEXT_PUBLIC_SERVER_URL, "/login"}><a className={LoginStyle.registerLink}>Already have an account? Login now!</a></Link>
               <div style={{clear: 'both'}}></div>
                   <Form onSubmit={this.login}>
                     <Form.Group controlId="formBasicUsername">

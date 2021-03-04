@@ -1,3 +1,5 @@
 module.exports = {
-  basePath: '/dose',
+  env: {
+    serverUrl: 'localhost:3000',
+  },
 }

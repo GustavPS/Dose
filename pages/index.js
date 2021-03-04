@@ -12,7 +12,7 @@ const fetcher = url =>
     .then(r => {
       return r.json().then(result => {
         if (result.error !== undefined && result.error === 'unauthorized') {
-          Router.push('/login');
+          Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/login`);
         }
         return result;
       });
@@ -28,7 +28,7 @@ const chooseServer = server => {
 }
 
 export default function Home() {
-  const { data, error } = useSWR('/api/servers/getServers', fetcher);
+  const { data, error } = useSWR(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/getServers`, fetcher);
 
   return (
     <Layout home relative>

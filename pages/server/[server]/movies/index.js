@@ -33,7 +33,7 @@ export default (props) => {
 
     // Check if user have access to this server
     const validateAccess = async (cb) => {
-        return await fetch(`${server.server_ip}:4000/api/auth/validate`, {
+        return await fetch(`${server.server_ip}/api/auth/validate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -65,9 +65,9 @@ export default (props) => {
         return new Promise((resolve, reject) => {
             let url;
             if (ongoing) {
-                url = `${server.server_ip}:4000/api/movies/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                url = `${server.server_ip}/api/movies/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             } else {
-                url = `${server.server_ip}:4000/api/movies/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                url = `${server.server_ip}/api/movies/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             }
             fetch(url, {
                 method: 'POST',
@@ -155,7 +155,7 @@ export default (props) => {
 
 
             // Get all genres from the server
-            fetch(`${server.server_ip}:4000/api/genre/list`, {
+            fetch(`${server.server_ip}/api/genre/list`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -189,7 +189,7 @@ export default (props) => {
     }, []);
 
     const selectMovie = (id) => {
-        Router.push(`/server/${server.server_id}/movies/video/${id}`);
+        Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/movies/video/${id}`);
     }
 
 
@@ -218,10 +218,10 @@ export default (props) => {
                         {genre.movieElements.length >= 5 &&
                             <>
                                 <div className={Styles.scrollButton} onClick={() => scrollLeft(genre.name + 'Movies')}>
-                                    <img src="/images/left.svg" width="70" />
+                                    <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
                                 </div>
                                 <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight(genre.name + 'Movies')}>
-                                    <img src="/images/right.svg" width="70" />
+                                    <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
                                 </div>
 
                             </>
@@ -257,10 +257,10 @@ export default (props) => {
                                 {ongoingMovies.length >= 5 &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
-                                            <img src="/images/left.svg" width="70" />
+                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
-                                            <img src="/images/right.svg" width="70" />
+                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
                                         </div>
                                     </>
                                 }
@@ -285,7 +285,7 @@ export default (props) => {
 // Get the information about the server and send it to the front end before render (this is server-side)
 export async function getServerSideProps(context) {
     let serverId = context.params.server;
-    return await fetch('http://localhost/dose/api/servers/getServer', {
+    return await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/getServer`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

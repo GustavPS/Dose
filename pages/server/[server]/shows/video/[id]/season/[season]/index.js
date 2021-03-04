@@ -28,7 +28,7 @@ export default function Home(props) {
 
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
-    fetch(`${server.server_ip}:4000/api/series/${id}/season/${season}?token=${serverToken}`, {
+    fetch(`${server.server_ip}/api/series/${id}/season/${season}?token=${serverToken}`, {
       method: 'GET',
       headers: {
           'Content-Type': 'application/json'
@@ -51,7 +51,7 @@ export default function Home(props) {
   }, []);
 
   const selectEpisode = (episodeID, internalID) => {
-      Router.push(`/server/${server.server_id}/shows/video/${id}/season/${season}/episode/${episodeID}?internalID=${internalID}`);
+      Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}/season/${season}/episode/${episodeID}?internalID=${internalID}`);
   }
 
 
@@ -122,7 +122,7 @@ export async function getServerSideProps(context) {
   let serverId = context.params.server;
   let movieID = context.params.id;
 
-  return await fetch('http://localhost/dose/api/servers/getServer', {
+  return await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/getServer`, {
       method: 'POST',
       headers: {
           'Content-Type': 'application/json'

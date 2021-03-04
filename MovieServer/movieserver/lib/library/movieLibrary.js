@@ -30,13 +30,6 @@ class MovieLibrary extends Library {
         return new Promise(async (resolve) => {
             db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
                 if (result.length === 0) {
-                    let audio_streams = await this.findAudioStreams(movieName, path);
-                    if (!audio_streams) {
-                        console.log("\x1b[33m",` > Error: Found a new movie but it does not contain any audio streams. Not adding to database. (${path} for library '${this.name}')`, "\x1b[0m");
-                        resolve();
-                        return;
-                    }
-
                     console.log(` > Found a new movie (${path} for library: '${this.name}')`);
     
                     // Insert to the movie table (contining the path of the movie)
@@ -55,8 +48,11 @@ class MovieLibrary extends Library {
 
                         // Find all the audio streams (languages) for the movie
 
-                        for (let stream of audio_streams) {
-                            db.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internal_movie_id, stream.language, stream.stream]);
+                        let audio_streams = await this.findAudioStreams(movieName, path);
+                        if (audio_streams) {
+                            for (let stream of audio_streams) {
+                                db.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internal_movie_id, stream.language, stream.stream]);
+                            }
                         }
 
                         db.one('SELECT id FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(result => {

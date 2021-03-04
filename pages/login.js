@@ -20,7 +20,8 @@ export default class Login extends React.Component {
 
 login(e) {
   e.preventDefault();
-    fetch('/api/auth/login', {
+    let serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+    fetch(`${serverUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ login(e) {
         <div className={LoginStyle.container}>
         <div className={LoginStyle.loginForm}>
             <h1>Login</h1>
-            <Link href="/register"><a className={LoginStyle.registerLink}>Don't have an account? Register now!</a></Link>
+            <Link href={process.env.NEXT_PUBLIC_SERVER_URL, "/register"}><a className={LoginStyle.registerLink}>Don't have an account? Register now!</a></Link>
             <div style={{clear: 'both'}}></div>
             <Form onSubmit={this.login}>
           <Form.Group controlId="formBasicUsername">

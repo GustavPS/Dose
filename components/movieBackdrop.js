@@ -19,7 +19,7 @@ export default class MovieBackdrop extends React.Component {
     }
 
     markAsWatched() {
-        fetch(`${server.server_ip}:4000/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
+        fetch(`${server.server_ip}/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
         .then(r => r.json())
         .then(status => {
             if (status.success) {

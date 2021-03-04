@@ -15,11 +15,11 @@ export default function Layout({ children, home, searchEnabled, server, relative
   let count = 0;
 
   const selectMovie = (id) => {
-      Router.push(`/server/${server.server_id}/movies/video/${id}`);
+      Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/movies/video/${id}`);
   }
 
   const selectShow = (id) => {
-    Router.push(`/server/${server.server_id}/shows/video/${id}`);
+    Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}`);
   }
 
   const onSearch = (result) => {
@@ -88,10 +88,10 @@ export default function Layout({ children, home, searchEnabled, server, relative
           {searchResults.length * 480 > windowSize.width &&
                                         <>
                                             <div className={styles.scrollButton} onClick={() => scrollLeft('searchRow')}>
-                                                <img src="/images/left.svg" width="70" />
+                                                <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
                                             </div>
                                             <div className={styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('searchRow')}>
-                                                <img src="/images/right.svg" width="70" />
+                                                <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
                                             </div>
                                         </>
           }

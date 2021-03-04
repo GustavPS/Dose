@@ -66,7 +66,7 @@ export default function ChangeImages(props) {
       }
 
     const getImages = () => {
-        fetch(`${server.server_ip}:4000/api/${type}/${id}/getImages`)
+        fetch(`${server.server_ip}/api/${type}/${id}/getImages`)
         .then(r => r.json())
         .then(images => {
           let backdropElements = [];
@@ -106,7 +106,7 @@ export default function ChangeImages(props) {
     return (
         <>
             <div style={{marginLeft: "27px"}}>
-                <div style={{backgroundImage: "url('/images/search.svg')"}} className={Styles.playButton} onClick={() => getImages()}></div>
+                <div style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/search.svg')`}} className={Styles.playButton} onClick={() => getImages()}></div>
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Välj bild</p>
             </div>
 
