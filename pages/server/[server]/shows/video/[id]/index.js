@@ -120,7 +120,7 @@ export async function getServerSideProps(context) {
   let serverId = context.params.server;
   let movieID = context.params.id;
 
-  return await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/getServer`, {
+  return await fetch(`http://localhost:${process.env.SERVER_PORT}${process.env.SERVER_SUB_FOLDER}/api/servers/getServer`, {
       method: 'POST',
       headers: {
           'Content-Type': 'application/json'
