@@ -175,19 +175,20 @@ class TvLibrary extends Library {
                     let internal_episode_id = await t.one('INSERT INTO serie_episode (season_number, serie_id, episode, path) VALUES ($1, (SELECT id FROM serie WHERE name = $2 AND path = $3), $4, $5) RETURNING id', [seasonNumber, serieName, showPath, episodeNumber, episodePath]);
                     internal_episode_id = internal_episode_id.id;
                     
-                    console.log(` > Trying to convert subtitles, this may take a while...`);
+		// CURENTLY DISABLED
+                    //console.log(` > Trying to convert subtitles, this may take a while...`);
                     // Try to convert the subtitles from the movie
-                    let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                    //let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
                 
                     // If the conversion failed (because the file was busy), try again.
-                    while(!subtitleConvertionResult) {
-                        subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
-                    }
+                    //while(!subtitleConvertionResult) {
+                    //    subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                    //}
 
                     let audio_streams = await this.findAudioStreams(serieName, episodePath);
                     console.log(audio_streams);
                     for (let stream of audio_streams) {
-                        db.none('INSERT INTO serie_episode_language (serie_episode_id, language, stream_index) VALUES ($1, $2, $3)', [internal_episode_id, stream.language, stream.stream]);
+                        t.none('INSERT INTO serie_episode_language (serie_episode_id, language, stream_index) VALUES ($1, $2, $3)', [internal_episode_id, stream.language, stream.stream]);
                     }
 
                     // Get the internal serie id for the episode
@@ -339,7 +340,7 @@ class TvLibrary extends Library {
     async removeEntry(path) {
         return new Promise(async (resolve, reject) => {
             let t = this;
-            lock.acquire(this.id, async function(done) {
+	    lock.enter(async function (token) {
                 // Remove the subtitle if that is what we are removing
                 db.any('SELECT * FROM serie_episode_subtitle WHERE path = $1 AND library_id = $2', [path, t.id])
                 .then(result => {
@@ -378,18 +379,16 @@ class TvLibrary extends Library {
                                         await db.none('DELETE FROM serie WHERE id = $1', [episodeInformation[0].serie_id]);
                                         await db.none('DELETE FROM serie_metadata WHERE serie_id = $1', [episodeInformation[0].serie_id]);
                                     }
-                                    done();
+					lock.leave(token);
                                 });
                             } else {
-                                done();
+lock.leave(token);
                             }
                         });
                     } else {
-                        done();
+lock.leave(token);
                     }
                 });
-            }, function() {
-                resolve();
             });
         });
     }

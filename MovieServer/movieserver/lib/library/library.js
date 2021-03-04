@@ -145,6 +145,7 @@ class Library {
                                 ])
                                 .output(outputPath)
                                 .on('start', function(commandLine) {
+console.log(commandLine);
                                 })
                                 .on('error', function(err, stdout, stderr) {
                                     console.log('an error happened converting subtitle: ' + err.message);

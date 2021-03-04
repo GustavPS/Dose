@@ -6,7 +6,7 @@ const db = require('../.././../lib/db');
 
 export default async (req, res) => {
     res = cors(res);
-    await fetch('http://localhost:3000/api/auth/validate', {
+    await fetch('http://localhost/dose/api/auth/validate', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

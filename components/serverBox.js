@@ -21,7 +21,7 @@ export default class ServerBox extends React.Component {
     }
 
     checkStatus() {
-        this.fetchWithTimeout(`${this.serverAdress}:4000/api/ping`, {}, 5000)    
+        this.fetchWithTimeout(`${this.serverAdress}/api/ping`, {}, 5000)    
         .then(() => {
             this.imgRef.current.classList.add(style.statusSuccess);
         })

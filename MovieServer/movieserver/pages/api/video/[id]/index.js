@@ -146,7 +146,7 @@ function startFFMPEG(filename, offset, language, req, res) {
         // Might be faster with only 1 thread? TODO: Test it
         .inputOptions([
           `-ss ${offset}`,
-          '-threads 3'
+          '-threads 8'
         ])
         .outputOptions(audioSettings)
 

@@ -216,7 +216,7 @@ export async function getServerSideProps(context) {
   let serverId = context.params.server;
   let internalEpisodeID = context.query.internalID;
 
-  return await fetch('http://localhost:3000/api/servers/getServer', {
+  return await fetch('http://localhost/dose/api/servers/getServer', {
       method: 'POST',
       headers: {
           'Content-Type': 'application/json'

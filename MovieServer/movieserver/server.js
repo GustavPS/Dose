@@ -1,4 +1,4 @@
-const { createServer } = require('https')
+const { createServer } = require('http')
 const { parse } = require('url')
 const next = require('next')
 const Watcher = require('./lib/watcher');
@@ -25,16 +25,18 @@ if (dev) {
 }
 
 function startWebServer() {
-    const httpsOptions = {
-        key: fs.readFileSync("./certs/localhost.key"),
-        cert: fs.readFileSync("./certs/localhost.crt"),
-    };
+    //const httpsOptions = {
+    //    key: fs.readFileSync("./certs/localhost.key"),
+    //    cert: fs.readFileSync("./certs/localhost.crt"),
+    //};
     app.prepare().then(() => {
-        createServer(httpsOptions, (req, res) => {
+        createServer((req, res) => {
           // Be sure to pass `true` as the second argument to `url.parse`.
           // This tells it to parse the query portion of the URL.
-          const parsedUrl = parse(req.url, true)
+	  const url = req.url.replace('/doseserver', '').replace(':4000', '');
+          const parsedUrl = parse(url, true)
           const { pathname, query } = parsedUrl
+console.log(pathname);
       
           if (pathname === '/a') {
             app.render(req, res, '/b', query)
@@ -43,7 +45,7 @@ function startWebServer() {
           } else {
             handle(req, res, parsedUrl)
           }
-        }).listen(4000, err => {
+        }).listen(3001, err => {
           if (err) throw err
           console.log('> Ready on http://localhost:4000')
         })

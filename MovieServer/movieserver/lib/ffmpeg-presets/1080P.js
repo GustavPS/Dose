@@ -1,9 +1,8 @@
 exports.load = function(ffmpeg) {
   ffmpeg
-  //.withVideoCodec('h264_nvenc')
-  .withVideoBitrate(8000)
-  .withAudioCodec('libmp3lame')
-  .withVideoCodec('h264_nvenc')
+  .withVideoCodec('libx264')
+  .withVideoBitrate(6000)
+  .withAudioCodec('aac')
   .inputOption([
     '-re'
   ])
