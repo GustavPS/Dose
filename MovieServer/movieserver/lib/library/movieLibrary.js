@@ -30,20 +30,20 @@ class MovieLibrary extends Library {
         return new Promise(async (resolve) => {
             db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
                 if (result.length === 0) {
+                    let audio_streams = await this.findAudioStreams(movieName, path);
+                    if (!audio_streams) {
+                        console.log("\x1b[33m",` > Error: Found a new movie but it does not contain any audio streams. Not adding to database. (${path} for library '${this.name}')`, "\x1b[0m");
+                        resolve();
+                        return;
+                    }
+
                     console.log(` > Found a new movie (${path} for library: '${this.name}')`);
-    
-                    // Try to convert the subtitles from the movie
-                    //new Promise(async (resolve, reject) => {
-                     //   resolve();
-                    //});
-    
-    
     
                     // Insert to the movie table (contining the path of the movie)
                     db.one('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3) RETURNING id', [path, this.id, movieName]).then(async (internal_movie_id) => {
                         internal_movie_id = internal_movie_id.id;
 
-			// CURRENTLY DISABLED
+			            // CURRENTLY DISABLED
                         //console.log(` > Trying to convert subtitles, this may take a while...`);
                         //let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
 
@@ -54,8 +54,7 @@ class MovieLibrary extends Library {
                         //}
 
                         // Find all the audio streams (languages) for the movie
-                        let audio_streams = await this.findAudioStreams(movieName, path);
-                        console.log(audio_streams);
+
                         for (let stream of audio_streams) {
                             db.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internal_movie_id, stream.language, stream.stream]);
                         }
@@ -149,14 +148,14 @@ class MovieLibrary extends Library {
             return;
         }
         let t = this;
-	lock.enter(async function (token) {
-        if (type === 'MOVIE') {
-            await t.addMovieIfNotSaved(movieName, path);
-        } else if (type === 'SUBTITLE') {
-            t.addSubtitleIfNotSaved(movieName, path, parentFolder);
-        }
-        lock.leave(token);
-    });
+	    lock.enter(async function (token) {
+            if (type === 'MOVIE') {
+                await t.addMovieIfNotSaved(movieName, path);
+            } else if (type === 'SUBTITLE') {
+                t.addSubtitleIfNotSaved(movieName, path, parentFolder);
+            }
+            lock.leave(token);
+        });
     }
 
     /**
