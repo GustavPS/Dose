@@ -15,10 +15,10 @@ export default class Register extends React.Component {
         username: ''
     }
 
-    this.login = this.login.bind(this);
+    this.register = this.register.bind(this);
 }
 
-login(e) {
+register(e) {
   e.preventDefault();
     fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/register`, {
         method: 'POST',
@@ -33,6 +33,13 @@ login(e) {
     })
     .then((r) => r.json())
     .then((data) => {
+      console.log(data.message)
+      let statusElement = document.getElementById("statusMessage");
+      if (data.message == "success") {
+        statusElement.innerHTML = "Successfully created an account";
+      } else {
+        statusElement.innerHTML = data.message;
+      }
     });
 }
 
@@ -45,10 +52,11 @@ login(e) {
 
         <div className={LoginStyle.container} style={{height: '100vh'}}>
           <div className={LoginStyle.loginForm}>
+              <h3 id="statusMessage"></h3>
               <h1>Register</h1>
               <Link href={process.env.NEXT_PUBLIC_SERVER_URL, "/login"}><a className={LoginStyle.registerLink}>Already have an account? Login now!</a></Link>
               <div style={{clear: 'both'}}></div>
-                  <Form onSubmit={this.login}>
+                  <Form onSubmit={this.register}>
                     <Form.Group controlId="formBasicUsername">
                       <Form.Label>Username</Form.Label>
                       <Form.Control type="text" placeholder="Username" onChange={(e) => this.setState({username: e.target.value})}/>
@@ -66,7 +74,7 @@ login(e) {
                         <Form.Label>Password</Form.Label>
                         <Form.Control type="password" placeholder="Password" onChange={(e) => this.setState({password: e.target.value})}/>
                     </Form.Group>
-                    <Button variant="primary" onClick={this.login}>
+                    <Button variant="primary" onClick={this.register}>
                         Submit
                     </Button>
           <input type="submit" style={{display: 'none'}} />
