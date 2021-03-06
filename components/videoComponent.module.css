@@ -237,3 +237,58 @@
     opacity: 0;
     transition: opacity 0.2s;
 }
+
+@keyframes load-1 {
+    0% { top: 29.264px; height: 59.471999999999994px }
+    50% { top: 37.76px; height: 42.48px }
+    100% { top: 37.76px; height: 42.48px }
+  }
+  @keyframes load-2 {
+    0% { top: 31.388px; height: 55.224px }
+    50% { top: 37.76px; height: 42.48px }
+    100% { top: 37.76px; height: 42.48px }
+  }
+  @keyframes load-3 {
+    0% { top: 33.512px; height: 50.97599999999999px }
+    50% { top: 37.76px; height: 42.48px }
+    100% { top: 37.76px; height: 42.48px }
+  }
+  .loadingInner div { position: absolute; width: 20.06px }.loadingInner div:nth-child(1) {
+    left: 19.47px;
+    background: #0051a2;
+    animation: load-1 1.075268817204301s cubic-bezier(0,0.5,0.5,1) infinite;
+    animation-delay: -0.21505376344086022s
+  }
+  .loadingInner div:nth-child(2) {
+    left: 48.97px;
+    background: #1b75be;
+    animation: load-2 1.075268817204301s cubic-bezier(0,0.5,0.5,1) infinite;
+    animation-delay: -0.10752688172043011s
+  }
+  .loadingInner div:nth-child(3) {
+    left: 78.47px;
+    background: #408ee0;
+    animation: load-3 1.075268817204301s cubic-bezier(0,0.5,0.5,1) infinite;
+    animation-delay: undefineds
+  }
+  
+  .loadingOuter {
+    width: 118px;
+    height: 118px;
+    display: inline-block;
+    overflow: hidden;
+    position: absolute;
+    z-index: 100;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+  }
+  .loadingInner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform: translateZ(0) scale(1);
+    backface-visibility: hidden;
+    transform-origin: 0 0; /* see note above */
+  }
+  .loadingInner div { box-sizing: content-box; }

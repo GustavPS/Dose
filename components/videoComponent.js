@@ -56,6 +56,7 @@ export default class VideoComponent extends React.Component {
                 show: false
             } : undefined,
             videoPaused: true,
+            isBuffering: true,
             title: props.title,
             season: props.season,
             episode: props.episode
@@ -119,6 +120,9 @@ export default class VideoComponent extends React.Component {
                     this.displayNextEpisodeBox();
                 }
             }
+            if(this.state.isBuffering) {
+                this.setState({isBuffering: false});
+            }
         }
 
         // Returns the 'real' current time
@@ -140,8 +144,12 @@ export default class VideoComponent extends React.Component {
                     this.seek();
                 }
             }
-            this.setState({videoPaused: false});
+            this.setState({videoPaused: false, isBuffering: false});
         }
+        // Show spinner on buffer
+        this.video.onwaiting = () => {
+            this.setState({isBuffering: true});
+        };
     }
 
     show(time=0) {
@@ -607,6 +615,8 @@ export default class VideoComponent extends React.Component {
                 
             </Head>
             <div className={Styles.videoContainer} id="videoContainer" onMouseMove={this.showControls}>
+            
+
                 
                 <video crossOrigin="anonymous" id="video" className={Styles.videoPlayer}>
                     <track id="subtitle" kind="subtitles" />
@@ -615,6 +625,15 @@ export default class VideoComponent extends React.Component {
                 <div className={Styles.transparentOverlay} id="transparentOverlay" onClick={this.togglePlay} onDoubleClick={this.enterFullScreen}>
 
                 </div>
+                {this.state.isBuffering &&
+                <div className={Styles.loadingOuter}>
+                    <div class={Styles.loadingInner}>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </div>
+                }
 
                 {this.state.nextEpisode != undefined && this.state.nextEpisode.show &&
                     <div className={Styles.nextEpisode}>
