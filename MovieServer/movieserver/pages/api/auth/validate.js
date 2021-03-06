@@ -18,22 +18,30 @@ export default async (req, res) => {
     .then((r) => r.json())
     .then((data) => {
         if (data.valid) {
-            db.one('SELECT id FROM users WHERE username = $1', [data.username])
+            db.any('SELECT id FROM users WHERE username = $1', [data.username])
                 .then(user => {
-                    const token = jwt.sign(
-                        {
-                            username: data.username,
-                            user_id: user.id
-                        },
-                        jwtSecret,
-                        {
-                            expiresIn: 300000, // 50 min
-                        },
-                    );
-                    res.status(200).json({
-                        status: 'success',
-                        token: token
-                    });
+                    if(user.length == 1) {
+                        user = user[0];
+                        const token = jwt.sign(
+                            {
+                                username: data.username,
+                                user_id: user.id
+                            },
+                            jwtSecret,
+                            {
+                                expiresIn: 300000, // 50 min
+                            },
+                        );
+                        res.status(200).json({
+                            status: 'success',
+                            token: token
+                        });
+                    } else {
+                        res.status(200).json({
+                            status: 'error',
+                            error: 'User not found in database'
+                        })
+                    }
              });
         } else {
             res.status(200).json({
