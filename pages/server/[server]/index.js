@@ -6,6 +6,7 @@ import Router from 'next/router';
 import { useEffect, useState } from 'react';
 import { Carousel, Container, Row, Col } from 'react-bootstrap';
 import Link from 'next/link';
+import Image from 'next/image';
 
 import useWindowSize from '../../../components/hooks/WindowSize';
 
@@ -352,10 +353,10 @@ export default (props) => {
                                 {ongoingMovies.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
-                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
+                                            <img src="../../../public/images/left.svg" width="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
-                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
+                                            <img src="../../../public/images/right.svg" width="70" />
                                         </div>
                                     </>
                                 }
@@ -374,10 +375,10 @@ export default (props) => {
                                 {ongoingShows.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingShows')}>
-                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
+                                            <Image src="/images/left.svg" width="70" height="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingShows')}>
-                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
+                                            <Image src="/images/right.svg" width="70" height="70" />
                                         </div>
                                     </>
                                 }
@@ -388,7 +389,7 @@ export default (props) => {
 
                     {newlyAddedMovies.length > 0 &&
                         <>
-                            <Link href={process.env.NEXT_PUBLIC_SERVER_URL + "/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
+                            <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
                             <div className={Styles.movieRow}>
                                 <div id="newlyAddedMovies" className={Styles.scrollable}>
                                     {newlyAddedMovies}
@@ -396,10 +397,10 @@ export default (props) => {
                                 {newlyAddedMovies.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedMovies')}>
-                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
+                                            <Image src="/images/left.svg" width="70" height="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedMovies')}>
-                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
+                                            <Image src="/images/right.svg" width="70" height="70" />
                                         </div>
                                     </>
                                 }
@@ -411,7 +412,7 @@ export default (props) => {
                     
                     {newlyAddedShows.length > 0 &&
                         <>
-                            <Link href={process.env.NEXT_PUBLIC_SERVER_URL + "/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda serier</h2></a></Link>
+                            <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda serier</h2></a></Link>
                             <div className={Styles.movieRow}>
                                 <div id="newlyAddedShows" className={Styles.scrollable}>
                                     {newlyAddedShows}
@@ -419,10 +420,10 @@ export default (props) => {
                                 {newlyAddedShows.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedShows')}>
-                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
+                                            <Image src="/images/left.svg" width="70" height="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedShows')}>
-                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
+                                            <Image src="/images/right.svg" width="70" height="70" />
                                         </div>
                                     </>
                                 }

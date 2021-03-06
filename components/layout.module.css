@@ -28,10 +28,13 @@
 }
 
 .logo {
-    width: 198px;
+    width: 198px !important; 
+    height: auto !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
     filter: invert(1);
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    margin-left: 15px;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin: 0 0 0 15px !important;
 }
