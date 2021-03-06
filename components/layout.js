@@ -14,7 +14,6 @@ export default function Layout({ children, home, searchEnabled, server, relative
   let currentResults = [];
   let count = 0;
   searchEnabled = searchEnabled == undefined ? false : true;
-  console.log(searchEnabled)
 
   const selectMovie = (id) => {
       Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/movies/video/${id}`);
