@@ -83,7 +83,7 @@ background: whitesmoke;
     margin: 10px 10px 0 0;
     width: 25px;
     height: 25px;
-    background-image: url('/images/cross.svg');
+    background-image: url('../public/images/cross.svg');
     background-size: contain;
     background-repeat: no-repeat;
     cursor: pointer;

@@ -4,6 +4,7 @@ import Search from './search';
 import {useState} from 'react'
 import MovieBackdrop from './movieBackdrop';
 import Router from 'next/router';
+import Image from 'next/image';
 import useWindowSize from './hooks/WindowSize';
 
 
@@ -16,11 +17,11 @@ export default function Layout({ children, home, searchEnabled, server, relative
   searchEnabled = searchEnabled == undefined ? false : true;
 
   const selectMovie = (id) => {
-      Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/movies/video/${id}`);
+      Router.push(`/server/${server.server_id}/movies/video/${id}`);
   }
 
   const selectShow = (id) => {
-    Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}`);
+    Router.push(`/server/${server.server_id}/shows/video/${id}`);
   }
 
   const onSearch = (result) => {
@@ -73,11 +74,11 @@ export default function Layout({ children, home, searchEnabled, server, relative
       <Head>
         <link rel="icon" 
         type="image/png" 
-        href="/images/favicon.png" />
+        href="../public/images/favicon.png" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
       </Head>
       <header style={relative !== undefined ? {position: 'relative'} : {}}>
-        <img className={styles.logo} src="/images/logo.png"></img>
+        <Image className={styles.logo} src="/images/logo.png" layout="fill"></Image>
         {searchEnabled &&
           <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} onSearch={(result) => onSearch(result)}></Search>}
       </header>
@@ -91,10 +92,10 @@ export default function Layout({ children, home, searchEnabled, server, relative
           {searchResults.length * 480 > windowSize.width &&
                                         <>
                                             <div className={styles.scrollButton} onClick={() => scrollLeft('searchRow')}>
-                                                <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
+                                                <Image src="/images/left.svg" width="70" height="70" />
                                             </div>
                                             <div className={styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('searchRow')}>
-                                                <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
+                                                <Image src="/images/right.svg" width="70" height="70" />
                                             </div>
                                         </>
           }

@@ -8,14 +8,12 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
-    "@silvermine/videojs-chromecast": "^1.2.1",
-    "@silvermine/videojs-quality-selector": "^1.2.4",
     "bootstrap": "^4.4.1",
     "didyoumean": "^1.2.1",
     "hls.js": "^0.13.2",
     "js-cookie": "^2.2.1",
     "jsonwebtoken": "^8.5.1",
-    "next": "^9.3.5",
+    "next": "^10.0.5",
     "next-cookies": "^2.0.3",
     "pg-promise": "^10.5.5",
     "plyr": "^3.6.2",

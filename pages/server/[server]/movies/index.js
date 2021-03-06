@@ -189,7 +189,7 @@ export default (props) => {
     }, []);
 
     const selectMovie = (id) => {
-        Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/movies/video/${id}`);
+        Router.push(`/server/${server.server_id}/movies/video/${id}`);
     }
 
 
@@ -218,10 +218,10 @@ export default (props) => {
                         {genre.movieElements.length >= 5 &&
                             <>
                                 <div className={Styles.scrollButton} onClick={() => scrollLeft(genre.name + 'Movies')}>
-                                    <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
+                                    <img src="../../../../public/images/left.svg" width="70" />
                                 </div>
                                 <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight(genre.name + 'Movies')}>
-                                    <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
+                                    <img src="../../../../public/images/right.svg" width="70" />
                                 </div>
 
                             </>
@@ -257,10 +257,10 @@ export default (props) => {
                                 {ongoingMovies.length >= 5 &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
-                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
+                                            <img src="../../../../images/left.svg" width="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
-                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
+                                            <img src="../../../../images/right.svg" width="70" />
                                         </div>
                                     </>
                                 }

@@ -106,7 +106,7 @@
 
 
 .settingsButton {
-    background-image: url('/images/settings.svg');
+    background-image: url('../public/images/settings.svg');
     filter: invert(1);
     width: 24px;
     height: 24px;
@@ -122,21 +122,21 @@
 }
 
 .playButton {
-    background-image: url('/images/play.svg');
+    background-image: url('../public/images/play.svg');
     filter: invert(1);
     width: 24px;
     height: 24px;
 }
 
 .pauseButton {
-    background-image: url('/images/pause.svg');
+    background-image: url('../public/images/pause.svg');
     filter: invert(1);
     width: 24px;
     height: 24px;
 }
 
 .settingsBack {
-    background-image: url('/images/left_arrow.svg');
+    background-image: url('../public/images/left_arrow.svg');
     background-repeat: no-repeat;
     background-position-x: 0;
     background-position-y: center;
@@ -145,7 +145,7 @@
 }
 
 .back {
-    background-image: url('/images/left_arrow.svg');
+    background-image: url('../public/images/left_arrow.svg');
     background-repeat: no-repeat;
     filter: invert(1);
     width: 50px;
@@ -169,7 +169,7 @@
 }
 
 .audioImage {
-    background-image: url('/images/speaker.svg');
+    background-image: url('../public/images/speaker.svg');
     filter: invert(1);
     background-repeat: no-repeat;
     background-position: center;
@@ -180,7 +180,7 @@
 }
 
 .fullscreenImage {
-    background-image: url('/images/fullscreen.svg');
+    background-image: url('../public/images/fullscreen.svg');
     filter: invert(1);
     background-repeat: no-repeat;
     background-position: center;

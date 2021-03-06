@@ -51,7 +51,7 @@ export default function Home(props) {
   }, []);
 
   const selectEpisode = (episodeID, internalID) => {
-      Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}/season/${season}/episode/${episodeID}?internalID=${internalID}`);
+      Router.push(`/server/${server.server_id}/shows/video/${id}/season/${season}/episode/${episodeID}?internalID=${internalID}`);
   }
 
 
