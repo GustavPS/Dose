@@ -73,11 +73,11 @@ export default function Layout({ children, home, searchEnabled, server, relative
       <Head>
         <link rel="icon" 
         type="image/png" 
-        href="/images/favicon.png" />
+        href="../public/images/favicon.png" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
       </Head>
       <header style={relative !== undefined ? {position: 'relative'} : {}}>
-        <img className={styles.logo} src="/images/logo.png"></img>
+        <img className={styles.logo} src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/logo.png"}></img>
         {searchEnabled &&
           <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} onSearch={(result) => onSearch(result)}></Search>}
       </header>

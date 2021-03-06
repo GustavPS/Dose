@@ -78,7 +78,7 @@
 }
 
 .playButton {
-    background: url('/images/play_2.svg');
+    background: url('../public/images/play_2.svg');
     filter: invert(1);
     background-repeat: no-repeat;
     background-position: center;
