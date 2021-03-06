@@ -13,6 +13,8 @@ export default function Layout({ children, home, searchEnabled, server, relative
   const [isSearching, setIsSearching] = useState(false);
   let currentResults = [];
   let count = 0;
+  searchEnabled = searchEnabled == undefined ? false : true;
+  console.log(searchEnabled)
 
   const selectMovie = (id) => {
       Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/movies/video/${id}`);
@@ -23,6 +25,7 @@ export default function Layout({ children, home, searchEnabled, server, relative
   }
 
   const onSearch = (result) => {
+    console.log("search enabled " + searchEnabled)
     console.log(result);
       let elements = []
       for (let content of result) {
@@ -76,7 +79,8 @@ export default function Layout({ children, home, searchEnabled, server, relative
       </Head>
       <header style={relative !== undefined ? {position: 'relative'} : {}}>
         <img className={styles.logo} src="/images/logo.png"></img>
-        <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} onSearch={(result) => onSearch(result)}></Search>
+        {searchEnabled &&
+          <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} onSearch={(result) => onSearch(result)}></Search>}
       </header>
       {isSearching &&
       <div style={{position: 'relative', top: '115px'}}>
