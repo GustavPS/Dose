@@ -60,7 +60,7 @@ export default function Home(props) {
 
       let currentTime = "";
       let hours = Math.floor(meta.currentTime / 60 / 60)
-      let minutes = Math.floor(meta.currentTime / 60)
+      let minutes = Math.floor((meta.currentTime / 60) % 60)
       let seconds = Math.floor(meta.currentTime % 60);
       if (hours >= 1) {
         currentTime += `${hours}:`

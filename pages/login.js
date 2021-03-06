@@ -34,6 +34,8 @@ login(e) {
     .then((r) => r.json())
     .then((data) => {
       if (data && data.status === 'error') {
+        let statusElement = document.getElementById("statusMessage");
+        statusElement.innerHTML = data.message;
         // Show login error
       } else if (data && data.status === 'success') {
         cookie.set('token', data.token, {expires: 2});
@@ -51,6 +53,7 @@ login(e) {
 
         <div className={LoginStyle.container}>
         <div className={LoginStyle.loginForm}>
+            <h3 id="statusMessage"></h3>
             <h1>Login</h1>
             <Link href={process.env.NEXT_PUBLIC_SERVER_URL, "/register"}><a className={LoginStyle.registerLink}>Don't have an account? Register now!</a></Link>
             <div style={{clear: 'both'}}></div>

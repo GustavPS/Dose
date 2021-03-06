@@ -86,7 +86,7 @@ export default class VideoComponent extends React.Component {
         this.video.isFullscreen = false;
 
         // The duration of the movie
-        this.video.realDuration = -1;
+        this.video.realDuration = 999;
         // The watchtime offset for the seekbar (since we change source on seek and HTML do not know the correct watchtime after we change source)
         this.video.watchTimeOffset = 0;
         // True if we are currently seeking (Draging the seekbar);
