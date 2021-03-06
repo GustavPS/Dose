@@ -38,7 +38,7 @@ export default function Home(props) {
 
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
-    fetch(`${server.server_ip}:4000/api/movies/${id}?token=${serverToken}`, {
+    fetch(`${server.server_ip}/api/movies/${id}?token=${serverToken}`, {
       method: 'GET',
       headers: {
           'Content-Type': 'application/json'
@@ -82,7 +82,7 @@ export default function Home(props) {
   }, []);
 
   const markAsWatched = () => {
-    fetch(`${server.server_ip}:4000/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
+    fetch(`${server.server_ip}/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
     .then(r => r.json())
     .then(status => {
       if (status.success) {
@@ -96,7 +96,7 @@ export default function Home(props) {
   }
 
   const markAsNotWatched = () => {
-    fetch(`${server.server_ip}:4000/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
+    fetch(`${server.server_ip}/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
     .then(r => r.json())
     .then(status => {
       if (status.success) {
@@ -113,7 +113,7 @@ export default function Home(props) {
   const searchMetadata = (event) => {
     let search = metadataSearch.current.value;
     console.log(search);
-    fetch(`${server.server_ip}:4000/api/movies/searchMetadata?search=${search}`)
+    fetch(`${server.server_ip}/api/movies/searchMetadata?search=${search}`)
     .then(r => r.json())
     .then(result => {
       console.log(result);
@@ -137,7 +137,7 @@ export default function Home(props) {
   }
 
   const updateMetadata = (metadataID) => {
-    fetch(`${server.server_ip}:4000/api/movies/${id}/updateMetadata?metadataID=${metadataID}`)
+    fetch(`${server.server_ip}/api/movies/${id}/updateMetadata?metadataID=${metadataID}`)
     .then(r => r.json())
     .then(json => {
       if (json.success) {
@@ -145,11 +145,7 @@ export default function Home(props) {
       }
     });
   }
-
-
-
-    
-    //   <video disablePictureInPicture id="video" className={Styles.videoPlayer + " video-js vjs-default-skin"} controls preload="auto"></video>
+  
   return (
     <>
         <Head>
@@ -224,7 +220,7 @@ export default function Home(props) {
               {watched &&
               <>
                   <div style={{marginLeft: "15px"}}>
-                  <div id="markAsWatched" style={{backgroundImage: "url('/images/cross.svg')"}} className={Styles.playButton} onClick={() => markAsNotWatched()}></div>
+                  <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => markAsNotWatched()}></div>
                   <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som osedd</p>
                   </div>
               </>
@@ -232,13 +228,13 @@ export default function Home(props) {
               {!watched &&
               <>
                 <div style={{marginLeft: "15px"}}>
-                  <div id="markAsWatched" style={{backgroundImage: "url('/images/eye.svg')"}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
+                  <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
                   <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
                 </div>
               </>
               }
               <div>
-                <div style={{marginLeft: "15px", backgroundImage: "url('/images/search.svg')"}} className={Styles.playButton} onClick={() => setMetadataBox(true)}></div>
+                <div style={{marginLeft: "15px", backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/search.svg')`}} className={Styles.playButton} onClick={() => setMetadataBox(true)}></div>
                 <p style={{marginLeft: "15px", marginTop: "5px", fontSize: '14px'}}>Uppdatera metadata</p>
               </div>
 
@@ -265,7 +261,7 @@ export async function getServerSideProps(context) {
   let serverId = context.params.server;
   let movieID = context.params.id;
 
-  return await fetch('http://localhost:3000/api/servers/getServer', {
+  return await fetch(`http://localhost:${process.env.SERVER_PORT}${process.env.SERVER_SUB_FOLDER}/api/servers/getServer`, {
       method: 'POST',
       headers: {
           'Content-Type': 'application/json'

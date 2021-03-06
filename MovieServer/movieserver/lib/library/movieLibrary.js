@@ -32,31 +32,27 @@ class MovieLibrary extends Library {
                 if (result.length === 0) {
                     console.log(` > Found a new movie (${path} for library: '${this.name}')`);
     
-                    // Try to convert the subtitles from the movie
-                    //new Promise(async (resolve, reject) => {
-                     //   resolve();
-                    //});
-    
-    
-    
                     // Insert to the movie table (contining the path of the movie)
                     db.one('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3) RETURNING id', [path, this.id, movieName]).then(async (internal_movie_id) => {
                         internal_movie_id = internal_movie_id.id;
 
-                        console.log(` > Trying to convert subtitles, this may take a while...`);
-                        let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+			            // CURRENTLY DISABLED
+                        //console.log(` > Trying to convert subtitles, this may take a while...`);
+                        //let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
 
                         // If the conversion failed (because the file was busy), try again.
-                        while(!subtitleConvertionResult) {
-                            await new Promise(r => setTimeout(r, 2000));
-                            subtitleConvertionResult = await this.convertSubtitles(movieName, path);
-                        }
+                        //while(!subtitleConvertionResult) {
+                        //    await new Promise(r => setTimeout(r, 2000));
+                        //    subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                        //}
 
                         // Find all the audio streams (languages) for the movie
+
                         let audio_streams = await this.findAudioStreams(movieName, path);
-                        console.log(audio_streams);
-                        for (let stream of audio_streams) {
-                            db.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internal_movie_id, stream.language, stream.stream]);
+                        if (audio_streams) {
+                            for (let stream of audio_streams) {
+                                db.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internal_movie_id, stream.language, stream.stream]);
+                            }
                         }
 
                         db.one('SELECT id FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(result => {
@@ -148,17 +144,14 @@ class MovieLibrary extends Library {
             return;
         }
         let t = this;
-        lock.acquire("abcdefg", async function(done) {
-
-        if (type === 'MOVIE') {
-            await t.addMovieIfNotSaved(movieName, path);
-        } else if (type === 'SUBTITLE') {
-            t.addSubtitleIfNotSaved(movieName, path, parentFolder);
-        }
-        done();
-    }, function() {
-        
-    });
+	    lock.enter(async function (token) {
+            if (type === 'MOVIE') {
+                await t.addMovieIfNotSaved(movieName, path);
+            } else if (type === 'SUBTITLE') {
+                t.addSubtitleIfNotSaved(movieName, path, parentFolder);
+            }
+            lock.leave(token);
+        });
     }
 
     /**

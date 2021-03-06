@@ -41,7 +41,7 @@ export default (props) => {
 
     // Check if user have access to this server
     const validateAccess = async (cb) => {
-        return await fetch(`${server.server_ip}:4000/api/auth/validate`, {
+        return await fetch(`${server.server_ip}/api/auth/validate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -73,9 +73,9 @@ export default (props) => {
         return new Promise((resolve, reject) => {
             let url;
             if (ongoing) {
-                url = `${server.server_ip}:4000/api/movies/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                url = `${server.server_ip}/api/movies/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             } else {
-                url = `${server.server_ip}:4000/api/movies/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                url = `${server.server_ip}/api/movies/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             }
             fetch(url, {
                 method: 'POST',
@@ -121,9 +121,9 @@ export default (props) => {
         return new Promise((resolve, reject) => {
             let url;
             if (ongoing) {
-                url = `${server.server_ip}:4000/api/series/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                url = `${server.server_ip}/api/series/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             } else {
-                url = `${server.server_ip}:4000/api/series/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                url = `${server.server_ip}/api/series/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             }
             fetch(url, {
                 method: 'POST',
@@ -308,15 +308,15 @@ export default (props) => {
 
 
     const selectMovie = (id) => {
-        Router.push(`/server/${server.server_id}/movies/video/${id}`);
+        Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/movies/video/${id}`);
     }
 
     const selectShow = (id) => {
-        Router.push(`/server/${server.server_id}/shows/video/${id}`);
+        Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}`);
     }
 
     const selectEpisode = (showID, seasonNumber, episodeNumber, internalEpisodeID) => {
-        Router.push(`/server/${server.server_id}/shows/video/${showID}/season/${seasonNumber}/episode/${episodeNumber}?internalID=${internalEpisodeID}`)
+        Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${showID}/season/${seasonNumber}/episode/${episodeNumber}?internalID=${internalEpisodeID}`)
     }
 
 
@@ -352,10 +352,10 @@ export default (props) => {
                                 {ongoingMovies.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
-                                            <img src="/images/left.svg" width="70" />
+                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
-                                            <img src="/images/right.svg" width="70" />
+                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
                                         </div>
                                     </>
                                 }
@@ -374,10 +374,10 @@ export default (props) => {
                                 {ongoingShows.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingShows')}>
-                                            <img src="/images/left.svg" width="70" />
+                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingShows')}>
-                                            <img src="/images/right.svg" width="70" />
+                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
                                         </div>
                                     </>
                                 }
@@ -388,7 +388,7 @@ export default (props) => {
 
                     {newlyAddedMovies.length > 0 &&
                         <>
-                            <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
+                            <Link href={process.env.NEXT_PUBLIC_SERVER_URL + "/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
                             <div className={Styles.movieRow}>
                                 <div id="newlyAddedMovies" className={Styles.scrollable}>
                                     {newlyAddedMovies}
@@ -396,10 +396,10 @@ export default (props) => {
                                 {newlyAddedMovies.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedMovies')}>
-                                            <img src="/images/left.svg" width="70" />
+                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedMovies')}>
-                                            <img src="/images/right.svg" width="70" />
+                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
                                         </div>
                                     </>
                                 }
@@ -411,7 +411,7 @@ export default (props) => {
                     
                     {newlyAddedShows.length > 0 &&
                         <>
-                            <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda serier</h2></a></Link>
+                            <Link href={process.env.NEXT_PUBLIC_SERVER_URL + "/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda serier</h2></a></Link>
                             <div className={Styles.movieRow}>
                                 <div id="newlyAddedShows" className={Styles.scrollable}>
                                     {newlyAddedShows}
@@ -419,10 +419,10 @@ export default (props) => {
                                 {newlyAddedShows.length * 480 > windowSize.width &&
                                     <>
                                         <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedShows')}>
-                                            <img src="/images/left.svg" width="70" />
+                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/left.svg"} width="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedShows')}>
-                                            <img src="/images/right.svg" width="70" />
+                                            <img src={process.env.NEXT_PUBLIC_SERVER_URL, "/images/right.svg"} width="70" />
                                         </div>
                                     </>
                                 }
@@ -446,7 +446,7 @@ export default (props) => {
 // Get the information about the server and send it to the front end before render (this is server-side)
 export async function getServerSideProps(context) {
     let serverId = context.params.server;
-    return await fetch('http://localhost:3000/api/servers/getServer', {
+    return await fetch(`http://localhost:${process.env.SERVER_PORT}${process.env.SERVER_SUB_FOLDER}/api/servers/getServer`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

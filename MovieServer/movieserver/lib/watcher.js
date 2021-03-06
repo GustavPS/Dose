@@ -140,7 +140,7 @@ class Watcher {
                 await library.newEntry(filePath);
                 //console.log("mer efter")
             } else {
-                //library.newEntry(filePath);
+                library.newEntry(filePath);
             }
         })
         .on('unlink', (filePath) => {

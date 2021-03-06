@@ -1,12 +1,12 @@
 exports.load = function(ffmpeg) {
-    ffmpeg
-    .withVideoCodec('h264_nvenc')
+ffmpeg
+    .withVideoCodec('libx264')
     .withVideoBitrate(4000)
     .withAudioCodec('libmp3lame')
     .inputOption([
       '-re'
     ])
-    .outputOption([
+   /* .outputOption([
       '-g 52',
       '-map 0',
       '-map -v',
@@ -20,6 +20,29 @@ exports.load = function(ffmpeg) {
       '-vf scale=-1:720',
       '-movflags frag_keyframe+empty_moov+faststart',
       '-pix_fmt yuv420p'
+    ])*/
+    .outputOption([
+/*
+'-movflags frag_keyframe+empty_moov+faststart',
+'-pix_fmt yuv420p',
+'-preset ultrafast',
+ '-deadline realtime',
+'-crf 30'
+*/
+      '-g 52',
+      '-map 0',
+      '-map -v',
+      '-map 0:V',
+      '-sn',
+      '-deadline realtime',
+      '-lag-in-frames 0',
+      '-static-thresh 0',
+      '-frame-parallel 1',
+      '-crf 25',
+      '-movflags frag_keyframe+empty_moov+faststart',
+      '-pix_fmt yuv420p',
+'-preset ultrafast'
+
     ])
     .outputFormat('mp4')
   };
