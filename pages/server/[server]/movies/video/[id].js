@@ -152,12 +152,8 @@ export default function Home(props) {
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
         <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
 
-        <link href="https://unpkg.com/@silvermine/videojs-quality-selector/dist/css/quality-selector.css" rel="stylesheet" />
         <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
         <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
-        <link href="/chromecast/silvermine-videojs-chromecast.css" rel="stylesheet" />
-        <script src="https://unpkg.com/@silvermine/videojs-quality-selector/dist/js/silvermine-videojs-quality-selector.min.js"></script>
-        <script src="/chromecast/silvermine-videojs-chromecast.min.js"></script>
         <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
         </Head>

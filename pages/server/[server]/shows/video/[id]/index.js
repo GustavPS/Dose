@@ -52,7 +52,7 @@ export default function Home(props) {
   }, []);
 
   const selectSeason = (seasonId) => {
-      Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}/season/${seasonId}`);
+      Router.push(`/server/${server.server_id}/shows/video/${id}/season/${seasonId}`);
   }
 
 

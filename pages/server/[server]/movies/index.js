@@ -189,7 +189,7 @@ export default (props) => {
     }, []);
 
     const selectMovie = (id) => {
-        Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/movies/video/${id}`);
+        Router.push(`/server/${server.server_id}/movies/video/${id}`);
     }
 
 

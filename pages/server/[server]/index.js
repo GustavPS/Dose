@@ -308,15 +308,15 @@ export default (props) => {
 
 
     const selectMovie = (id) => {
-        Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/movies/video/${id}`);
+        Router.push(`/server/${server.server_id}/movies/video/${id}`);
     }
 
     const selectShow = (id) => {
-        Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}`);
+        Router.push(`/server/${server.server_id}/shows/video/${id}`);
     }
 
     const selectEpisode = (showID, seasonNumber, episodeNumber, internalEpisodeID) => {
-        Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${showID}/season/${seasonNumber}/episode/${episodeNumber}?internalID=${internalEpisodeID}`)
+        Router.push(`/server/${server.server_id}/shows/video/${showID}/season/${seasonNumber}/episode/${episodeNumber}?internalID=${internalEpisodeID}`)
     }
 
 
