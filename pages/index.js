@@ -12,7 +12,7 @@ const fetcher = url =>
     .then(r => {
       return r.json().then(result => {
         if (result.error !== undefined && result.error === 'unauthorized') {
-          Router.push(`${process.env.NEXT_PUBLIC_SERVER_URL}/login`);
+          Router.push(`/login`);
         }
         return result;
       });

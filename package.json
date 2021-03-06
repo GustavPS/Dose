@@ -8,8 +8,6 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
-    "@silvermine/videojs-chromecast": "^1.2.1",
-    "@silvermine/videojs-quality-selector": "^1.2.4",
     "bootstrap": "^4.4.1",
     "didyoumean": "^1.2.1",
     "hls.js": "^0.13.2",
