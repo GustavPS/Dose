@@ -55,7 +55,7 @@ login(e) {
         <div className={LoginStyle.loginForm}>
             <h3 id="statusMessage"></h3>
             <h1>Login</h1>
-            <Link href={process.env.NEXT_PUBLIC_SERVER_URL, "/register"}><a className={LoginStyle.registerLink}>Don't have an account? Register now!</a></Link>
+            <Link href={"/register"}><a className={LoginStyle.registerLink}>Don't have an account? Register now!</a></Link>
             <div style={{clear: 'both'}}></div>
             <Form onSubmit={this.login}>
           <Form.Group controlId="formBasicUsername">
