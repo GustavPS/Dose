@@ -18,7 +18,7 @@ export default async function handle(req, res) {
         if (user.length === 0) {
             res.status(200).json({
                 status: 'error',
-                message: 'Wrong username'
+                message: 'Wrong username/password'
             });
             return;
         }
@@ -31,7 +31,7 @@ export default async function handle(req, res) {
         if (user.length === 0) {
             res.status(200).json({
                 status: 'error',
-                message: 'Wrong password'
+                message: 'Wrong username/password'
             });
             return;
         }
