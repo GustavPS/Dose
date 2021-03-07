@@ -1,3 +1,5 @@
+// nvidia encoding = h264_nvenc
+
 exports.load = function(ffmpeg) {
   ffmpeg
   .withVideoCodec('libx264')
@@ -7,6 +9,7 @@ exports.load = function(ffmpeg) {
     '-re'
   ])
   .outputOption([
+    /*
     '-g 52',
     '-map 0',
     '-map -v',
@@ -20,6 +23,20 @@ exports.load = function(ffmpeg) {
     '-pix_fmt yuv420p',
     '-sn',
     '-max_muxing_queue_size 9999'
+    */
+    '-g 52',
+    '-map 0',
+    '-map -v',
+    '-map 0:V',
+    '-sn',
+    '-deadline realtime',
+    '-lag-in-frames 0',
+    '-static-thresh 0',
+    '-frame-parallel 1',
+    '-crf 22',
+    '-movflags frag_keyframe+empty_moov+faststart',
+    '-pix_fmt yuv420p',
+    '-preset ultrafast'
   ])
   .outputFormat('mp4')
 };
