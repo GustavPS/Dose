@@ -9,7 +9,7 @@ class TvMetadata extends Metadata {
 
     getImages(serieID) {
         return new Promise((resolve, reject) => {
-            fetch(`${this.getAPIUrl()}/tv/${serieID}/images?api_key=${this.getAPIKey()}`)
+            fetch(`${this.getAPIUrl()}/tv/${serieID}/images?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`)
             .then(res => res.json())
             .then(images => {
                 resolve(images);
@@ -177,14 +177,26 @@ class TvMetadata extends Metadata {
 
                         // Set so one backdrop image is active
                         let hasAnActive = false;
+                        let foundPrefferedLanguage = false;
                         for (let image of images.backdrops) {
-                            if (image.file_path === json.results[0].backdrop_path) {
+                            if (image.iso_639_1 == 'en' && !foundPrefferedLanguage) {
                                 image.active = true;
+                                foundPrefferedLanguage = true;
                                 hasAnActive = true;
                             } else {
                                 image.active = false;
                             }
                         }
+
+                        if (!foundPrefferedLanguage) {
+                            for (let image of images.backdrops) {
+                                if (image.file_path === json.results[0].backdrop_path && !foundPrefferedLanguage) {
+                                    image.active = true;
+                                    hasAnActive = true;
+                                }
+                            }
+                        }
+
                         if (!hasAnActive) {
                             images.backdrops[0].active = true;
                         }

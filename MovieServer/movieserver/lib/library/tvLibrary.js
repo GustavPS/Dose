@@ -187,9 +187,12 @@ class TvLibrary extends Library {
 
                     let audio_streams = await this.findAudioStreams(serieName, episodePath);
                     console.log(audio_streams);
-                    for (let stream of audio_streams) {
-                        t.none('INSERT INTO serie_episode_language (serie_episode_id, language, stream_index) VALUES ($1, $2, $3)', [internal_episode_id, stream.language, stream.stream]);
+                    if (audio_streams) {
+                        for (let stream of audio_streams) {
+                            t.none('INSERT INTO serie_episode_language (serie_episode_id, language, stream_index) VALUES ($1, $2, $3)', [internal_episode_id, stream.language, stream.stream]);
+                        }
                     }
+
 
                     // Get the internal serie id for the episode
                     let internalSerieID = await t.one(`SELECT id FROM serie WHERE name = $1 AND path = $2`, [serieName, showPath], c => +c.id);
