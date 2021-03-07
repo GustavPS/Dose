@@ -13,6 +13,7 @@ const ALLOWED_QUALITIES = [
   '1080P',
   '720P',
   '480P',
+  '360P',
   '240P',
   'directplay'
 ];

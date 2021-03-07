@@ -38,10 +38,11 @@ ffmpeg
       '-lag-in-frames 0',
       '-static-thresh 0',
       '-frame-parallel 1',
-      '-crf 25',
+      '-crf 22',
+      '-vf scale=trunc(oh*a/2)*2:720',
       '-movflags frag_keyframe+empty_moov+faststart',
       '-pix_fmt yuv420p',
-'-preset ultrafast'
+      '-preset ultrafast'
 
     ])
     .outputFormat('mp4')
