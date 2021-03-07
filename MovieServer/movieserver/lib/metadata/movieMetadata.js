@@ -31,16 +31,29 @@ class MovieMetadata extends Metadata {
                         this.getImages(json.results[0].id)
                         .then(images => {
                             let active = true;
+                            let foundPrefferedLanguage = false;
+                            let count = 0;
+                            let prefferedLanguageIndex = -1;
                             for (let image of images.backdrops) {
-                                image.active = active;
-                                active = false;
+                                if (image.iso_639_1 == 'en' && !foundPrefferedLanguage) {
+                                    image.active = true;
+                                    foundPrefferedLanguage = true;
+                                    prefferedLanguageIndex = count;
+                                    active = false;
+                                } else {
+                                    image.active = active;
+                                    active = false;
+                                }
+                                count++;
+                            }
+                            if (foundPrefferedLanguage && images.backdrops.length > 0 && prefferedLanguageIndex != 0) {
+                                images.backdrops[0].active = false;
                             }
                             active = true;
                             for (let image of images.posters) {
                                 image.active = active;
                                 active = false;
                             }
-
 
                             this.getTrailer(json.results[0].id).then(trailer => {
                                 let result = {
@@ -60,7 +73,7 @@ class MovieMetadata extends Metadata {
 
     getImages(movieID) {
         return new Promise((resolve, reject) => {
-            fetch(`${this.getAPIUrl()}/movie/${movieID}/images?api_key=${this.getAPIKey()}`)
+            fetch(`${this.getAPIUrl()}/movie/${movieID}/images?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`)
             .then(res => res.json())
             .then(images => {
                 resolve(images);
