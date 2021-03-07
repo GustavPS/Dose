@@ -78,7 +78,7 @@ export default function Layout({ children, home, searchEnabled, server, relative
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
       </Head>
       <header style={relative !== undefined ? {position: 'relative'} : {}}>
-        <Image className={styles.logo} src="/images/logo.png" layout="fill"></Image>
+        <img className={styles.logo} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/logo.png`} layout="fill"></img>
         {searchEnabled &&
           <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} onSearch={(result) => onSearch(result)}></Search>}
       </header>
@@ -92,10 +92,10 @@ export default function Layout({ children, home, searchEnabled, server, relative
           {searchResults.length * 480 > windowSize.width &&
                                         <>
                                             <div className={styles.scrollButton} onClick={() => scrollLeft('searchRow')}>
-                                                <Image src="/images/left.svg" width="70" height="70" />
+                                                <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
                                             </div>
                                             <div className={styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('searchRow')}>
-                                                <Image src="/images/right.svg" width="70" height="70" />
+                                                <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
                                             </div>
                                         </>
           }
