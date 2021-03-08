@@ -28,11 +28,18 @@ export default async (req, res) => {
     }
 
     let filename = "";
-    if (type === 'movie') {
-      filename = await getMoviePath(req.query.id);
-    } else if (type === 'serie') {
-      filename = await getEpisodePath(req.query.id); 
+    try {
+      if (type === 'movie') {
+        filename = await getMoviePath(req.query.id);
+      } else if (type === 'serie') {
+        filename = await getEpisodePath(req.query.id); 
+      }
+    } catch(error) {
+      console.log(` > User tried to access movie/episode with id ${req.query.id} which does not exist`);
+      res.status(404).end();
+      return;
     }
+
 
     var stat = fs.statSync(filename);
     var start = 0;
@@ -75,6 +82,8 @@ function getMoviePath(movieID) {
               ON movie.library = library.id AND movie.id = $1
             `, [movieID]).then((result) => {
               resolve(`${result.basepath}${result.subpath}`)
+      }).catch(error => {
+        reject();
       });
   });
 }
@@ -92,6 +101,8 @@ function getEpisodePath(showID) {
             WHERE serie_episode.id = $1
     `, [showID]).then(result => {
       resolve(`${result.basepath}${result.subpath}`);
+    }).catch(error => {
+      reject();
     });
   });
 }

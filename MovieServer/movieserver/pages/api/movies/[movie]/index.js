@@ -69,6 +69,11 @@ export default (req, res) => {
                     resolve();
                 });
 
+            }).catch(error => {
+                console.log(` > User tried to get the information for movie with id ${req.query.movie} which does not exist`);
+                res.status(404).end();
+                resolve();
+                return;
             });
         } else {
             res.status(403).end();
