@@ -1,5 +1,6 @@
 const db = require('../../../lib/db');
 const cors = require('../../../lib/cors');
+const validateUser = require('../../../lib/validateUser');
 const ORDERBY = [
   'id',
   'added_date',
@@ -22,27 +23,15 @@ export default (req, res) => {
         let episode_number = parseInt(req.query.episode);
         let token = req.query.token;
 
-    
-    
-        let decoded;
-        if (token === undefined || token === null) {
+        if (!validateUser(token)) {
             res.status(403).end();
             resolve();
             return;
         }
-    
-        try {
-            decoded = jwt.verify(token, jwtSecret);
-        } catch (e) {
-            console.log("Kunde inte verifiera token i getCurrentTime (gammal token?)");
-        }
-    
-        if (decoded) {
-            getNextEpisodeID(episode_number, serie_id, season_number).then(episodeInfo => {
-                res.status(200).json(episodeInfo);
-                resolve();
-            });
-        }
+        getNextEpisodeID(episode_number, serie_id, season_number).then(episodeInfo => {
+            res.status(200).json(episodeInfo);
+            resolve();
+        });
     });
 }
 

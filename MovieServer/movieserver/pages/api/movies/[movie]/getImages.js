@@ -2,9 +2,8 @@ import fetch from 'node-fetch';
 
 const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
-const jwtSecret = 'SERVERSECRET';
-const jwt = require('jsonwebtoken');
 const MovieMetadata = require('../../../../lib/metadata/movieMetadata');
+const validateUser = require('../../../../lib/validateUser');
 
 
 const metadataObj = new MovieMetadata();
@@ -14,6 +13,13 @@ export default (req, res) => {
     return new Promise(resolve => {
         let movieID = req.query.movie;
         res = cors(res);
+
+        let token = req.query.token;
+        if (!validateUser(token)) {
+            res.status(403).end();
+            resolve();
+            return;
+        }
 
         // TODO: Error handling when metadatID does not exist
 

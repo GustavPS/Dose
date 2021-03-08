@@ -198,7 +198,7 @@ export default class VideoComponent extends React.Component {
 
     loadSubtitles() {
         return new Promise(resolve => {
-            fetch(`${this.server.server_ip}/api/subtitles/list?content=${this.internalID}&type=${this.type}`)
+            fetch(`${this.server.server_ip}/api/subtitles/list?content=${this.internalID}&type=${this.type}&token=${this.serverToken}`)
             .then(r => r.json())
             .then(result => {
                 let noSub = {id: -1, language: 'None'};
@@ -235,7 +235,7 @@ export default class VideoComponent extends React.Component {
 
     loadAudioStreams() {
         return new Promise(resolve => {
-            fetch(`${this.server.server_ip}/api/video/${this.internalID}/getLanguages?type=${this.type}`)
+            fetch(`${this.server.server_ip}/api/video/${this.internalID}/getLanguages?type=${this.type}&token=${this.serverToken}`)
             .then(r => r.json())
             .then(result => {
                 console.log(result);
@@ -251,7 +251,7 @@ export default class VideoComponent extends React.Component {
     loadSources(autoplay = false) {
         return new Promise(resolve => {
             // Set the duration of the video
-            fetch(`${this.server.server_ip}/api/video/${this.internalID}/getDuration?type=${this.type}`)
+            fetch(`${this.server.server_ip}/api/video/${this.internalID}/getDuration?type=${this.type}&token=${this.serverToken}`)
             .then(r => r.json())
             .then(data => {
                 this.video.realDuration = data.duration;
@@ -270,7 +270,7 @@ export default class VideoComponent extends React.Component {
                 this.video.watchTimeOffset = time;
 
                 // Get the available resolutions for this video
-                fetch(`${this.server.server_ip}/api/video/${this.internalID}/getResolution?type=${this.type}`, {
+                fetch(`${this.server.server_ip}/api/video/${this.internalID}/getResolution?type=${this.type}&token=${this.serverToken}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
@@ -403,7 +403,7 @@ export default class VideoComponent extends React.Component {
             this.setState({subtitles: stateSubs});
             return;
         }
-        this.subtitle.setAttribute('src', `${this.server.server_ip}/api/subtitles/get?id=${subtitle.id}&type=${this.type}&start=${this.video.getRealWatchtime() - this.video.currentTime}`);
+        this.subtitle.setAttribute('src', `${this.server.server_ip}/api/subtitles/get?id=${subtitle.id}&type=${this.type}&start=${this.video.getRealWatchtime() - this.video.currentTime}&token=${this.serverToken}`);
         this.video.textTracks[0].mode = 'showing';
         stateSubs.activeSubtitle = subtitle;
         this.setState({subtitles: stateSubs});

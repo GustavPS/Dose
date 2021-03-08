@@ -1,4 +1,5 @@
 const db = require('../../../lib/db');
+const validateUser = require('../../../lib/validateUser');
 
 export default (req, res) => {
     return new Promise(resolve => {
@@ -6,6 +7,12 @@ export default (req, res) => {
         let type = req.query.type;
         res.setHeader('Access-Control-Allow-Origin', "*");
         res.setHeader('Access-Control-Allow-Headers', "*");
+        let token = req.query.token;
+        if (!validateUser(token)) {
+            res.status(403).end();
+            resolve();
+            return;
+        }
     
         if (type == 'movie') {
             db.any('SELECT id, language FROM subtitle WHERE movie_id = $1', [contentID]).then(subtitles => {

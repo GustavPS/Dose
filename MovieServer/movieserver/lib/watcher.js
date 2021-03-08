@@ -89,7 +89,7 @@ class Watcher {
             }
         }
 
-        console.log(" > Done syncing database!");
+        console.log(" > Done syncing database!\n");
     }
 
     /**

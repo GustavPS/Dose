@@ -7,9 +7,7 @@ const ORDERBY = [
   'popularity'
 ];
 var ffmpeg = require('fluent-ffmpeg');
-const jwtSecret = 'SERVERSECRET';
-const jwt = require('jsonwebtoken');
-
+const validateUser = require('../../../../../lib/validateUser');
 
 export default (req, res) => {
     return new Promise((resolve) => {
@@ -23,45 +21,28 @@ export default (req, res) => {
         let videoDuration = Math.floor(parseInt(req.query.videoDuration));
         let token = req.query.token;
         let type = req.query.type;
+        let decoded = validateUser(token);
     
-    
-    
-        let decoded;
-        if (token === undefined || token === null) {
+        if (!decoded) {
             res.status(403).end();
             resolve();
             return;
         }
     
-        try {
-            decoded = jwt.verify(token, jwtSecret);
-        } catch (e) {
-            console.log("Kunde inte verifiera token i setCurrentTime (gammal token?)");
-        }
-    
-        if (decoded) {
-            let user_id = decoded.user_id;
-            // Update the runtime that we got from the metadata with the real runtime.
-            if (type === 'movie') {
-                setMovieProgress(contentId, user_id, time, videoDuration).then(() => {
-                    res.status(200).end();
-                    resolve();
-                });
-            } else if(type === 'serie') {
-                setEpisodeProgress(contentId, user_id, time, videoDuration).then(() => {
-                    res.status(200).end();
-                    resolve();
-                });
-            } else {
-                res.status(404).end();
+        let user_id = decoded.user_id;
+        // Update the runtime that we got from the metadata with the real runtime.
+        if (type === 'movie') {
+            setMovieProgress(contentId, user_id, time, videoDuration).then(() => {
+                res.status(200).end();
                 resolve();
-            }
-
-
-
+            });
+        } else if(type === 'serie') {
+            setEpisodeProgress(contentId, user_id, time, videoDuration).then(() => {
+                res.status(200).end();
+                resolve();
+            });
         } else {
-            console.log("Decoded var false i setCurrentTime");
-            res.status(403).end();
+            res.status(404).end();
             resolve();
         }
     });

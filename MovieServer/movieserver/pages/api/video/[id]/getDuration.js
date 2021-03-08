@@ -1,5 +1,6 @@
 const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
+const validateUser = require('../../../../lib/validateUser');
 const ORDERBY = [
   'id',
   'added_date',
@@ -14,6 +15,13 @@ export default (req, res) => {
 
   res.setHeader('Access-Control-Allow-Origin', "*");
   res.setHeader('Access-Control-Allow-Headers', "*");
+
+  let token = req.query.token;
+  if (!validateUser(token)) {
+      res.status(403).end();
+      resolve();
+      return;
+  }
 
   let type = req.query.type;
   if (!['movie', 'serie'].includes(type)) {

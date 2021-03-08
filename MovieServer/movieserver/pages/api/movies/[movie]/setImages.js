@@ -1,9 +1,7 @@
 import fetch from 'node-fetch';
-
 const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
-const jwtSecret = 'SERVERSECRET';
-const jwt = require('jsonwebtoken');
+const validateUser = require('../../../../lib/validateUser');
 
 export default (req, res) => {
     return new Promise(async (resolve) => {
@@ -11,6 +9,13 @@ export default (req, res) => {
         let poster = req.query.poster;
         let backdrop = req.query.backdrop;
         res = cors(res);
+
+        let token = req.query.token;
+        if (!validateUser(token)) {
+            res.status(403).end();
+            resolve();
+            return;
+        }
 
         // TODO: Error handling when imageID or movieID does not exist
         await db.none('UPDATE movie_image SET active = false WHERE movie_id = $1', [movieID]);

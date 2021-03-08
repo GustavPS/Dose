@@ -113,7 +113,7 @@ export default function Home(props) {
   const searchMetadata = (event) => {
     let search = metadataSearch.current.value;
     console.log(search);
-    fetch(`${server.server_ip}/api/movies/searchMetadata?search=${search}`)
+    fetch(`${server.server_ip}/api/movies/searchMetadata?search=${search}&token=${serverToken}`)
     .then(r => r.json())
     .then(result => {
       console.log(result);
@@ -137,7 +137,7 @@ export default function Home(props) {
   }
 
   const updateMetadata = (metadataID) => {
-    fetch(`${server.server_ip}/api/movies/${id}/updateMetadata?metadataID=${metadataID}`)
+    fetch(`${server.server_ip}/api/movies/${id}/updateMetadata?metadataID=${metadataID}&token=${serverToken}`)
     .then(r => r.json())
     .then(json => {
       if (json.success) {
@@ -234,7 +234,7 @@ export default function Home(props) {
                 <p style={{marginLeft: "15px", marginTop: "5px", fontSize: '14px'}}>Uppdatera metadata</p>
               </div>
 
-              <ChangeImages id={id} server={server} type="movies"></ChangeImages>
+              <ChangeImages id={id} server={server} serverToken={serverToken} type="movies"></ChangeImages>
 
             </div>
           </div>

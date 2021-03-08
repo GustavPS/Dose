@@ -1,5 +1,6 @@
 const db = require('../../../lib/db');
 const cors = require('../../../lib/cors');
+const validateUser = require('../../../lib/validateUser');
 
 const ORDERBY = [
   'id',
@@ -11,6 +12,14 @@ const ORDERBY = [
 export default (req, res) => {
     return new Promise(resolve => {
         res = cors(res);
+
+        let token = req.query.token;
+        if (!validateUser(token)) {
+            res.status(403).end();
+            resolve();
+            return;
+        }
+
         let response = {
             movies: [],
             series: []

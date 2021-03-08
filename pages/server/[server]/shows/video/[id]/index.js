@@ -99,7 +99,7 @@ export default function Home(props) {
                 <p>{metadata.overview}</p>
             </div>
             <div className={Styles.actions}>
-            <ChangeImages id={id} server={server} type="series"></ChangeImages>
+            <ChangeImages id={id} server={server} serverToken={serverToken} type="series"></ChangeImages>
 
             </div>
           </div>
