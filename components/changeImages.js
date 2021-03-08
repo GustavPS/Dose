@@ -10,7 +10,7 @@ export default function ChangeImages(props) {
     const [imageBox, setImageBox] = useState(false);
     const [movieBackdropResult, setMovieBackdropResult] = useState([]);
     const [moviePosterResult, setMoviePosterResult] = useState([]);
-    const {server, id, type} = props;
+    const {server, id, serverToken, type} = props;
     const Router = useRouter();
 
 
@@ -31,7 +31,7 @@ export default function ChangeImages(props) {
         console.log(poster);
         console.log(backdrop);
   
-        fetch(`${server.server_ip}:4000/api/${type}/${id}/setImages?poster=${poster}&backdrop=${backdrop}`)
+        fetch(`${server.server_ip}/api/${type}/${id}/setImages?poster=${poster}&backdrop=${backdrop}&token=${serverToken}`)
         .then(r => r.json())
         .then(json => {
           if (json.success) {
@@ -66,7 +66,7 @@ export default function ChangeImages(props) {
       }
 
     const getImages = () => {
-        fetch(`${server.server_ip}/api/${type}/${id}/getImages`)
+        fetch(`${server.server_ip}/api/${type}/${id}/getImages?token=${serverToken}`)
         .then(r => r.json())
         .then(images => {
           let backdropElements = [];

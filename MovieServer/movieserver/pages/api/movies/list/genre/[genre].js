@@ -1,5 +1,6 @@
 const db = require('../../../../../lib/db');
 const cors = require('../../../../../lib/cors');
+const validateUser = require('../../../../../lib/validateUser');
 const ORDERBY = [
   'id',
   'added_date',
@@ -14,6 +15,13 @@ export default (req, res) => {
     let orderBy = req.query.orderby ? req.query.orderby : 'id';
     let offset = req.query.offset ? req.query.offset : '0';
     let limit = req.query.limit ? req.query.limit : '20';
+
+    let token = req.query.token;
+    if (!validateUser(token)) {
+        res.status(403).end();
+        resolve();
+        return;
+    }
     //console.log(offset);
 
     if (!ORDERBY.includes(orderBy)) {

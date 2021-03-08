@@ -155,7 +155,7 @@ export default (props) => {
 
 
             // Get all genres from the server
-            fetch(`${server.server_ip}/api/genre/list`, {
+            fetch(`${server.server_ip}/api/genre/list?token=${cookie.get('serverToken')}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

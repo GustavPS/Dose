@@ -1,6 +1,7 @@
 const db = require('../../../lib/db');
 const OS = require('opensubtitles-api');
 const pathLib = require('path');
+const validateUser = require('../../../lib/validateUser');
 
 const OpenSubtitles = new OS({
     useragent: 'TemporaryUserAgent',
@@ -13,6 +14,13 @@ export default (req, res) => {
     return new Promise(async (resolve) => {
         let type = req.query.type;
         let id = req.query.id;
+
+        let token = req.query.token;
+        if (!validateUser(token)) {
+            res.status(403).end();
+            resolve();
+            return;
+        }
 
         let path = undefined;
         if (type === 'movie') {

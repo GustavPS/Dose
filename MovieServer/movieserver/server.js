@@ -8,7 +8,8 @@ const fs = require("fs");
 
 const dev = process.env.NODE_ENV !== 'production'
 const app = next({ dev })
-const handle = app.getRequestHandler()
+const handle = app.getRequestHandler();
+var crypto = require('crypto');
 
 console.log(`######                       
 #     #  ####   ####  ###### 
@@ -24,6 +25,7 @@ if (dev) {
   console.log("\x1b[0m", "")
 }
 
+
 function startWebServer() {
     //const httpsOptions = {
     //    key: fs.readFileSync("./certs/localhost.key"),
@@ -33,10 +35,8 @@ function startWebServer() {
         createServer((req, res) => {
           // Be sure to pass `true` as the second argument to `url.parse`.
           // This tells it to parse the query portion of the URL.
-	  const url = req.url.replace('/doseserver', '').replace(':4000', '');
-          const parsedUrl = parse(url, true)
+          const parsedUrl = parse(req.url, true)
           const { pathname, query } = parsedUrl
-console.log(pathname);
       
           if (pathname === '/a') {
             app.render(req, res, '/b', query)
@@ -55,7 +55,15 @@ console.log(pathname);
 
 const watcher = new Watcher();
 
-watcher.init(() => {
-  watcher.startWatcher();
-  startWebServer();
-})
+// Generate webtoken secret
+console.log("Generating token before starting..");
+crypto.randomBytes(256, function(ex, buf) {
+  if (ex) throw ex;
+  process.env.SECRET = buf;
+  console.log(" > Done\n");
+
+  watcher.init(() => {
+    watcher.startWatcher();
+    startWebServer();
+  })
+});

@@ -7,8 +7,7 @@ const ORDERBY = [
   'popularity'
 ];
 var ffmpeg = require('fluent-ffmpeg');
-const jwtSecret = 'SERVERSECRET';
-const jwt = require('jsonwebtoken');
+const validateUser = require('../../../../../lib/validateUser');
 
 
 export default (req, res) => {
@@ -21,44 +20,27 @@ export default (req, res) => {
         let token = req.query.token;
         let type = req.query.type;
 
-    
-    
-        let decoded;
-        if (token === undefined || token === null) {
+        let decoded = validateUser(token);
+        if (!decoded) {
             res.status(403).end();
             resolve();
             return;
         }
-    
-        try {
-            decoded = jwt.verify(token, jwtSecret);
-        } catch (e) {
-            console.log("Kunde inte verifiera token i getCurrentTime (gammal token?)");
-        }
-    
-        if (decoded) {
-            let user_id = decoded.user_id;
-            if (type === 'movie') {
-                getProgressFromMovie(user_id, content_id).then(time => {
-                    res.status(200).json({
-                        time: time
-                    });
+        let user_id = decoded.user_id;
+        if (type === 'movie') {
+            getProgressFromMovie(user_id, content_id).then(time => {
+                res.status(200).json({
+                    time: time
                 });
-            } else if(type === 'serie') {
-                getProgressFromEpisode(user_id, content_id).then(time => {
-                    res.status(200).json({
-                        time: time
-                    })
-                });
-            } else {
-                res.status(404).end();
-            }
-
-
+            });
+        } else if(type === 'serie') {
+            getProgressFromEpisode(user_id, content_id).then(time => {
+                res.status(200).json({
+                    time: time
+                })
+            });
         } else {
-            console.log("Decoded var false i getCurrentTime");
-            res.status(403).end();
-            resolve();
+            res.status(404).end();
         }
     });
 }

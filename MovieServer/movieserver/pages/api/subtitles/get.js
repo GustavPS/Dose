@@ -7,6 +7,7 @@ const ORDERBY = [
 ];
 const fs = require('fs');
 const path = require('path');
+const validateUser = require('../../../lib/validateUser');
 var ffmpeg = require('fluent-ffmpeg');
 var crypto = require("crypto");
 
@@ -15,6 +16,13 @@ export default (req, res) => {
     return new Promise(async (resolve) => {
         res.setHeader('Access-Control-Allow-Origin', "*");
         res.setHeader('Access-Control-Allow-Headers', "*");
+
+        let token = req.query.token;
+        if (!validateUser(token)) {
+            res.status(403).end();
+            resolve();
+            return;
+        }
 
         let type = req.query.type;
         let subtitleID = req.query.id;
