@@ -166,6 +166,10 @@ class TvMetadata extends Metadata {
             fetch(`${this.getAPIUrl()}/search/tv?api_key=${this.getAPIKey()}&language=en-US&query=${serieName}&page=1&include_adult=true`)
             .then(res => res.json())
             .then(json => {
+                if (json.total_results == 0) {
+                    reject("Not found");
+                    return;
+                }
 
                 // Get the details for the show
                 fetch(`${this.getAPIUrl()}/tv/${json.results[0].id}?api_key=${this.getAPIKey()}&language=en-US`)

@@ -77,6 +77,11 @@ class TvLibrary extends Library {
                                 resolve();
                             });
                         }
+                    })
+                    .catch(async (error) => {
+                        console.log("\x1b[31m", ` > Couldn't find any metadata for serie' ${serieName}', stopping`, "\x1b[0m");
+                        await db.none('DELETE FROM serie WHERE path = $1 AND library = $2 AND name = $3', [path, this.id, serieName]);
+                        reject();
                     });
                 } else {
                     resolve();
@@ -302,9 +307,6 @@ class TvLibrary extends Library {
                 // Lock so each library only can handle one serie at a time (for race condition with episodes)
                // lock.acquire("abcdefg", async function(done) {
                 lock.enter(async function (token) {
-                    if (path == "Family Guy\Season 8 V2 Remaster HEVC\Family Guy - S08E04 - Brian`s Got a Brand New Bag-4.mkv") {
-                        print("Låst");
-                    }
                     let seasonNumber = t.getSeasonNumber(path);
                     let episodeNumber = t.getEpisodeNumber(path);
     
@@ -318,7 +320,13 @@ class TvLibrary extends Library {
                         let showPath = t.getShowPath(path);
                         let seasonPath = t.getSeasonPath(path);
                         if (type === 'SHOW') {
-                            await t.addSerieIfNotSaved(showName, showPath);
+                            try {
+                                await t.addSerieIfNotSaved(showName, showPath);
+                            } catch(error) {
+                                lock.leave(token);
+                                return;
+                            }
+
                             await t.addSeasonIfNotSaved(showName, seasonPath, showPath, seasonNumber);
                             await t.addEpisodeIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber);
                             //console.log("efter");
