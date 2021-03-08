@@ -1,10 +1,13 @@
+import { resolve } from 'path';
 import { Stream } from 'stream';
 const db = require('../../../../lib/db');
+const jwt = require('jsonwebtoken');
 
 var ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const mime = require('mime');
 let transcodings = [];
+const jwtSecret = 'SERVERSECRET';
 
 var AsyncLock = require('async-lock');
 var lock = new AsyncLock();
@@ -21,6 +24,24 @@ const ALLOWED_QUALITIES = [
 export default async (req, res) => {
     let type = req.query.type;
     let language = req.query.audio;
+    let token = req.query.token;
+
+
+    let decoded;
+    if (token === undefined || token === null) {
+        res.status(403).end();
+        resolve();
+        return;
+    }
+
+    try {
+        decoded = jwt.verify(token, jwtSecret);
+    } catch (e) {
+        console.log("Couldn't verify the token in /video/[id]/index.js (Old token?)");
+        res.status(403).end();
+        resolve();
+        return;
+    }
 
     if (!['movie', 'serie'].includes(type)) {
       res.status(404).end();
