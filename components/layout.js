@@ -8,7 +8,7 @@ import Image from 'next/image';
 import useWindowSize from './hooks/WindowSize';
 
 
-export default function Layout({ children, home, searchEnabled, server, relative}) {
+export default function Layout({ children, home, searchEnabled, server, relative, serverToken}) {
   const windowSize = useWindowSize();
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -32,7 +32,7 @@ export default function Layout({ children, home, searchEnabled, server, relative
           let img;
           for (let image of content.images) {
               if (image.type === 'BACKDROP') {
-                  img = image.path !== null ? `https://image.tmdb.org/t/p/w500/${image.path}` : 'https://via.placeholder.com/2000x1000' 
+                  img = image.path !== 'no_image' ? `https://image.tmdb.org/t/p/w500/${image.path}` : 'https://via.placeholder.com/2000x1000' 
                   break;
               }
           }
@@ -80,7 +80,7 @@ export default function Layout({ children, home, searchEnabled, server, relative
       <header style={relative !== undefined ? {position: 'relative'} : {}}>
         <img className={styles.logo} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/logo.png`} layout="fill"></img>
         {searchEnabled &&
-          <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} onSearch={(result) => onSearch(result)}></Search>}
+          <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} serverToken={serverToken} onSearch={(result) => onSearch(result)}></Search>}
       </header>
       {isSearching &&
       <div style={{position: 'relative', top: '115px'}}>
