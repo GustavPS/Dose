@@ -136,7 +136,7 @@ class MovieMetadata extends Metadata {
             metadata.runtime,
             metadata.popularity,
             metadata.backdrop_path,
-            `${d.getFullYear()}-${("0" + (d.getMonth() + 1)).slice(-2)}-${("0" + d.getDate()).slice(-2)}`,
+            `${Date.now()}`,
             trailer,
             metadata.runtime === -1 ? -1 : metadata.runtime * 60 // insert -1 if runtime is -1 (when we use dummy metadata)
         ]);
