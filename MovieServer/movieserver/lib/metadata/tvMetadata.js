@@ -28,7 +28,7 @@ class TvMetadata extends Metadata {
                 metadata.air_date,
                 metadata.overview,
                 metadata.poster_path,
-                `${d.getFullYear()}-${("0" + (d.getMonth() + 1)).slice(-2)}-${("0" + d.getDate()).slice(-2)}` // Added date
+                `${Date.now()}` // Added date
             ]);
             resolve();
         });
@@ -51,7 +51,7 @@ class TvMetadata extends Metadata {
                 episodeNumber,
                 seasonNumber,
                 internalSerieID,
-                `${d.getFullYear()}-${("0" + (d.getMonth() + 1)).slice(-2)}-${("0" + d.getDate()).slice(-2)}` // Added date
+                `${Date.now()}` // Added date
             ]);
             resolve();
         });
@@ -85,7 +85,7 @@ class TvMetadata extends Metadata {
                 metadata.overview,
                 metadata.first_air_date,
                 metadata.popularity,
-                `${d.getFullYear()}-${("0" + (d.getMonth() + 1)).slice(-2)}-${("0" + d.getDate()).slice(-2)}`, // Added date
+                `${Date.now()}`, // Added date
                 "", // Trailer
                 metadata.id
             ]);

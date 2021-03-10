@@ -43,6 +43,19 @@ export default function Home(props) {
         }
       }
       console.log(meta);
+      
+      let new_added_date = new Date(parseInt(meta.added_date));
+      let added_year = new_added_date.getFullYear();
+      let added_month = new_added_date.getMonth() + 1;
+      if(added_month < 10) {
+        added_month = "0" + added_month.toString();
+      }
+      let adde_date = new_added_date.getDate();
+      if(adde_date < 10) {
+        adde_date = "0" + adde_date.toString();
+      }
+      meta.added_date = `${added_year}-${added_month}-${adde_date}`
+
       meta.poster = meta.poster_path;
       setMetadata(meta);
       return () => {
