@@ -9,6 +9,7 @@ export default class Search extends React.Component {
     constructor(props) {
         super(props);
         this.server = props.server;
+        this.serverToken = props.serverToken;
         this.series = [];
         this.movies = [];
         this.enabled = props.searchEnabled;
@@ -22,7 +23,7 @@ export default class Search extends React.Component {
      * This is used to get all the movies/series from the server
      */
     getAllContent() {
-        fetch(`${this.server.server_ip}/api/list`)
+        fetch(`${this.server.server_ip}/api/list?token=${this.serverToken}`)
         .then(r => r.json())
         .then(content => {
             this.series = content.series;
