@@ -334,7 +334,7 @@ export default (props) => {
 
     // LAYOUT //
     return (
-        <Layout searchEnabled server={server}>
+        <Layout searchEnabled server={server} serverToken={cookie.get('serverToken')}>
             <Head>
             </Head>
             <Carousel interval={10000}>
