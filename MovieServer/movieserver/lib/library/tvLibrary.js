@@ -319,6 +319,12 @@ class TvLibrary extends Library {
                         let showName = t.getShowName(path);
                         let showPath = t.getShowPath(path);
                         let seasonPath = t.getSeasonPath(path);
+                        
+                        // Quickfix for when we find the folder '.'
+                        if (showName == '.') {
+                            lock.leave(token);
+                            return;
+                        }
                         if (type === 'SHOW') {
                             try {
                                 await t.addSerieIfNotSaved(showName, showPath);
