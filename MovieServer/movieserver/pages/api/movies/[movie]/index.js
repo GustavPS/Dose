@@ -25,7 +25,7 @@ export default (req, res) => {
         let user_id = decoded.user_id;
         db.one(`
         SELECT i.movie_id AS id, i.title, i.overview, i.release_date, i.runtime, i.popularity, i.added_date, i.trailer, array_agg(DISTINCT t.name) AS genres, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images,
-        m.movie_id AS watched
+        m.movie_id AS watched, string_agg(DISTINCT mov.path, ',') AS path
         FROM movie_metadata i
 
         -- Join with movie_category and category to get an array of the categories
@@ -39,6 +39,9 @@ export default (req, res) => {
         ON i.movie_id = j.movie_id
         INNER JOIN image k
         ON j.image_id = k.id
+
+        INNER JOIN movie mov
+		ON mov.id = i.movie_id
 
         LEFT JOIN user_movie_watched m
         ON m.user_id = $1 AND m.movie_id = i.movie_id
