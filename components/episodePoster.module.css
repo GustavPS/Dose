@@ -1,0 +1,41 @@
+.poster {
+    height: 300px;
+    width: 202px;
+    position: relative;
+    cursor: pointer;
+    display: inline-flex;
+    margin: 0 20px 0 0;
+    transition: all 0.3s;
+}
+
+.posterImage {
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 300px;
+    transition: 0.3s all;
+}
+.poster .seasonName {
+    text-shadow: 5px 5px 6px #000;
+    opacity: 1;
+    will-change: opacity;
+    text-align: center;
+    font-size: 15px;
+    line-height: 50px;
+    margin: 0;
+    padding: 0;
+}
+
+.episodeInfo {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 50px;
+    background-color: rgba(0, 0, 0, 0.616);
+    vertical-align: middle;
+
+}
+.poster:hover > .posterImage {
+    opacity: 0.5;
+}
