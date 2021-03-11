@@ -14,6 +14,7 @@ import useWindowSize from '../../../components/hooks/WindowSize';
 import Styles from '../../../styles/server.module.css';
 
 import MovieBackdrop from '../../../components/movieBackdrop';
+import EpisodePoster from '../../../components/episodePoster';
 
 const fetcher = url =>
   fetch(url)
@@ -32,6 +33,7 @@ export default (props) => {
     const [ongoingShows, setOngoingShows] = useState([]);
     const [newlyAddedMovies, setNewlyAddedMovies] = useState([]);
     const [newlyAddedShows, setNewlyAddedShows] = useState([]);
+    const [newlyAddedEpisodes, setNewlyAddedEpisodes] = useState([]);
 
 
     const windowSize = useWindowSize();
@@ -117,6 +119,64 @@ export default (props) => {
             });
         });
     }
+
+    /**
+     * Makes a query to the current active server for a list of new episodes
+     * 
+     * @param {string} genre 
+     * @param {string} orderby 
+     * @param {int} limit 
+     */
+         const getNewEpisodeList = async (orderby=null, limit=20) => {
+            return new Promise((resolve, reject) => {
+                let url;
+                url = `${server.server_ip}/api/series/list/episodes?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        limit: 20
+                    })
+                })
+                .then((r) => r.json())
+                .then((response) => {
+                    // Mark the movies active image
+                    response.result.forEach(episode => {
+                        for (let image of episode.images) {
+                            if (image.active) {
+                                if (image.type === 'BACKDROP') {
+                                    if (image.path === 'no_image') {
+                                        episode.backdrop = null;
+                                    } else {
+                                        episode.backdrop = image.path;
+                                    }
+                                } else if (image.type === 'POSTER') {
+                                    if (image.path === 'no_image') {
+                                        episode.poster = null;
+                                    } else {
+                                        episode.poster = image.path;
+                                    }
+                                } else {
+                                    if (image.path === 'no_image') {
+                                        episode.backdrop = null;
+                                    } else {
+                                        episode.poster = image.path;
+                                    }
+                                }
+    
+                                if (episode.backdrop != null && episode.poster != null) {
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                    console.log(response.result);
+                    resolve(response.result);
+                });
+            });
+        }
 
     const getShowList = async (genre=null, orderby=null, limit=20, ongoing=false) => {
         return new Promise((resolve, reject) => {
@@ -304,6 +364,20 @@ export default (props) => {
                 }
                 setOngoingShows(showElements);
             });
+
+            getNewEpisodeList('added_date', 20).then(episodes => {
+                let episodeElements = [];
+
+                for (let episode of episodes) {
+                    let poster = episode.poster !== null ? `https://image.tmdb.org/t/p/w500/${episode.poster}` : 'https://via.placeholder.com/500x1000';
+                    let backdrop = episode.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${episode.backdrop}` : 'https://via.placeholder.com/500x1000' 
+                    episodeElements.push(
+                        <EpisodePoster show={episode.serie_id} season={episode.season} episode={episode.episode} poster={poster} internalEpisodeID={episode.internalepisodeid} backdrop={backdrop}
+                            onClick={(season, episode, show, internalEpisodeID) => selectEpisode(show, season, episode, internalEpisodeID)}></EpisodePoster>
+                    );
+                }
+                setNewlyAddedEpisodes(episodeElements);
+            });
         });
     }, []);
 
@@ -408,7 +482,28 @@ export default (props) => {
                         <hr className={Styles.divider}></hr>
                         </> 
                     }
-
+                    
+                    {newlyAddedEpisodes.length > 0 &&
+                        <>
+                            <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda avsnitt</h2></a></Link>
+                            <div className={Styles.movieRow}>
+                                <div id="newlyAddedEpisodes" className={Styles.scrollable}>
+                                    {newlyAddedEpisodes}
+                                </div>
+                                {newlyAddedEpisodes.length * 480 > windowSize.width &&
+                                    <>
+                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedEpisodes')}>
+                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                        </div>
+                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedEpisodes')}>
+                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                        </div>
+                                    </>
+                                }
+                            </div> 
+                        <hr className={Styles.divider}></hr>
+                        </> 
+                    }
                     
                     {newlyAddedShows.length > 0 &&
                         <>
@@ -431,6 +526,8 @@ export default (props) => {
                         <hr className={Styles.divider}></hr>
                         </> 
                     }
+
+                    
                 </Container>
             </div>
         </Layout>
