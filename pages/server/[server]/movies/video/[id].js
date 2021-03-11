@@ -47,6 +47,7 @@ export default function Home(props) {
     .then(r => r.json())
     .then(result => {
       let meta = result.result;
+      console.log(meta)
       let finish_at = new Date(new Date().getTime() + meta.runtime * 60000);
       meta.finish_at = finish_at.getHours() + ":" + finish_at.getMinutes();
       for (let image of meta.images) {
@@ -125,26 +126,29 @@ export default function Home(props) {
   const searchMetadata = (event) => {
     let search = metadataSearch.current.value;
     console.log(search);
-    fetch(`${server.server_ip}/api/movies/searchMetadata?search=${search}&token=${serverToken}`)
-    .then(r => r.json())
-    .then(result => {
-      console.log(result);
-      let metadataElements = [];
-      for (let movie of result) {
-        let img = movie.poster_path !== null ? `https://image.tmdb.org/t/p/w500/${movie.poster_path}` : 'https://via.placeholder.com/500x750' 
-        metadataElements.push(
-          <ListGroup.Item key={movie.id} className={Styles.metadataSearchRow} data-metadataid={movie.id}>
-            <Image src={img} />
-            <div>
-              <h5>{movie.title}</h5>
-              <p>{movie.overview}</p>
-            </div>
-            <Button onClick={() => updateMetadata(movie.id)}>Välj</Button>
-          </ListGroup.Item>
-        );        
-      }
-      setMetadataSearchResult(metadataElements);
-    });
+    if(search != ""){
+      fetch(`${server.server_ip}/api/movies/searchMetadata?search=${search}&token=${serverToken}`)
+      .then(r => r.json())
+      .then(result => {
+        console.log(result);
+        let metadataElements = [];
+        for (let movie of result) {
+          let img = movie.poster_path !== null ? `https://image.tmdb.org/t/p/w500/${movie.poster_path}` : 'https://via.placeholder.com/500x750' 
+          metadataElements.push(
+            <ListGroup.Item key={movie.id} className={Styles.metadataSearchRow} data-metadataid={movie.id}>
+              <Image src={img} />
+              <div>
+                <h5>{movie.title}</h5>
+                <p>{movie.overview}</p>
+              </div>
+              <Button onClick={() => updateMetadata(movie.id)}>Välj</Button>
+            </ListGroup.Item>
+          );        
+        }
+        setMetadataSearchResult(metadataElements);
+      });
+    }
+   
     event.preventDefault();
   }
 
@@ -185,8 +189,8 @@ export default function Home(props) {
           <div className="metadataBox">
             <Form onSubmit={searchMetadata}>
               <Form.Group controlId="formSearch">
-                <Form.Label>Sök efter filmen</Form.Label>
-                <Form.Control ref={metadataSearch} type="text" placeholder="Sök.." />
+                <Form.Label>Uppdatera metadata för {metadata.path}</Form.Label>
+                <Form.Control ref={metadataSearch} type="text" placeholder="Sök efter ny metadata..." />
               </Form.Group>
               <Button variant="primary" type="submit">
                 Sök
