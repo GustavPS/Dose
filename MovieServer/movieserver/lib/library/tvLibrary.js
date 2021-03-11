@@ -38,6 +38,8 @@ class TvLibrary extends Library {
 
     addSerieIfNotSaved(serieName, path) {
         return new Promise(async (resolve, reject) => {
+            let internalSerieID;
+            let alreadyAdded = false;
             await db.tx(async t => {
                 // Check if we have already saved this show
                 let result = await t.any('SELECT * FROM serie WHERE path = $1 AND library = $2', [path, this.id]);
@@ -48,44 +50,51 @@ class TvLibrary extends Library {
                     await t.none('INSERT INTO serie (path, library, name) VALUES ($1, $2, $3)', [path, this.id, serieName]);
                     // Get the internal ID for the new show
                     result = await t.one('SELECT id FROM serie WHERE path = $1 AND library = $2', [path, this.id]);
-                    let internalSerieID = result.id;
-
-                    // Get the metadata for the show
-                    this.metadata.getShowMetadata(serieName).then(result => {
-                        let metadata = result.metadata;
-                        let images = result.images;
-                        let trailer = result.trailer;
-
-                        // If we didn't find any metadata, insert dummy metadata
-                        if (metadata === null) {
-                            console.log(` > Couldn't find any metadata for serie '${serieName}'`);
-                            images = {
-                                backdrops: [],
-                                posters: []
-                            }
-                            metadata = this.metadata.getDummyMetadata(serieName);
-                            trailer = "";
-                            
-                            this.metadata.insertShowMetadata(metadata, images, trailer, internalSerieID).then(() => {
-                                resolve();
-                            });
-                        } else {
-                            // If we found metadata, save it
-                            console.log(` > Saving metadata for serie '${serieName}'`);
-                            // Insert metadata
-                            this.metadata.insertShowMetadata(metadata, images, trailer, internalSerieID).then(() => {
-                                resolve();
-                            });
-                        }
-                    })
-                    .catch(async (error) => {
-                        console.log("\x1b[31m", ` > Couldn't find any metadata for serie' ${serieName}', stopping`, "\x1b[0m");
-                        await db.none('DELETE FROM serie WHERE path = $1 AND library = $2 AND name = $3', [path, this.id, serieName]);
-                        reject();
-                    });
+                    internalSerieID = result.id;
                 } else {
+                    alreadyAdded = true;
                     resolve();
                 }
+            }).then(data => {
+                    // Get the metadata for the show
+                    if (!alreadyAdded) {
+                        this.metadata.getShowMetadata(serieName).then(result => {
+                            let metadata = result.metadata;
+                            let images = result.images;
+                            let trailer = result.trailer;
+    
+                            // If we didn't find any metadata, insert dummy metadata
+                            if (metadata === null) {
+                                console.log(` > Couldn't find any metadata for serie '${serieName}'`);
+                                images = {
+                                    backdrops: [],
+                                    posters: []
+                                }
+                                metadata = this.metadata.getDummyMetadata(serieName);
+                                trailer = "";
+                                
+                                this.metadata.insertShowMetadata(metadata, images, trailer, internalSerieID).then(() => {
+                                    resolve();
+                                });
+                            } else {
+                                // If we found metadata, save it
+                                console.log(` > Saving metadata for serie '${serieName}'`);
+                                // Insert metadata
+                                this.metadata.insertShowMetadata(metadata, images, trailer, internalSerieID).then(() => {
+                                    resolve();
+                                });
+                            }
+                        })
+                        .catch(async (error) => {
+                            console.log("\x1b[31m", ` > Couldn't find any metadata for serie' ${serieName}', stopping`, "\x1b[0m");
+                            await db.none('DELETE FROM serie WHERE path = $1 AND library = $2 AND name = $3', [path, this.id, serieName]);
+                            reject();
+                        });
+                    }
+            }).catch(error => {
+                console.log("ERROR IN addSerieIfNotSaved");
+                console.log(error);
+                reject();
             });
         });
     }
