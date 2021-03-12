@@ -52,8 +52,10 @@ class TvLibrary extends Library {
                     result = await t.one('SELECT id FROM serie WHERE path = $1 AND library = $2', [path, this.id]);
                     internalSerieID = result.id;
                 } else {
+                    // Get the internal ID for the existing show so we can resolve it
+                    result = await t.one('SELECT id FROM serie WHERE path = $1 AND library = $2', [path, this.id]);
                     alreadyAdded = true;
-                    resolve();
+                    resolve(result.id);
                 }
             }).then(data => {
                     // Get the metadata for the show
@@ -62,30 +64,14 @@ class TvLibrary extends Library {
                             let metadata = result.metadata;
                             let images = result.images;
                             let trailer = result.trailer;
-    
-                            // If we didn't find any metadata, insert dummy metadata
-                            if (metadata === null) {
-                                console.log(` > Couldn't find any metadata for serie '${serieName}'`);
-                                images = {
-                                    backdrops: [],
-                                    posters: []
-                                }
-                                metadata = this.metadata.getDummyMetadata(serieName);
-                                trailer = "";
-                                
-                                this.metadata.insertShowMetadata(metadata, images, trailer, internalSerieID).then(() => {
-                                    resolve();
-                                });
-                            } else {
-                                // If we found metadata, save it
-                                console.log(` > Saving metadata for serie '${serieName}'`);
-                                // Insert metadata
-                                this.metadata.insertShowMetadata(metadata, images, trailer, internalSerieID).then(() => {
-                                    resolve();
-                                });
-                            }
-                        })
-                        .catch(async (error) => {
+
+                            // If we found metadata, save it
+                            console.log(` > Saving metadata for serie '${serieName}'`);
+                            // Insert metadata
+                            this.metadata.insertShowMetadata(metadata, images, trailer, internalSerieID).then(() => {
+                                resolve(internalSerieID);
+                            });
+                        }).catch(async (error) => {
                             console.log("\x1b[31m", ` > Couldn't find any metadata for serie' ${serieName}', stopping`, "\x1b[0m");
                             await db.none('DELETE FROM serie WHERE path = $1 AND library = $2 AND name = $3', [path, this.id, serieName]);
                             reject();
@@ -109,7 +95,6 @@ class TvLibrary extends Library {
      * @param {integer} episodeNumber  - the episode number for the subtitle
      */
     addSubtitleIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber) {
-        //console.log("hh")
         return new Promise(async (resolve, reject) => {
             let fileName = pathLib.basename(path);
             let language = null;
@@ -126,7 +111,6 @@ class TvLibrary extends Library {
                     if (result.length === 0) {
                         console.log(` > Saving subtitle for ${showName} in library ${this.name}`);
                         await db.none('INSERT INTO serie_episode_subtitle (path, episode_id, library_id, language) VALUES ($1, $2, $3, $4)', [path, episode.id, this.id, language]);
-                        console.log("inne här")
                     }
                     resolve();
                 });
@@ -141,6 +125,9 @@ class TvLibrary extends Library {
 
     async addSeasonIfNotSaved(serieName, seasonPath, showPath, seasonNumber) {
         return new Promise(async (resolve, reject) => {
+            let internalSerieID;
+            let alreadyAdded = false;
+            let serieTmdbId;
             await db.tx(async t => {
                 // Check if we have already saved this season for the show
                 let result = await t.any('SELECT * FROM serie_season WHERE season_number = $1 AND serie_id IN (SELECT id FROM serie WHERE name = $2 AND path = $3)', [seasonNumber, serieName, showPath]);
@@ -149,39 +136,46 @@ class TvLibrary extends Library {
                     console.log(` > Found a new season (${seasonNumber}) for the show ${serieName} in library ${this.name}`);
                     await t.none('INSERT INTO serie_season (serie_id, season_number, path) VALUES ((SELECT id FROM serie WHERE name = $1 AND path = $2), $3, $4) ', [serieName, showPath, seasonNumber, seasonPath]);
 
-
                     // Get the Tmdb id for the show
-                    let serieTmdbId = await t.one('SELECT tmdb_id FROM serie_metadata WHERE serie_id IN (SELECT id FROM serie WHERE name = $1 AND path = $2)', [serieName, showPath], c => +c.tmdb_id);
+                    serieTmdbId = await t.one('SELECT tmdb_id FROM serie_metadata WHERE serie_id IN (SELECT id FROM serie WHERE name = $1 AND path = $2)', [serieName, showPath], c => +c.tmdb_id);
                     // Get the internal ID for the show
-                    let internalSerieID = await t.one(`SELECT id FROM serie WHERE name = $1 AND path = $2`, [serieName, showPath], c => +c.id);
-
+                    internalSerieID = await t.one(`SELECT id FROM serie WHERE name = $1 AND path = $2`, [serieName, showPath], c => +c.id);
+                } else {
+                    alreadyAdded = true;
+                }
+            }).then(data => {
+                if (!alreadyAdded) {
                     // Get the metadata for this season
                     this.metadata.getSeasonMetadata(serieTmdbId, seasonNumber).then(async (result) => {
                         let metadata = result.metadata;
 
-                        // If we didn't find any metadata, save dummymetadata
-                        if (metadata === null) {
-                            console.log(` > Couldn't find any metadata for season ${seasonNumber} of serie ${serieName}`);
-                             resolve();
-                            // TODO: GET AND SAVE DUMMYDATA
-                        } else {
-                            // If we found metadata, save it to the database
-                            console.log(` > Saving metadata for season ${seasonNumber} of serie ${serieName}`);
-                            this.metadata.insertSeasonMetadata(metadata, internalSerieID, seasonNumber).then(() => {
-                                resolve();
-                            });
-                        }
+                        // If we found metadata, save it to the database
+                        console.log(` > Saving metadata for season ${seasonNumber} of serie ${serieName}`);
+                        this.metadata.insertSeasonMetadata(metadata, internalSerieID, seasonNumber).then(() => {
+                            resolve();
+                        });
+                    }).catch(async (error) => {
+                        // TODO: Add support for dummy metadata
+                        console.log("\x1b[31m", `> Couldn't find any metadata for serie' ${serieName}' Season '${seasonNumber}', stopping`, "\x1b[0m");
+                        await db.none('DELETE FROM serie_season WHERE serie_id = $1 AND season_number = $2 AND path = $3', [internalSerieID, seasonNumber, seasonPath]);
+                        reject();
                     });
                 } else {
-                    //console.log("season result was not 0.....")
                     resolve();
                 }
+            }).catch(err => {
+                console.log("TRANSACTION ERROR in addSeasonIfNotSaved");
+                console.log(error);
+                reject();
             });
         });
     }
 
     addEpisodeIfNotSaved(serieName, episodePath, showPath, seasonNumber, episodeNumber) {
         return new Promise(async (resolve, reject) => {
+            let alreadyAdded = false;
+            let internalSerieID;
+            let serieTmdbId;
             await db.tx(async t => {
                 let result = await t.any('SELECT * FROM serie_episode WHERE season_number = $1 AND episode = $2 AND serie_id IN (SELECT id FROM serie WHERE name = $3 AND path = $4)', [seasonNumber, episodeNumber, serieName, showPath]);
                 if (result.length === 0) {
@@ -189,18 +183,18 @@ class TvLibrary extends Library {
                     let internal_episode_id = await t.one('INSERT INTO serie_episode (season_number, serie_id, episode, path) VALUES ($1, (SELECT id FROM serie WHERE name = $2 AND path = $3), $4, $5) RETURNING id', [seasonNumber, serieName, showPath, episodeNumber, episodePath]);
                     internal_episode_id = internal_episode_id.id;
                     
-		// CURENTLY DISABLED
-                    //console.log(` > Trying to convert subtitles, this may take a while...`);
+                    /* CURENTLY DISABLED DUE TO PERFORMANCE ISSUES
+                    console.log(` > Trying to convert subtitles, this may take a while...`);
                     // Try to convert the subtitles from the movie
-                    //let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                    let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
                 
                     // If the conversion failed (because the file was busy), try again.
-                    //while(!subtitleConvertionResult) {
-                    //    subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
-                    //}
+                    while(!subtitleConvertionResult) {
+                        subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                    }
+                    */
 
                     let audio_streams = await this.findAudioStreams(serieName, episodePath);
-                    console.log(audio_streams);
                     if (audio_streams) {
                         for (let stream of audio_streams) {
                             t.none('INSERT INTO serie_episode_language (serie_episode_id, language, stream_index) VALUES ($1, $2, $3)', [internal_episode_id, stream.language, stream.stream]);
@@ -209,28 +203,34 @@ class TvLibrary extends Library {
 
 
                     // Get the internal serie id for the episode
-                    let internalSerieID = await t.one(`SELECT id FROM serie WHERE name = $1 AND path = $2`, [serieName, showPath], c => +c.id);
+                    internalSerieID = await t.one(`SELECT id FROM serie WHERE name = $1 AND path = $2`, [serieName, showPath], c => +c.id);
                     // Get the Tmdb id for the show
-                    let serieTmdbId = await t.one('SELECT tmdb_id FROM serie_metadata WHERE serie_id IN (SELECT id FROM serie WHERE name = $1 AND path = $2)', [serieName, showPath], c => +c.tmdb_id);
+                    serieTmdbId = await t.one('SELECT tmdb_id FROM serie_metadata WHERE serie_id IN (SELECT id FROM serie WHERE name = $1 AND path = $2)', [serieName, showPath], c => +c.tmdb_id);
+                } else {
+                    alreadyAdded = true;
+                }
+            }).then(data => {
+                if (!alreadyAdded) {
                     this.metadata.getEpisodeMetadata(serieTmdbId, seasonNumber, episodeNumber).then(result => {
                         let metadata = result.metadata;
-
-                        if (metadata === null) {
-                            console.log(` > Couldn't find any metadata for season ${seasonNumber} episode ${episodeNumber} of serie ${serieName}`);
-                            // TODO: GET AND SAVE DUMMYDATA
+                        
+                        console.log(` > Saving metadata for season ${seasonNumber} episode ${episodeNumber} of serie ${serieName}`);
+                        this.metadata.insertEpisodeMetadata(metadata, internalSerieID, seasonNumber, episodeNumber).then(() => {
                             resolve();
-                        } else {
-                            console.log(` > Saving metadata for season ${seasonNumber} episode ${episodeNumber} of serie ${serieName}`);
-                            this.metadata.insertEpisodeMetadata(metadata, internalSerieID, seasonNumber, episodeNumber).then(() => {
-                                console.log("Resolving");
-                                resolve();
-                            });
-                        }
+                        });
+                    }).catch(async (error) => {
+                        // TODO: Add support for dummy metadata
+                        console.log("\x1b[31m", `> Couldn't find any metadata for season ${seasonNumber} episode ${episodeNumber} of serie ${serieName}`, "\x1b[0m");
+                        await db.none('DELETE FROM serie_episode WHERE season_number = $1 AND serie_id = $2 AND episode = $3 AND path = $4', [seasonNumber, internalSerieID, episodeNumber, episodePath]);
+                        reject();
                     });
-
                 } else {
                     resolve();
                 }
+            }).catch(err => {
+                console.log("TRANSACTION ERROR in addEpisodeIfNotSaved");
+                console.log(error);
+                reject();
             });
         });
     }
@@ -311,10 +311,8 @@ class TvLibrary extends Library {
                 resolve();
             } else {
                 let type = MOVIE_FORMATS.includes(fileExtension) ? 'SHOW' : 'SUBTITLE'
-                //console.log(type);
                 let t = this;
                 // Lock so each library only can handle one serie at a time (for race condition with episodes)
-               // lock.acquire("abcdefg", async function(done) {
                 lock.enter(async function (token) {
                     let seasonNumber = t.getSeasonNumber(path);
                     let episodeNumber = t.getEpisodeNumber(path);
@@ -335,38 +333,87 @@ class TvLibrary extends Library {
                             return;
                         }
                         if (type === 'SHOW') {
-                            try {
-                                await t.addSerieIfNotSaved(showName, showPath);
-                            } catch(error) {
-                                lock.leave(token);
-                                return;
-                            }
+                            // TODO: There must be a better way to write this?
+                            t.addSerieIfNotSaved(showName, showPath).then((serieId) => {
+                                t.addSeasonIfNotSaved(showName, seasonPath, showPath, seasonNumber).then(() => {
+                                    t.addEpisodeIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber).then(() => {
+                                        lock.leave(token);
 
-                            await t.addSeasonIfNotSaved(showName, seasonPath, showPath, seasonNumber);
-                            await t.addEpisodeIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber);
-                            //console.log("efter");
+                                    // If we failed to add the episode
+                                    }).catch(err => {
+                                        t.removeSeasonIfNoEpisodes(serieId, seasonNumber, seasonPath).then(removed => {
+                                            if (removed) {
+                                                console.log(` > No more saved episodes in season ${seasonNumber} for serie ${showName}, removing the season from the database.`);
+                                                t.removeShowIfNoSeasons(serieId).then((removed) => {
+                                                    if (removed) {
+                                                        console.log(` > No more seasons in the show ${showName}, removing the show from the database.`);
+                                                    }
+                                                    lock.leave(token);
+                                                });
+                                            } else {
+                                                lock.leave(token);
+                                            }
+                                        });
+                                    });
+
+                                // If we failed to add the season
+                                }).catch(err => {
+                                    t.removeShowIfNoSeasons(serieId).then((removed) => {
+                                        if (removed) {
+                                            console.log(` > No more seasons in the show ${showName}, removing the show from the database.`);
+                                        }
+                                        lock.leave(token);
+                                    });
+                                });
+
+                            // If we failed to add the show
+                            }).catch(err => {
+                                lock.leave(token);
+                            });
+
                         } else if (type === 'SUBTITLE') {
                             await t.addSubtitleIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber);
-                            //console.log("kk");
+                            lock.leave(token);
                         }
                     }
-                    lock.leave(token);
                 });
-
-                    //done();
-                //}, function() {
-                //    console.log("LOCK RESOLVE" + path)
-                //    resolve();
-                //});
             }
 
+        });
+    }
+
+    async removeSeasonIfNoEpisodes(serieId, seasonNumber, seasonPath) {
+        return new Promise(async (resolve, reject) => {
+            db.any('SELECT * FROM serie_episode WHERE serie_id = $1 AND season_number = $2', [serieId, seasonNumber]).then(async (result) => {
+                if (result.length === 0) {
+                    await db.none('DELETE FROM serie_season WHERE serie_id = $1 AND season_number = $2 AND path = $3', [serieId, seasonNumber, seasonPath]);
+                    await db.none('DELETE FROM serie_season_metadata WHERE serie_id = $1 AND season_id = $2', [serieId, seasonNumber]);
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            });
+        });
+    }
+
+    async removeShowIfNoSeasons(serieId) {
+        return new Promise(async (resolve, reject) => {
+            db.any('SELECT * FROM serie_season WHERE serie_id = $1', [serieId]).then(async (result) => {
+                if (result.length === 0) {
+                    await db.none('DELETE FROM serie WHERE id = $1', [serieId]).then(result => {
+                        resolve(true);
+                    });
+                } else {
+                    resolve(false);
+                }
+            });
         });
     }
 
     async removeEntry(path) {
         return new Promise(async (resolve, reject) => {
             let t = this;
-	    lock.enter(async function (token) {
+            lock.enter(async function (token) {
                 // Remove the subtitle if that is what we are removing
                 db.any('SELECT * FROM serie_episode_subtitle WHERE path = $1 AND library_id = $2', [path, t.id])
                 .then(result => {
@@ -405,14 +452,14 @@ class TvLibrary extends Library {
                                         await db.none('DELETE FROM serie WHERE id = $1', [episodeInformation[0].serie_id]);
                                         await db.none('DELETE FROM serie_metadata WHERE serie_id = $1', [episodeInformation[0].serie_id]);
                                     }
-					lock.leave(token);
+					                lock.leave(token);
                                 });
                             } else {
-lock.leave(token);
+                                lock.leave(token);
                             }
                         });
                     } else {
-lock.leave(token);
+                        lock.leave(token);
                     }
                 });
             });

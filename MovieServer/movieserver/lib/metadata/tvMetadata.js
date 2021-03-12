@@ -130,12 +130,13 @@ class TvMetadata extends Metadata {
             fetch(`${this.getAPIUrl()}/tv/${serieTmdbID}/season/${season}?api_key=${this.getAPIKey()}&language=en-US`)
             .then(res => res.json())
             .then(json => {
+                if (!json.success && json.status_code == 34) {
+                    reject("Not found");
+                    return;
+                }
+
                 let result = {
                     metadata: json
-                }
-                // If we didn't find any metadata
-                if (json.status_code != undefined) {
-                    result.metadata = null;
                 }
                 resolve(result);
             });
@@ -147,14 +148,14 @@ class TvMetadata extends Metadata {
             fetch(`${this.getAPIUrl()}/tv/${serieTmdbID}/season/${season}/episode/${episode}?api_key=${this.getAPIKey()}&language=en-US`)
             .then(res => res.json())
             .then(json => {
+                if (!json.success && json.status_code == 34) {
+                    reject("Not found");
+                    return;
+                }
+
                 let result = {
                     metadata: json
                 };
-
-                // If we didn't find any metadata
-                if (json.status_code != undefined) {
-                    result.metadata = null;
-                }
                 resolve(result);
             });
         });
