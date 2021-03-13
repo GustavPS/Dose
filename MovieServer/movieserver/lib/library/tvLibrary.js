@@ -319,8 +319,10 @@ class TvLibrary extends Library {
     
                     if (seasonNumber === false) {
                         console.log(`> Couldn't find a season number for ${path} (${seasonNumber}). Stopping.`);
+                        lock.leave(token);
                     } else if (episodeNumber === false) {
                         console.log(`> Couldn't find a episode number for ${path}, Stopping.`);
+                        lock.leave(token);
                     } else {
                         episodeNumber = parseInt(episodeNumber);
                         let showName = t.getShowName(path);
