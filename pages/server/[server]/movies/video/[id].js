@@ -25,6 +25,8 @@ export default function Home(props) {
   const serverToken = props.serverToken;
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
+  const [inWatchList, setInWatchList] = useState(false);
+
 
   const videoRef = useRef();
 
@@ -89,6 +91,7 @@ export default function Home(props) {
       meta.currentTime = currentTime;
       videoRef.current.setTitle(meta.title);
 
+      setInWatchList(meta.inwatchlist);
       setWatched(meta.watched);
       setMetadata(meta);
     });
@@ -116,6 +119,35 @@ export default function Home(props) {
         setWatched(false);
       } else {
         console.log("ERROR MARKING AS WATCHED: " + status);
+      }
+    })
+    .catch(err => {
+      console.log(err);
+    });
+  }
+
+  const addToWatchList = () => {
+    fetch(`${server.server_ip}/api/movies/${id}/addToWatchList?add=true&token=${serverToken}`)
+    .then(r => r.json())
+    .then(status => {
+      if (status.success) {
+        setInWatchList(true);
+      } else {
+        console.log("ERROR adding to watchlist: " + status);
+      }
+    })      .catch(err => {
+      console.log(err);
+    });
+  }
+
+  const removeFromWatchList = () => {
+    fetch(`${server.server_ip}/api/movies/${id}/addToWatchList?add=false&token=${serverToken}`)
+    .then(r => r.json())
+    .then(status => {
+      if (status.success) {
+        setInWatchList(false);
+      } else {
+        console.log("ERROR removing from watchlist: " + status);
       }
     })
     .catch(err => {
@@ -242,6 +274,22 @@ export default function Home(props) {
                 <div style={{marginLeft: "15px"}}>
                   <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
                   <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
+                </div>
+              </>
+              }
+              {inWatchList &&
+              <>
+                  <div style={{marginLeft: "15px"}}>
+                  <div id="inWatchList" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => removeFromWatchList()}></div>
+                  <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Ta bort från watchlist</p>
+                  </div>
+              </>
+              }
+              {!inWatchList &&
+              <>
+                <div style={{marginLeft: "15px"}}>
+                  <div id="inWatchList" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => addToWatchList()}></div>
+                  <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Lägg till i watchlist</p>
                 </div>
               </>
               }
