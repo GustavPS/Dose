@@ -91,6 +91,7 @@ export default function Home(props) {
       meta.currentTime = currentTime;
       videoRef.current.setTitle(meta.title);
 
+      setInWatchList(meta.inwatchlist);
       setWatched(meta.watched);
       setMetadata(meta);
     });
