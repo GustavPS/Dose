@@ -17,10 +17,13 @@ export default (req, res) => {
         }
         console.log("called addtowatch with " + goingToAdd)
         let user_id = decoded.user_id;
-        if (goingToAdd == "true" || goingToAdd) {
+        if (goingToAdd == "true") {
+            console.log("Adding from user_movie_watchlist: user_id = " + user_id + " and movie_id = " + movieID)
+
             db.none('INSERT INTO user_movie_watchlist (user_id, movie_id) VALUES ($1, $2) ON CONFLICT DO nothing', [user_id, movieID]);
         } else {
-            db.none('DELETE FROM user_movie_watchlist (user_id, movie_id) VALUES ($1, $2)', [user_id, movieID]);
+            console.log("DELETING from user_movie_watchlist: user_id = " + user_id + " and movie_id = " + movieID)
+            db.none('DELETE FROM user_movie_watchlist WHERE user_id = $1 AND movie_id = $2', [user_id, movieID]);
         }
 
         res.status(200).json({

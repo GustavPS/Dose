@@ -28,8 +28,10 @@ const fetcher = url =>
 export default (props) => {
     // props.server is from the SSR under this function
     let server = props.server;
+    
     const [latestMovies, setLatesMovies] = useState(null);
     const [ongoingMovies, setOngoingMovies] = useState([]);
+    const [movieWatchList, setMovieWatchList] = useState([]);
     const [ongoingShows, setOngoingShows] = useState([]);
     const [newlyAddedMovies, setNewlyAddedMovies] = useState([]);
     const [newlyAddedShows, setNewlyAddedShows] = useState([]);
@@ -72,11 +74,13 @@ export default (props) => {
      * @param {string} orderby 
      * @param {int} limit 
      */
-    const getMovieList = async (genre=null, orderby=null, limit=20, ongoing=false) => {
+    const getMovieList = async (genre=null, orderby=null, limit=20, ongoing=false, watchlist=false) => {
         return new Promise((resolve, reject) => {
             let url;
             if (ongoing) {
                 url = `${server.server_ip}/api/movies/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+            } else if(watchlist) {
+                url = `${server.server_ip}/api/movies/list/watchlist?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             } else {
                 url = `${server.server_ip}/api/movies/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             }
@@ -319,6 +323,19 @@ export default (props) => {
                 setOngoingMovies(movieElements);
             });
 
+            // Get watchlist for movies
+            getMovieList(null, 'release_date', 20, false, true).then(movies => {
+                movies.reverse();
+                let movieElements = [];
+                for (let movie of movies) {
+                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                    movieElements.push(
+                        <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                    );
+                }
+                setMovieWatchList(movieElements);
+            });
+
             // Get newly added movies
             getMovieList(null, 'added_date', 20).then(movies => {
                 let movieElements = [];
@@ -474,6 +491,28 @@ export default (props) => {
                                             <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
                                         </div>
                                         <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedMovies')}>
+                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                        </div>
+                                    </>
+                                }
+                            </div> 
+                        <hr className={Styles.divider}></hr>
+                        </> 
+                    }
+
+                    {movieWatchList.length > 0 &&
+                        <>
+                            <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Filmer att se senare</h2></a></Link>   
+                            <div className={Styles.movieRow}>
+                                <div id="movieWatchList" className={Styles.scrollable}>
+                                    {movieWatchList}
+                                </div>
+                                {movieWatchList.length * 480 > windowSize.width &&
+                                    <>
+                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('movieWatchList')}>
+                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                        </div>
+                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('movieWatchList')}>
                                             <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
                                         </div>
                                     </>
