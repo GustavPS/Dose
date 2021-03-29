@@ -28,96 +28,86 @@ class MovieLibrary extends Library {
 
     async addMovieIfNotSaved(movieName, path) {
         return new Promise(async (resolve) => {
-            db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(async (result) => {
+            let internalMovieID;
+            let alreadyAdded = false;
+            await db.tx(async t => {
+                // Check if we have already saved this movie
+                let result = await t.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]);
+                // If we haven't saved this movie, insert it
                 if (result.length === 0) {
                     console.log(` > Found a new movie (${path} for library: '${this.name}')`);
-    
-                    // Insert to the movie table (contining the path of the movie)
-                    db.one('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3) RETURNING id', [path, this.id, movieName]).then(async (internal_movie_id) => {
-                        internal_movie_id = internal_movie_id.id;
+                    // Insert into the movie table and get the assigned ID
+                    internalMovieID = await t.one('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3) RETURNING id', [path, this.id, movieName]);
+                    internalMovieID = internalMovieID.id;
 
-			            // CURRENTLY DISABLED
-                        //console.log(` > Trying to convert subtitles, this may take a while...`);
-                        //let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
-
-                        // If the conversion failed (because the file was busy), try again.
-                        //while(!subtitleConvertionResult) {
-                        //    await new Promise(r => setTimeout(r, 2000));
-                        //    subtitleConvertionResult = await this.convertSubtitles(movieName, path);
-                        //}
-
-                        // Find all the audio streams (languages) for the movie
-
-                        let audio_streams = await this.findAudioStreams(movieName, path);
-                        if (audio_streams) {
-                            for (let stream of audio_streams) {
-                                db.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internal_movie_id, stream.language, stream.stream]);
-                            }
+                    // Find all the audio streams (languages) for the movie
+                    let audio_streams = await this.findAudioStreams(movieName, path);
+                    if (audio_streams) {
+                        for (let stream of audio_streams) {
+                            await db.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internal_movie_id, stream.language, stream.stream]);
                         }
-
-                        db.one('SELECT id FROM movie WHERE path = $1 AND library = $2', [path, this.id]).then(result => {
-                            let internalMovieID = result.id;
-    
-                            // Try to find metadata
-                            this.metadata.getMetadata(movieName).then(result => {
-                                let metadata = result.metadata;
-                                let images = result.images;
-                                let trailer = result.trailer;
-                                if (metadata === null) {
-                                    console.log(` > Couldn't find any metadata for movie '${movieName}'`);
-                                    images = {
-                                        backdrops: [],
-                                        posters: []
-                                    }
-                                    metadata = this.metadata.getDummyMetadata(movieName);
-                                    trailer = "";
-                                    
-                                    this.metadata.insertMetadata(metadata, images, trailer, internalMovieID);
-                                    resolve();
-                                } else {
-                                    console.log(` > Saving metadata for movie '${movieName}'`);
-                                    // Insert metadata
-                                    this.metadata.insertMetadata(metadata, images, trailer, internalMovieID);
-                                    resolve();
-                                }
-                            })
+                    }
+                } else {
+                    alreadyAdded = true;
+                }
+            }).then(data => {
+                if (!alreadyAdded) {
+                    this.metadata.getMetadata(movieName).then(result => {
+                        console.log(` > Saving metadata for movie '${movieName}'`);
+                        this.metadata.insertMetadata(result.metadata, result.images,
+                                                     result.trailer, internalMovieID).then(() => {
+                            resolve();
+                        });
+                    }).catch(async (error) => {
+                        console.log(` > Couldn't find any metadata for movie (using dummy data) '${movieName}'`);
+                        let images = {
+                            backdrops: [],
+                            posters: []
+                        }
+                        let metadata = this.metadata.getDummyMetadata(movieName);
+                        let trailer = "";
+                        
+                        this.metadata.insertMetadata(metadata, images, trailer, internalMovieID).then(() => {
+                            resolve();
                         });
                     });
-    
                 } else {
                     resolve();
                 }
-            })
+            });
         });
-      
     }
 
     addSubtitleIfNotSaved(movieName, path, parentFolder) {
-        let fileName = pathLib.basename(path);
-        let language = null;
-        for (let lang of LANGUAGE_LIST) {
-            if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
-                language = lang.longName;
-                break;
+        return new Promise(async (resolve, reject) => {
+            let fileName = pathLib.basename(path);
+            let language = null;
+            for (let lang of LANGUAGE_LIST) {
+                if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
+                    language = lang.longName;
+                    break;
+                }
             }
-        }
-        db.any("SELECT * FROM movie WHERE library = $1", [parseInt(this.id)]).then(movies => {
-            for (let movie of movies) {
-                let movieFolder =  pathLib.dirname(movie.path);
-                if (movieFolder === parentFolder) {
-                    db.any('SELECT * FROM subtitle WHERE movie_id = $1 AND path = $2 AND library_id = $3', [movie.id, path, movie.library]).then(result => {
+            db.any("SELECT * FROM movie WHERE library = $1", [parseInt(this.id)]).then(async (movies) => {
+                for (let movie of movies) {
+                    let movieFolder =  pathLib.dirname(movie.path);
+                    if (movieFolder === parentFolder) {
+                        let result = await db.any('SELECT * FROM subtitle WHERE movie_id = $1 AND path = $2 AND library_id = $3', [movie.id, path, movie.library]);
                         if (result.length === 0) {
                             console.log(` > Saving subtitle for ${movieName} in library ${movie.library}`);
-                            db.none('INSERT INTO subtitle (path, movie_id, library_id, language) VALUES ($1, $2, $3, $4)', [path, movie.id, movie.library, language]);
+                            await db.none('INSERT INTO subtitle (path, movie_id, library_id, language) VALUES ($1, $2, $3, $4)', [path, movie.id, movie.library, language]);
                         }
-                    })
+                    }
+    
                 }
-
-            }
-            // If we didn't find a matching movie by the subtitle name, try with the folderName
-            if (movies.length === 0) {
-                    console.log(`Couldn't find any matching movies for subtitle ${path}`);
-            }
+                // If we didn't find a matching movie by the subtitle name, try with the folderName
+                if (movies.length === 0) {
+                        console.log(`Couldn't find any matching movies for subtitle ${path}`);
+                        reject();
+                } else {
+                    resolve();
+                }
+            });
         });
     }
 
@@ -146,11 +136,17 @@ class MovieLibrary extends Library {
         let t = this;
 	    lock.enter(async function (token) {
             if (type === 'MOVIE') {
-                await t.addMovieIfNotSaved(movieName, path);
+                t.addMovieIfNotSaved(movieName, path).then(() => {
+                    lock.leave(token);
+                });
             } else if (type === 'SUBTITLE') {
-                t.addSubtitleIfNotSaved(movieName, path, parentFolder);
+                t.addSubtitleIfNotSaved(movieName, path, parentFolder).then(() => {
+                    lock.leave(token);
+                }).catch(error => {
+                    // Didn't find a matchin movie, it is logged in the function call
+                    lock.leave(token);
+                })
             }
-            lock.leave(token);
         });
     }
 
@@ -159,21 +155,24 @@ class MovieLibrary extends Library {
      * @param {String} path - Path to the removed movie
      */
     async removeEntry(path) {
-        db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id])
-        .then(result => {
-            if (result.length > 0) {
-                console.log(` > Removing movie ${result[0].name} from '${this.name}'`);
-                db.none('DELETE FROM movie WHERE path = $1 AND library = $2', [path, this.id]);
-            }
+        lock.enter(token => {
+            db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id])
+            .then(result => {
+                if (result.length > 0) {
+                    console.log(` > Removing movie ${result[0].name} from '${this.name}'`);
+                    db.none('DELETE FROM movie WHERE path = $1 AND library = $2', [path, this.id]);
+                }
+                db.any('SELECT * FROM subtitle WHERE path = $1 AND library_id = $2', [path, this.id])
+                .then(result => {
+                    if (result.length > 0) {
+                        console.log(` > Removing a subtitle for Movie ID ${result[0].id} from '${this.name}'`);
+                        db.none('DELETE FROM subtitle WHERE path = $1 AND library_id = $2', [path, this.id]);
+                    }
+                    lock.leave(token);
+                });
+        
+            });
         });
-        db.any('SELECT * FROM subtitle WHERE path = $1 AND library_id = $2', [path, this.id])
-        .then(result => {
-            if (result.length > 0) {
-                console.log(` > Removing a subtitle for Movie ID ${result[0].id} from '${this.name}'`);
-                db.none('DELETE FROM subtitle WHERE path = $1 AND library_id = $2', [path, this.id]);
-            }
-        });
-
     }
 }
 
