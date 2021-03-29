@@ -44,7 +44,7 @@ class MovieLibrary extends Library {
                     let audio_streams = await this.findAudioStreams(movieName, path);
                     if (audio_streams) {
                         for (let stream of audio_streams) {
-                            await db.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internal_movie_id, stream.language, stream.stream]);
+                            await db.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internalMovieID, stream.language, stream.stream]);
                         }
                     }
                 } else {
