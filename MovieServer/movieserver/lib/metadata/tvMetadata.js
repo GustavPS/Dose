@@ -19,7 +19,11 @@ class TvMetadata extends Metadata {
 
     async insertSeasonMetadata(metadata, internalSerieID, seasonNumber) {
         return new Promise(async (resolve, reject) => {
-            let d = new Date();
+            if (metadata.poster_path == null) {
+                console.log(` > Didn't find a image for this season, using dummyimage.`);
+                metadata.poster_path = "";
+            }
+
             // Insert to the database
             await db.none("INSERT INTO serie_season_metadata (serie_id, season_id, name, air_date, overview, poster_path, added_date) VALUES ($1, $2, $3, $4, $5, $6, $7)", [
                 internalSerieID,
