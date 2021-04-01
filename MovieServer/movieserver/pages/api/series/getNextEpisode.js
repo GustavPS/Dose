@@ -50,12 +50,15 @@ function getNextEpisodeID(episodeNumber, serie_id, season_number) {
                 db.any('SELECT id, season_number, episode FROM serie_episode WHERE serie_id = $1 AND season_number = $2 AND episode = $3', [serie_id, season_number+1, 1]).then(result => {
                     // If there is no more seasons
                     if (result.length === 0) {
-                        resolve(false);
+                        resolve({
+                            foundEpisode: false
+                        });
                     } else {
                         resolve({
                             internalID: result[0].id,
                             season: result[0].season_number,
-                            episode: result[0].episode
+                            episode: result[0].episode,
+                            foundEpisode: true
                         });
                     }
                 });
@@ -63,7 +66,8 @@ function getNextEpisodeID(episodeNumber, serie_id, season_number) {
                 resolve({
                     internalID: result[0].id,
                     season: result[0].season_number,
-                    episode: result[0].episode
+                    episode: result[0].episode,
+                    foundEpisode: true
                 });
             }
         });
