@@ -44,17 +44,29 @@ class Watcher {
     async syncDatabase() {
         console.log("Syncing database..");
         const libraries = await db.any("SELECT * FROM library");
+        const libLenght = libraries.length;
+        let index = 1;
         for (const library of libraries) {
+            process.stdout.clearLine();
+            process.stdout.cursorTo(0);
+            process.stdout.write(` > Checking Library ${index}/${libLenght}`);
             let exist = await pathExists(library.path);
             if (!exist) {
                 console.log("\x1b[31m", ` > Can't find ${library.name} (${library.path}), removing from the database.`, "\x1b[0m");
                 await db.none('DELETE FROM movie WHERE library = $1', [library.id]);
                 await db.none('DELETE FROM library WHERE id = $1', [library.id]);
             }
+            index++;
         }
+        process.stdout.write("\n");
 
         const movies = await db.any("SELECT movie.path AS movie_path, movie.name AS movie_name, movie.id AS movie_id, library.path AS library_path, library.id AS library_id FROM movie, library WHERE movie.library = library.id");
+        const movieLenght = movies.length;
+        index = 1;
         for (const movie of movies) {
+            process.stdout.clearLine();
+            process.stdout.cursorTo(0);
+            process.stdout.write(` > Checking Movie ${index}/${movieLenght}`);
             if (movie.movie_name === null) {
                 movie.movie_name = "";
             }
@@ -63,11 +75,18 @@ class Watcher {
                 console.log("\x1b[31m", ` > Can't find ${movie.movie_name} (${movie.library_path + movie.movie_path}), removing from the database.`, "\x1b[0m");
                 await db.none('DELETE FROM movie WHERE id = $1', [movie.movie_id]);
             }
+            index++;
         }
+        process.stdout.write("\n");
 
         // Check if all the tv show paths are still present in the filesystem
         const shows = await db.any("SELECT serie.path AS serie_path, serie.name AS serie_name, serie.id AS serie_id, library.path AS library_path, library.id AS library_id FROM serie, library WHERE serie.library = library.id");
+        const showLength = shows.length;
+        index = 1;
         for (const show of shows) {
+            process.stdout.clearLine();
+            process.stdout.cursorTo(0);
+            process.stdout.write(` > Checking Show ${index}/${showLength}`);
             if (show.serie_name === null) {
                 show.serie_name = "";
             }
@@ -78,16 +97,27 @@ class Watcher {
                 console.log("\x1b[31m", ` > Can't find ${show.serie_name} (${show.library_path + show.serie_path}), removing from the database.`, "\x1b[0m");
                 await db.none('DELETE FROM serie WHERE id = $1', [show.serie_id]);
             }
+            index++;
         }
+        process.stdout.write("\n");
+
 
         const subtitles = await db.any("SELECT subtitle.id AS subtitle_id, subtitle.path AS subtitle_path, subtitle.movie_id AS movie_id, subtitle.library_id AS library_id, library.path AS library_path, library.name AS library_name FROM subtitle, library WHERE subtitle.library_id = library.id");
+        const subLength = subtitles.length;
+        index = 1;
         for (const subtitle of subtitles) {
+            process.stdout.clearLine();
+            process.stdout.cursorTo(0);
+            process.stdout.write(` > Checking Subtitle ${index}/${subLength}`);
             let exist = await pathExists(subtitle.library_path + subtitle.subtitle_path);
             if (!exist) {
                 console.log(` > Can't find ${subtitle.subtitle_path} in library ${subtitle.library_name}, removing from the databse (${subtitle.library_path + subtitle.subtitle_path})`, "\x1b[0m");
                 await db.none('DELETE FROM subtitle WHERE id = $1', [subtitle.subtitle_id]);
             }
+            index++;
+
         }
+        process.stdout.write("\n");
 
         console.log(" > Done syncing database!\n");
     }
