@@ -4,7 +4,7 @@ const db = require('../../../lib/db').default;
 export default async function handle(req, res) {
     res.setHeader('Access-Control-Allow-Origin', "*");
     res.setHeader('Access-Control-Allow-Headers', "*");
-    let user = hash.decodeJWT(req.cookies.token);
+    let user = hash.decodeJWT(req.query.token);
 
     // Not authenticated
     if (user === false) {

@@ -25,7 +25,7 @@ const chooseServer = server => {
 }
 
 export default function Home() {
-  const { data, error } = useSWR(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/getServers`, fetcher);
+  const { data, error } = useSWR(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/getServers?token=${cookie.get('token')}`, fetcher);
 
   return (
     <Layout home relative>
