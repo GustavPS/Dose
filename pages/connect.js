@@ -24,7 +24,7 @@ export default function Connect(props) {
 // Get the information about the server and send it to the front end before render (this is server-side)
 export async function getServerSideProps(context) {
 
-    return await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/tv/getConnectCode?token=${cookies(context).token}`)
+    return await fetch(`http://localhost:${process.env.SERVER_PORT}${process.env.SERVER_SUB_FOLDER}/api/auth/tv/getConnectCode?token=${cookies(context).token}`)
     .then(r => r.json())
     .then(result => {
         return {props: {
