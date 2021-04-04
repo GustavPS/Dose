@@ -1,4 +1,5 @@
 import style from './movieBackdrop.module.css';
+import validateServerAccess from '../lib/validateServerAccess';
 
 
 export default class MovieBackdrop extends React.Component {
@@ -19,16 +20,18 @@ export default class MovieBackdrop extends React.Component {
     }
 
     markAsWatched() {
-        fetch(`${server.server_ip}/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
-        .then(r => r.json())
-        .then(status => {
-            if (status.success) {
-                this.props.unMountMe();
-            } else {
-                console.log("ERROR MARKING AS WATCHED: " + status);
-            }
-        }).catch(err => {
-            console.log(err);
+        validateServerAccess(server, (serverToken) => {
+            fetch(`${server.server_ip}/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
+            .then(r => r.json())
+            .then(status => {
+                if (status.success) {
+                    this.props.unMountMe();
+                } else {
+                    console.log("ERROR MARKING AS WATCHED: " + status);
+                }
+            }).catch(err => {
+                console.log(err);
+            });
         });
     }
 

@@ -8,7 +8,7 @@ import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
 import Router from 'next/router';
 import cookies from 'next-cookies'
-
+import validateServerAccess from '../../../../../../../../../lib/validateServerAccess';
 import VideoComponent from '../../../../../../../../../components/videoComponent';
 
 let internalID, season, episode;
@@ -30,71 +30,75 @@ export default function Home(props) {
 
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
-    fetch(`${server.server_ip}/api/series/${id}/season/${season}/episode/${episode}?token=${serverToken}`, {
-      method: 'GET',
-      headers: {
-          'Content-Type': 'application/json'
-      }
-    })
-    .then(r => r.json())
-    .then(result => {
-      let meta = result.result;
-      let finish_at = new Date(new Date().getTime() + meta.runtime * 60000);
-      meta.finish_at = finish_at.getHours() + ":" + finish_at.getMinutes();
-      for (let image of meta.images) {
-        if (image.active && image.type === 'BACKDROP') {
-          meta.backdrop = image.path;
+    validateServerAccess(server, (serverToken) => {
+      fetch(`${server.server_ip}/api/series/${id}/season/${season}/episode/${episode}?token=${serverToken}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
         }
-        if (image.active && image.type === 'POSTER') {
-          meta.poster = image.path;
+      })
+      .then(r => r.json())
+      .then(result => {
+        let meta = result.result;
+        let finish_at = new Date(new Date().getTime() + meta.runtime * 60000);
+        meta.finish_at = finish_at.getHours() + ":" + finish_at.getMinutes();
+        for (let image of meta.images) {
+          if (image.active && image.type === 'BACKDROP') {
+            meta.backdrop = image.path;
+          }
+          if (image.active && image.type === 'POSTER') {
+            meta.poster = image.path;
+          }
         }
-      }
-
-      let new_added_date = new Date(parseInt(meta.added_date));
-      let added_year = new_added_date.getFullYear();
-      let added_month = new_added_date.getMonth() + 1;
-      if(added_month < 10) {
-        added_month = "0" + added_month.toString();
-      }
-      let adde_date = new_added_date.getDate();
-      if(adde_date < 10) {
-        adde_date = "0" + adde_date.toString();
-      }
-      meta.added_date = `${added_year}-${added_month}-${adde_date}`
-
-      let currentTime = "";
-      let hours = Math.floor(meta.currentTime / 60 / 60)
-      let minutes = Math.floor(meta.currentTime / 60)
-      let seconds = Math.floor(meta.currentTime % 60);
-      if (hours >= 1) {
-        currentTime += `${hours}:`
-      }
-      if (minutes < 10) {
-        minutes = `0${minutes}`;
-      }
-      if (seconds < 10) {
-        seconds = `0${seconds}`
-      }
-      currentTime += `${minutes}:${seconds}`
-      meta.currentTimeSeconds = meta.currentTime;
-      meta.currentTime = currentTime;
-      console.log(meta.show_name);
-
-      videoRef.current.setTitle(meta.show_name);
-      setWatched(meta.watched);
-      setMetadata(meta);
+  
+        let new_added_date = new Date(parseInt(meta.added_date));
+        let added_year = new_added_date.getFullYear();
+        let added_month = new_added_date.getMonth() + 1;
+        if(added_month < 10) {
+          added_month = "0" + added_month.toString();
+        }
+        let adde_date = new_added_date.getDate();
+        if(adde_date < 10) {
+          adde_date = "0" + adde_date.toString();
+        }
+        meta.added_date = `${added_year}-${added_month}-${adde_date}`
+  
+        let currentTime = "";
+        let hours = Math.floor(meta.currentTime / 60 / 60)
+        let minutes = Math.floor(meta.currentTime / 60)
+        let seconds = Math.floor(meta.currentTime % 60);
+        if (hours >= 1) {
+          currentTime += `${hours}:`
+        }
+        if (minutes < 10) {
+          minutes = `0${minutes}`;
+        }
+        if (seconds < 10) {
+          seconds = `0${seconds}`
+        }
+        currentTime += `${minutes}:${seconds}`
+        meta.currentTimeSeconds = meta.currentTime;
+        meta.currentTime = currentTime;
+        console.log(meta.show_name);
+  
+        videoRef.current.setTitle(meta.show_name);
+        setWatched(meta.watched);
+        setMetadata(meta);
+      });
     });
   }, []);
 
 
   const getNextEpisodeID = (cb) => {
-    fetch(`${server.server_ip}/api/series/getNextEpisode?serie_id=${id}&season=${season}&episode=${episode}&token=${serverToken}`)
-    .then(r => r.json())
-    .then(result => {
-      season = result.season;
-      episode = result.episode;
-      internalID = result.internalID;
-      cb(result.internalID);
+    validateServerAccess(server, (serverToken) => {
+      fetch(`${server.server_ip}/api/series/getNextEpisode?serie_id=${id}&season=${season}&episode=${episode}&token=${serverToken}`)
+      .then(r => r.json())
+      .then(result => {
+        season = result.season;
+        episode = result.episode;
+        internalID = result.internalID;
+        cb(result.internalID);
+      });
     });
   }
 
@@ -106,31 +110,35 @@ export default function Home(props) {
   }
 
   const markAsWatched = () => {
-    fetch(`${server.server_ip}/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
-    .then(r => r.json())
-    .then(status => {
-      if (status.success) {
-        setWatched(true);
-      } else {
-        console.log("ERROR MARKING AS WATCHED: " + status);
-      }
-    })      .catch(err => {
-      console.log(err);
+    validateServerAccess(server, (serverToken) => {
+      fetch(`${server.server_ip}/api/movies/${id}/setWatched?watched=true&token=${serverToken}`)
+      .then(r => r.json())
+      .then(status => {
+        if (status.success) {
+          setWatched(true);
+        } else {
+          console.log("ERROR MARKING AS WATCHED: " + status);
+        }
+      })      .catch(err => {
+        console.log(err);
+      });
     });
   }
 
   const markAsNotWatched = () => {
-    fetch(`${server.server_ip}/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
-    .then(r => r.json())
-    .then(status => {
-      if (status.success) {
-        setWatched(false);
-      } else {
-        console.log("ERROR MARKING AS WATCHED: " + status);
-      }
-    })
-    .catch(err => {
-      console.log(err);
+    validateServerAccess(server, (serverToken) => {
+      fetch(`${server.server_ip}/api/movies/${id}/setWatched?watched=false&token=${serverToken}`)
+      .then(r => r.json())
+      .then(status => {
+        if (status.success) {
+          setWatched(false);
+        } else {
+          console.log("ERROR MARKING AS WATCHED: " + status);
+        }
+      })
+      .catch(err => {
+        console.log(err);
+      });
     });
   }
 

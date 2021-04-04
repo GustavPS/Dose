@@ -2,6 +2,8 @@ import Styles from './changeImages.module.css';
 import {Container, Row, Col, Button, Image } from 'react-bootstrap';
 import { useState } from 'react';
 import { useRouter } from 'next/router'
+import validateServerAccess from '../lib/validateServerAccess';
+
 
 let selectedImages = [];
 
@@ -31,12 +33,14 @@ export default function ChangeImages(props) {
         console.log(poster);
         console.log(backdrop);
   
-        fetch(`${server.server_ip}/api/${type}/${id}/setImages?poster=${poster}&backdrop=${backdrop}&token=${serverToken}`)
-        .then(r => r.json())
-        .then(json => {
-          if (json.success) {
-            Router.reload(window.location.pathname);
-          }
+        validateServerAccess(server, (serverToken) => {
+          fetch(`${server.server_ip}/api/${type}/${id}/setImages?poster=${poster}&backdrop=${backdrop}&token=${serverToken}`)
+          .then(r => r.json())
+          .then(json => {
+            if (json.success) {
+              Router.reload(window.location.pathname);
+            }
+          });
         });
       }
   
@@ -66,6 +70,7 @@ export default function ChangeImages(props) {
       }
 
     const getImages = () => {
+      validateServerAccess(server, (serverToken) => {
         fetch(`${server.server_ip}/api/${type}/${id}/getImages?token=${serverToken}`)
         .then(r => r.json())
         .then(images => {
@@ -101,7 +106,8 @@ export default function ChangeImages(props) {
           setMovieBackdropResult(backdropElements);
           setImageBox(true);
         });
-      }
+      });
+    }
 
     return (
         <>

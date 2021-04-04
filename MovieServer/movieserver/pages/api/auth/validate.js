@@ -22,8 +22,9 @@ export default async (req, res) => {
                 db.any('SELECT id FROM users WHERE username = $1', [data.username])
                     .then(user => {
                         if(user.length == 1) {
-                            console.log(process.env.SECRET);
                             user = user[0];
+
+                            const expiresIn = parseInt(process.env.ACCESS_TOKEN_VALID_TIME);
                             const token = jwt.sign(
                                 {
                                     username: data.username,
@@ -31,12 +32,15 @@ export default async (req, res) => {
                                 },
                                 process.env.SECRET,
                                 {
-                                    expiresIn: 300000, // 50 min
+                                    expiresIn: expiresIn
                                 },
                             );
+                            const validTo = Math.round((Date.now() / 1000) + expiresIn);
+
                             res.status(200).json({
                                 status: 'success',
-                                token: token
+                                token: token,
+                                validTo: validTo
                             });
                             resolve();
                         } else {

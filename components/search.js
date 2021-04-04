@@ -1,6 +1,7 @@
 import Style from './search.module.css';
 import Form from 'react-bootstrap/Form';
 import fetch from 'node-fetch'
+import validateServerAccess from '../lib/validateServerAccess';
 import didYouMean from 'didyoumean';
 didYouMean.threshold = 0.1;
 
@@ -23,12 +24,14 @@ export default class Search extends React.Component {
      * This is used to get all the movies/series from the server
      */
     getAllContent() {
-        fetch(`${this.server.server_ip}/api/list?token=${this.serverToken}`)
-        .then(r => r.json())
-        .then(content => {
-            this.series = content.series;
-            this.movies = content.movies;
-        })
+        validateServerAccess(server, (serverToken) => {
+            fetch(`${this.server.server_ip}/api/list?token=${serverToken}`)
+            .then(r => r.json())
+            .then(content => {
+                this.series = content.series;
+                this.movies = content.movies;
+            });
+        });
     }
 
     search(event) {

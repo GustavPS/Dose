@@ -36,7 +36,7 @@ export default async function handle(req, res) {
             return;
         }
         user = user[0];
-
+        const expiresIn = parseInt(process.env.ACCESS_TOKEN_VALID_TIME);
         const token = jwt.sign(
             {
                 userId: user.id,
@@ -45,14 +45,23 @@ export default async function handle(req, res) {
             },
             hash.getJWTSecret(),
             {
-                expiresIn: 300000, // 50 min
+                expiresIn: expiresIn,
             },
         );
+        const validTo = Math.round((Date.now() / 1000) + expiresIn);
 
-        res.status(200).json({
-            status: 'success',
-            message: 'success',
-            token: token
+        const refreshToken          = hash.generateRefreshToken();
+        const encryptedRefreshToken = hash.getHashWithoutSalt(refreshToken);
+        const encryptedAccessToken  = hash.getHashWithoutSalt(token);
+
+        db.none('INSERT into user_access_token (user_id, access_token, refresh_token) VALUES($1, $2, $3)',[user.id, encryptedAccessToken, encryptedRefreshToken]).then(() => {
+            res.status(200).json({
+                status: 'success',
+                message: 'success',
+                token: token,
+                refreshToken: refreshToken,
+                validTo: validTo
+            });
         });
     } catch (e) {
         console.error(e);
