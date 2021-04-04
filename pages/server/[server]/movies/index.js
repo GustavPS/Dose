@@ -5,20 +5,12 @@ import cookie from 'js-cookie';
 import Router from 'next/router';
 import { useEffect, useState } from 'react';
 import { Carousel, Container, Row, Col } from 'react-bootstrap';
+import validateServerAccess from '../../../../lib/validateServerAccess';
 
 
 import Styles from '../../../../styles/server.module.css';
 
 import MovieBackdrop from '../../../../components/movieBackdrop';
-
-const fetcher = url =>
-  fetch(url)
-    .then(r => {
-      return r.json().then(result => {
-          return result;
-      });
-    }
-  );
 
 export default (props) => {
     // props.server is from the SSR under this function
@@ -27,32 +19,6 @@ export default (props) => {
     const [movies, setMovies] = useState([]);
     const [ongoingMovies, setOngoingMovies] = useState([]);
     let allContent = [];
-
-
-
-
-    // Check if user have access to this server
-    const validateAccess = async (cb) => {
-        return await fetch(`${server.server_ip}/api/auth/validate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                token: cookie.get('token')
-            }),
-        })
-        .then((r) => r.json())
-        .then((data) => {
-            if (data.status === 'success') {
-                cookie.set('serverToken', data.token, {expires: 2});
-                cb();
-            } else {
-                Router.push('/');
-
-            }
-        });
-    }
 
     /**
      * Makes a query to the current active server for a list of movies
@@ -110,7 +76,7 @@ export default (props) => {
     }
 
     useEffect(() => {
-        validateAccess(() => {
+        validateServerAccess(server, (serverToken) => {
             // Get all the newest released movies (The slieshow)
             getMovieList(null, 'release_date', 5).then(movies => {
                 movies.reverse();

@@ -6,13 +6,9 @@ import Router from 'next/router';
 import { useEffect, useState } from 'react';
 import { Carousel, Container, Row, Col } from 'react-bootstrap';
 import Link from 'next/link';
-
-
+import validateServerAccess from '../../../lib/validateServerAccess';
 import useWindowSize from '../../../components/hooks/WindowSize';
-
-
 import Styles from '../../../styles/server.module.css';
-
 import MovieBackdrop from '../../../components/movieBackdrop';
 import EpisodePoster from '../../../components/episodePoster';
 
@@ -25,7 +21,7 @@ const fetcher = url =>
     }
   );
 
-export default (props) => {
+const main = (props) => {
     // props.server is from the SSR under this function
     let server = props.server;
     
@@ -40,32 +36,6 @@ export default (props) => {
 
     const windowSize = useWindowSize();
     let allContent = [];
-
-
-
-
-    // Check if user have access to this server
-    const validateAccess = async (cb) => {
-        return await fetch(`${server.server_ip}/api/auth/validate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                token: cookie.get('token')
-            }),
-        })
-        .then((r) => r.json())
-        .then((data) => {
-            if (data.status === 'success') {
-                cookie.set('serverToken', data.token, {expires: 2});
-                cb();
-            } else {
-                Router.push('/');
-
-            }
-        });
-    }
 
     /**
      * Makes a query to the current active server for a list of movies
@@ -284,7 +254,7 @@ export default (props) => {
     }
 
     useEffect(() => {
-        validateAccess(() => {
+        validateServerAccess(server, (serverToken) => {
             // Get all the newest released movies (The slieshow)
             getMovieList(null, 'release_date', 5).then(movies => {
                 movies.reverse();
@@ -572,6 +542,8 @@ export default (props) => {
         </Layout>
     )
 }
+
+export default main;
 
 
 

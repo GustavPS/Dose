@@ -26,14 +26,27 @@ var sha512 = function(password, salt){
     return value;
 }
 
-function decodeJWT(token) {
+/**
+ * hash password with sha512.
+ * @function
+ * @param {string} string - String to be encrypted
+ */
+ var sha512NoSalt = function(string){
+    var hash = crypto.createHmac('sha512', string); /** Hashing algorithm sha512 */
+    var value = hash.digest('hex');
+    return value;
+}
+
+function decodeJWT(token, ignoreExpiration=false) {
     let decoded;
     if (token === undefined || token === null) {
         return false;
     }
 
     try {
-        decoded = jwt.verify(token, jwtSecret);
+        decoded = jwt.verify(token, jwtSecret, {
+            ignoreExpiration: ignoreExpiration
+        });
     } catch (e) {
         console.log("error, token gammal? hash.js")
     }
@@ -49,7 +62,20 @@ function getSecret() {
     return jwtSecret;
 }
 
+function generateRefreshToken() {
+    let token           = '';
+    let characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let charactersLength = characters.length;
+    let length = 200;
+    for (let i = 0; i < length; i++ ) {
+        token += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return token;
+}
+
 exports.getHash = sha512;
 exports.getSalt = genRandomString;
 exports.decodeJWT = decodeJWT;
 exports.getJWTSecret = getSecret;
+exports.generateRefreshToken = generateRefreshToken;
+exports.getHashWithoutSalt = sha512NoSalt;

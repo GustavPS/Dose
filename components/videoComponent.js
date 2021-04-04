@@ -1,8 +1,7 @@
 import Styles from './videoComponent.module.css';
 import Head from 'next/head'
 import Router from 'next/router';
-
-
+import validateServerAccess from '../lib/validateServerAccess';
 
 export default class VideoComponent extends React.Component {
     constructor(props) {
@@ -152,6 +151,11 @@ export default class VideoComponent extends React.Component {
         };
     }
 
+    updateServerToken(token, cb) {
+        this.serverToken = token;
+        cb();
+    }
+
     show(time=0) {
         document.getElementById('videoContainer').style.display = 'block';
         this.togglePlay();
@@ -198,67 +202,72 @@ export default class VideoComponent extends React.Component {
 
     loadSubtitles() {
         return new Promise(resolve => {
-            fetch(`${this.server.server_ip}/api/subtitles/list?content=${this.internalID}&type=${this.type}&token=${this.serverToken}`)
-            .then(r => r.json())
-            .then(result => {
-                let noSub = {id: -1, language: 'None'};
-                let stateSubs = this.state.subtitles;
-                stateSubs.availableSubtitles = result.subtitles;
-                stateSubs.availableSubtitles.push(noSub);
-
-                // If a subtitle was already selected (on automatic change episode), try to find a subtitle with the same language and set that as active.
-                let found = false;
-                if (this.state.subtitles.activeSubtitle !== undefined) {
-                    for (let subtitle of result.subtitles) {
-                        if (this.state.subtitles.activeSubtitle.language === subtitle.language) {
-                            found = true;
-                            this.changeSubtitle(subtitle);
-                            break;
+            validateServerAccess(this.server, (serverToken) => {
+                fetch(`${this.server.server_ip}/api/subtitles/list?content=${this.internalID}&type=${this.type}&token=${serverToken}`)
+                .then(r => r.json())
+                .then(result => {
+                    let noSub = {id: -1, language: 'None'};
+                    let stateSubs = this.state.subtitles;
+                    stateSubs.availableSubtitles = result.subtitles;
+                    stateSubs.availableSubtitles.push(noSub);
+    
+                    // If a subtitle was already selected (on automatic change episode), try to find a subtitle with the same language and set that as active.
+                    let found = false;
+                    if (this.state.subtitles.activeSubtitle !== undefined) {
+                        for (let subtitle of result.subtitles) {
+                            if (this.state.subtitles.activeSubtitle.language === subtitle.language) {
+                                found = true;
+                                this.changeSubtitle(subtitle);
+                                break;
+                            }
                         }
                     }
-                }
-
-                
-                if (!found) {
-                    this.changeSubtitle(noSub);
-                }
-                this.setState({subtitles: stateSubs});
-                resolve();
-            })
-            .catch(e => {
-                // TODO: Error handling
-                console.log(e);
-                resolve();
-            })
+    
+                    
+                    if (!found) {
+                        this.changeSubtitle(noSub);
+                    }
+                    this.setState({subtitles: stateSubs});
+                    resolve();
+                })
+                .catch(e => {
+                    // TODO: Error handling
+                    console.log(e);
+                    resolve();
+                })
+            });
         });
     }
 
     loadAudioStreams() {
         return new Promise(resolve => {
-            fetch(`${this.server.server_ip}/api/video/${this.internalID}/getLanguages?type=${this.type}&token=${this.serverToken}`)
-            .then(r => r.json())
-            .then(result => {
-                console.log(result);
-                let currentState = this.state.audioStreams;
-                currentState.availableStreams = result;
+            validateServerAccess(this.server, (serverToken) => {
+                fetch(`${this.server.server_ip}/api/video/${this.internalID}/getLanguages?type=${this.type}&token=${serverToken}`)
+                .then(r => r.json())
+                .then(result => {
+                    console.log(result);
+                    let currentState = this.state.audioStreams;
+                    currentState.availableStreams = result;
 
-                this.setState({audioStreams: currentState}, () => resolve());
-            })
+                    this.setState({audioStreams: currentState}, () => resolve());
+                })
+            });
 
         });
     }
     
     loadSources(autoplay = false) {
         return new Promise(resolve => {
+            validateServerAccess(this.server, (serverToken) => {
             // Set the duration of the video
-            fetch(`${this.server.server_ip}/api/video/${this.internalID}/getDuration?type=${this.type}&token=${this.serverToken}`)
+            fetch(`${this.server.server_ip}/api/video/${this.internalID}/getDuration?type=${this.type}&token=${serverToken}`)
             .then(r => r.json())
             .then(data => {
                 this.video.realDuration = data.duration;
             });
 
             // Get the current time for this video
-            fetch(`${this.server.server_ip}/api/video/${this.internalID}/currenttime/get?type=${this.type}&token=${this.serverToken}`, {
+            fetch(`${this.server.server_ip}/api/video/${this.internalID}/currenttime/get?type=${this.type}&token=${serverToken}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -270,7 +279,7 @@ export default class VideoComponent extends React.Component {
                 this.video.watchTimeOffset = time;
 
                 // Get the available resolutions for this video
-                fetch(`${this.server.server_ip}/api/video/${this.internalID}/getResolution?type=${this.type}&token=${this.serverToken}`, {
+                fetch(`${this.server.server_ip}/api/video/${this.internalID}/getResolution?type=${this.type}&token=${serverToken}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
@@ -303,11 +312,11 @@ export default class VideoComponent extends React.Component {
                     resolutions.availableResolutions = result.resolutions;
 
                     if (result.directplay) {
-                        this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=directplay${audio}`)
+                        this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${serverToken}&start=${time}&quality=directplay${audio}`)
                         resolutions.activeResolution = 'directplay';
                         resolutions.availableResolutions.push('directplay');
                     } else {
-                        this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${time}&quality=1080P${audio}`);
+                        this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${serverToken}&start=${time}&quality=1080P${audio}`);
                         resolutions.activeResolution = '1080P';
                     }
 
@@ -322,6 +331,7 @@ export default class VideoComponent extends React.Component {
                     resolve();
                 });
             })
+            });
         });
 
     }
@@ -379,17 +389,19 @@ export default class VideoComponent extends React.Component {
     }
 
     changeResolution(resolution) {
-        this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${this.video.getRealWatchtime()}&quality=${resolution}`);
-        // Change the watchTimeOffset to proberly sync subtitles and seekbar.
-        this.video.watchTimeOffset = this.video.getRealWatchtime();
-        this.changeSubtitle(this.state.subtitles.activeSubtitle);
-        this.video.load();
-        this.video.play();
-
-        // Change the active resolution in the state
-        let resolutions = this.state.resolutions;
-        resolutions.activeResolution = resolution;
-        this.setState({resolutions: resolutions});
+        validateServerAccess(this.server, (serverToken) => {
+            this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${serverToken}&start=${this.video.getRealWatchtime()}&quality=${resolution}`);
+            // Change the watchTimeOffset to proberly sync subtitles and seekbar.
+            this.video.watchTimeOffset = this.video.getRealWatchtime();
+            this.changeSubtitle(this.state.subtitles.activeSubtitle);
+            this.video.load();
+            this.video.play();
+    
+            // Change the active resolution in the state
+            let resolutions = this.state.resolutions;
+            resolutions.activeResolution = resolution;
+            this.setState({resolutions: resolutions});
+        });
     }
 
     changeSubtitle(subtitle) {
@@ -403,10 +415,13 @@ export default class VideoComponent extends React.Component {
             this.setState({subtitles: stateSubs});
             return;
         }
-        this.subtitle.setAttribute('src', `${this.server.server_ip}/api/subtitles/get?id=${subtitle.id}&type=${this.type}&start=${this.video.getRealWatchtime() - this.video.currentTime}&token=${this.serverToken}`);
-        this.video.textTracks[0].mode = 'showing';
-        stateSubs.activeSubtitle = subtitle;
-        this.setState({subtitles: stateSubs});
+        validateServerAccess(this.server, (serverToken) => {
+            this.subtitle.setAttribute('src', `${this.server.server_ip}/api/subtitles/get?id=${subtitle.id}&type=${this.type}&start=${this.video.getRealWatchtime() - this.video.currentTime}&token=${serverToken}`);
+            this.video.textTracks[0].mode = 'showing';
+            stateSubs.activeSubtitle = subtitle;
+            this.setState({subtitles: stateSubs});
+        });
+
     }
 
     changeAudioStream(stream) {
@@ -414,16 +429,17 @@ export default class VideoComponent extends React.Component {
         if (this.state.audioStreams.activeStream !== undefined && stream.id === this.state.audioStreams.activeStream.id) {
             return;
         }
-
-        this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${this.video.getRealWatchtime()}&quality=${this.state.resolutions.activeResolution}&audio=${stream.stream_index}`);
-        this.video.watchTimeOffset = this.video.getRealWatchtime();
-        this.changeSubtitle(this.state.subtitles.activeSubtitle);
-        this.video.load();
-        this.video.play();
-
-        let streams = this.state.audioStreams;
-        streams.activeStream = stream;
-        this.setState({audioStreams: streams});
+        validateServerAccess(this.server, (serverToken) => {
+            this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${serverToken}&start=${this.video.getRealWatchtime()}&quality=${this.state.resolutions.activeResolution}&audio=${stream.stream_index}`);
+            this.video.watchTimeOffset = this.video.getRealWatchtime();
+            this.changeSubtitle(this.state.subtitles.activeSubtitle);
+            this.video.load();
+            this.video.play();
+    
+            let streams = this.state.audioStreams;
+            streams.activeStream = stream;
+            this.setState({audioStreams: streams});
+        });
     }
 
     enterFullScreen() {
@@ -467,7 +483,9 @@ export default class VideoComponent extends React.Component {
             }
     
             this.updateCurrentTimeInterval = setInterval(() => {
-                fetch(`${this.server.server_ip}/api/video/${this.internalID}/currenttime/set?type=${this.type}&time=${this.video.getRealWatchtime()}&videoDuration=${this.video.realDuration}&token=${this.serverToken}`);
+                validateServerAccess(this.server, (serverToken) => {
+                    fetch(`${this.server.server_ip}/api/video/${this.internalID}/currenttime/set?type=${this.type}&time=${this.video.getRealWatchtime()}&videoDuration=${this.video.realDuration}&token=${serverToken}`);
+                });
             }, 5000);
 
         } else {
@@ -481,13 +499,16 @@ export default class VideoComponent extends React.Component {
         let quality = this.state.resolutions.activeResolution !== '' ? this.state.resolutions.activeResolution : '1080P';
         let audio = this.state.audioStreams.activeStream !== undefined ? `&audio=${this.state.audioStreams.activeStream.stream_index}` : ''
 
-        this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${this.serverToken}&start=${vidTime}&quality=${quality}${audio}`);
-        this.video.load();
-        this.video.play();
-        this.video.watchTimeOffset = vidTime;
-        this.video.isSeeking = false;
+        validateServerAccess(this.server, (serverToken) => {
+            this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${serverToken}&start=${vidTime}&quality=${quality}${audio}`);
+            this.video.load();
+            this.video.play();
+            this.video.watchTimeOffset = vidTime;
+            this.video.isSeeking = false;
+    
+            this.changeSubtitle(this.state.subtitles.activeSubtitle);
+        });
 
-        this.changeSubtitle(this.state.subtitles.activeSubtitle);
     }
 
     startSeek() {

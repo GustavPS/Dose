@@ -39,6 +39,8 @@ login(e) {
         // Show login error
       } else if (data && data.status === 'success') {
         cookie.set('token', data.token, {expires: 2});
+        cookie.set('refreshToken', data.refreshToken, {expires: 2});
+        cookie.set('validTo', data.validTo, {expires: 2});
         Router.push('/');
       }
     });

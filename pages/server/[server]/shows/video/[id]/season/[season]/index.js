@@ -6,7 +6,7 @@ import Styles from '../../../../../../../../styles/video.module.css'
 import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
 import Router from 'next/router';
-
+import validateServerAccess from '../../../../../../../../lib/validateServerAccess';
 import EpisodeRow from '../../../../../../../../components/episodeRow';
 
 import cookies from 'next-cookies'
@@ -25,41 +25,42 @@ export default function Home(props) {
   });
 
 
-
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
-    fetch(`${server.server_ip}/api/series/${id}/season/${season}?token=${serverToken}`, {
-      method: 'GET',
-      headers: {
-          'Content-Type': 'application/json'
-      }
-    })
-    .then(r => r.json())
-    .then(result => {
-      let meta = result.result;
-      for (let image of meta.images) {
-        if (image.active && image.type === 'BACKDROP') {
-          meta.backdrop = image.path;
+    validateServerAccess(server, (serverToken) => {
+      fetch(`${server.server_ip}/api/series/${id}/season/${season}?token=${serverToken}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
         }
-      }
-      console.log(meta);
-      
-      let new_added_date = new Date(parseInt(meta.added_date));
-      let added_year = new_added_date.getFullYear();
-      let added_month = new_added_date.getMonth() + 1;
-      if(added_month < 10) {
-        added_month = "0" + added_month.toString();
-      }
-      let adde_date = new_added_date.getDate();
-      if(adde_date < 10) {
-        adde_date = "0" + adde_date.toString();
-      }
-      meta.added_date = `${added_year}-${added_month}-${adde_date}`
-
-      meta.poster = meta.poster_path;
-      setMetadata(meta);
-      return () => {
-      }
+      })
+      .then(r => r.json())
+      .then(result => {
+        let meta = result.result;
+        for (let image of meta.images) {
+          if (image.active && image.type === 'BACKDROP') {
+            meta.backdrop = image.path;
+          }
+        }
+        console.log(meta);
+        
+        let new_added_date = new Date(parseInt(meta.added_date));
+        let added_year = new_added_date.getFullYear();
+        let added_month = new_added_date.getMonth() + 1;
+        if(added_month < 10) {
+          added_month = "0" + added_month.toString();
+        }
+        let adde_date = new_added_date.getDate();
+        if(adde_date < 10) {
+          adde_date = "0" + adde_date.toString();
+        }
+        meta.added_date = `${added_year}-${added_month}-${adde_date}`
+  
+        meta.poster = meta.poster_path;
+        setMetadata(meta);
+        return () => {
+        }
+      });
     });
   }, []);
 
