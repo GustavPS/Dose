@@ -73,9 +73,20 @@ function generateRefreshToken() {
     return token;
 }
 
+function generateConnectCode(length=4) {
+    let token           = '';
+    let characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let charactersLength = characters.length;
+    for (let i = 0; i < length; i++ ) {
+        token += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return token;
+}
+
 exports.getHash = sha512;
 exports.getSalt = genRandomString;
 exports.decodeJWT = decodeJWT;
 exports.getJWTSecret = getSecret;
 exports.generateRefreshToken = generateRefreshToken;
 exports.getHashWithoutSalt = sha512NoSalt;
+exports.generateConnectCode = generateConnectCode;

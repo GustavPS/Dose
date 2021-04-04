@@ -1,0 +1,11 @@
+.connect {
+    color: white;
+    text-align: center;
+    background-color: darkslategrey;
+    display: table;
+    padding: 50px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
