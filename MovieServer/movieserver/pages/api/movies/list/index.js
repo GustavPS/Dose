@@ -41,7 +41,7 @@ export default (req, res) => {
           INNER JOIN movie_image j
           ON i.movie_id = j.movie_id
           INNER JOIN image k
-          ON j.image_id = k.id
+          ON j.image_id = k.id AND j.active = true
 
           GROUP BY i.id, i.title
           ORDER BY ${orderBy}

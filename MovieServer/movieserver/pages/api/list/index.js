@@ -32,9 +32,7 @@ export default (req, res) => {
         INNER JOIN movie_image j
         ON i.movie_id = j.movie_id
         INNER JOIN image k
-        ON j.image_id = k.id
-
-        WHERE j.active = true
+        ON j.image_id = k.id AND j.active = true
 
         GROUP BY i.movie_id, i.title, i.overview
         `).then(movies => {
@@ -46,9 +44,7 @@ export default (req, res) => {
             INNER JOIN serie_image j
             ON i.serie_id = j.serie_id
             INNER JOIN image k
-            on j.image_id = k.id
-
-            WHERE j.active = true
+            on j.image_id = k.id AND j.active = true
 
             GROUP BY i.serie_id, i.title, i.overview
             `).then(series => {

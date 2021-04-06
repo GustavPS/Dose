@@ -44,7 +44,7 @@ export default (req, res) => {
             INNER JOIN movie_image j
             ON i.movie_id = j.movie_id
             INNER JOIN image k
-            ON j.image_id = k.id
+            ON j.image_id = k.id AND j.active = true
 
             INNER JOIN user_movie_watchlist m
             ON i.movie_id = m.movie_id AND m.user_id = $1
