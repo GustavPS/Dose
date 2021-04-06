@@ -42,7 +42,7 @@ export default (req, res) => {
             INNER JOIN serie_image k
             ON i.serie_id = k.serie_id
             INNER JOIN image m
-            ON k.image_id = m.id
+            ON k.image_id = m.id AND k.active = true
 
             INNER JOIN serie_episode n
             ON i.serie_id = n.serie_id AND i.season_number = n.season_number AND i.episode_number = n.episode
