@@ -198,7 +198,7 @@ console.log(commandLine);
     }
 
     nameMatch(name) {
-        let re = new RegExp("([& .A-zÀ-ú_'()!-]+?)(\\W\\d{4}\\W?.*)", 'gm');
+        let re = new RegExp("([& .A-zÀ-ú\\d_'()!-]+?)(\\W\\d{4}\\W?.*)", 'gm');
         let matches = re.exec(name)
         if (matches != null && matches.length >= 2) {
             name = matches[1];
