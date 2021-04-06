@@ -198,7 +198,7 @@ console.log(commandLine);
     }
 
     nameMatch(name) {
-        let re = new RegExp("([ .\\w'!-]+?)(\\W\\d{4}\\W?.*)", 'gm');
+        let re = new RegExp("([& .A-zÀ-ú_'()!-]+?)(\\W\\d{4}\\W?.*)", 'gm');
         let matches = re.exec(name)
         if (matches != null && matches.length >= 2) {
             name = matches[1];
@@ -223,13 +223,7 @@ console.log(commandLine);
         name = name.substring(name.lastIndexOf("/") + 1);
         name = name.substring(name.lastIndexOf("\\") + 1);
 
-        let re = new RegExp("([ .\\w'!-]+?)(\\W\\d{4}\\W?.*)", 'gm');
-        let matches = re.exec(name)
-        if (matches != null && matches.length >= 2) {
-            name = matches[1];
-            name = name.replace(/\./g, ' ');
-            name = name.trim();
-        }
+        name = this.nameMatch(name);
 
         // Get the folder name (for subtitles)
         let parentFolder =  pathLib.dirname(path);
