@@ -15,6 +15,7 @@ export default class MovieBackdrop extends React.Component {
         this.runtime = props.runtime ? props.runtime : null;
         this.markAsDoneButton = props.markAsDoneButton;
         this.showTitle = props.showTitle;
+        this.multipleRows = props.multipleRows ? props.multipleRows : null;
 
         this.markAsWatched = this.markAsWatched.bind(this);
     }
@@ -43,10 +44,21 @@ export default class MovieBackdrop extends React.Component {
         }
     }
 
+    getBackdropStyle() {
+        let style = {
+            backgroundImage: `url('${this.backdrop}')`
+        }
+        if (this.multipleRows) {
+            style.marginBottom = "20px";
+            style.width = "445px";
+        }
+        return style;
+    }
+
     render() {
 
         return (
-            <div onClick={() => this.props.onClick(this.id)} className={style.backdrop} style={{backgroundImage: `url('${this.backdrop}')`}}>
+            <div onClick={() => this.props.onClick(this.id)} className={style.backdrop} style={this.getBackdropStyle()}>
                 <h3 className={style.title} style={this.getStyle()}>{this.title}</h3>
                 <p className={style.overview}>
                     {this.overview.substring(0, 150)}{this.overview.length > 150 ? '...' : ''}

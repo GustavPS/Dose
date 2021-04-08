@@ -51,8 +51,9 @@ export default (req, res) => {
         LIMIT $3
         `, [req.query.genre, offset, limit]).then(result => {
           let response = {
-            result: result,
-            next: `/api/movies/list/${req.query.genre}?orderby=${orderBy}&limit=${limit}&offset=${parseInt(offset)+parseInt(limit)}`
+              result: result,
+              nextOffset: parseInt(offset)+parseInt(limit),
+              next: `/api/movies/list/${req.query.genre}?orderby=${orderBy}&limit=${limit}&offset=${parseInt(offset)+parseInt(limit)}`
           }
           res.status(200).json(response);
           resolve();
