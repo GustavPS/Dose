@@ -11,6 +11,7 @@ import validateServerAccess from '../../../../lib/validateServerAccess';
 import Styles from '../../../../styles/server.module.css';
 
 import MovieBackdrop from '../../../../components/movieBackdrop';
+import Link from "next/link";
 
 export default (props) => {
     // props.server is from the SSR under this function
@@ -176,7 +177,7 @@ export default (props) => {
             if (genre.movieElements.length != 0) {
                 render.push(
                     <>
-                        <h2 style={{textTransform: 'capitalize'}}>{genre.name}</h2>    
+                        <Link href={`/server/${server.server_id}/movies/genre/${genre.name}`}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>{genre.name}</h2></a></Link>
                     <div className={Styles.movieRow}>
                         <div id={genre.name + "Movies"} className={Styles.scrollable}>
                             {genre.movieElements}
