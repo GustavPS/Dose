@@ -9,6 +9,7 @@
     "windowsStart": "node server.js"
   },
   "dependencies": {
+    "@babel/preset-react": "^7.13.13",
     "async-lock": "^1.2.4",
     "babel-loader": "^8.1.0",
     "babel-preset-react": "^6.24.1",
@@ -16,7 +17,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "glob": "^7.1.6",
     "mime": "^2.4.5",
-    "next": "9.3.6",
+    "next": "^10.1.3",
     "node-async-locks": "^2.0.0",
     "node-fetch": "^2.6.0",
     "opensubtitles-api": "^5.1.2",
