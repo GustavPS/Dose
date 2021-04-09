@@ -21,6 +21,7 @@
     "plyr": "^3.6.2",
     "react": "16.13.1",
     "react-bootstrap": "^1.0.1",
+    "react-bottom-scroll-listener": "^5.0.0",
     "react-dom": "16.13.1",
     "react-in-viewport": "^1.0.0-alpha.11",
     "react-on-screen": "^2.1.1",
