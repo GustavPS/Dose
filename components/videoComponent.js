@@ -81,6 +81,12 @@ export default class VideoComponent extends React.Component {
 
     }
 
+    componentWillUnmount() {
+        this.video.pause();
+        clearInterval(this.updateCurrentTimeInterval);
+        this.video.ontimeupdate = undefined;
+    }
+
     componentDidMount() {
         this.video = document.getElementById('video');
         this.video.isFullscreen = false;
@@ -137,7 +143,7 @@ export default class VideoComponent extends React.Component {
             if (this.video.pauseTime != undefined) {
                 let currentTime = new Date();
                 let secondsSincePause = (currentTime.getTime() - this.video.pauseTime.getTime()) / 1000;
-                // This value needs to be checked, not sure what is needed
+                // TODO: This value needs to be checked, not sure what is needed
                 if (secondsSincePause > 15) {
                     this.video.pauseTime = undefined;
                     this.seek();
