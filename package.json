@@ -23,6 +23,7 @@
     "react-bootstrap": "^1.0.1",
     "react-bottom-scroll-listener": "^5.0.0",
     "react-dom": "16.13.1",
+    "react-iframe": "^1.8.0",
     "react-in-viewport": "^1.0.0-alpha.11",
     "react-on-screen": "^2.1.1",
     "react-player": "^2.0.1",
