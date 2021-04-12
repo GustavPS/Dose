@@ -11,6 +11,7 @@ import Router from 'next/router';
 import cookies from 'next-cookies'
 
 import VideoComponent from '../../../../../components/videoComponent';
+import VideoTrailer from '.././../../../../components/videoTrailer';
 import validateServerAccess from '../../../../../lib/validateServerAccess';
 
 import ChangeImages from '../../../../../components/changeImages';
@@ -27,6 +28,9 @@ export default function Home(props) {
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
   const [inWatchList, setInWatchList] = useState(false);
+
+  const [viewTrailer, setViewTrailer] = useState(false);
+  const [trailer, setTrailer] = useState(false);
 
 
   const videoRef = useRef();
@@ -96,6 +100,8 @@ export default function Home(props) {
         setInWatchList(meta.inwatchlist);
         setWatched(meta.watched);
         setMetadata(meta);
+        console.log(meta.trailer);
+        setTrailer(meta.trailer);
       });
     });
   }, []);
@@ -225,7 +231,11 @@ export default function Home(props) {
                         internalID={id} Movie
                         >
         </VideoComponent>
-        
+
+      {trailer !== false && viewTrailer &&
+        <VideoTrailer onClose={() => setViewTrailer(false)} videoPath={trailer} />
+      }
+
 
         <div id="container">
         <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
@@ -272,9 +282,13 @@ export default function Home(props) {
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
               </div>
               }
-              <div>
+              <div style={{marginRight: "15px"}}>
                 <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
+              </div>
+              <div>
+                <div className={Styles.playButton} onClick={() => setViewTrailer(true)}></div>
+                <p style={{marginTop: "5px", fontSize: '14px'}}>Visa trailer</p>
               </div>
               {watched &&
               <>
