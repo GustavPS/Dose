@@ -36,7 +36,7 @@ export default (req, res) => {
         INNER JOIN image k
         ON j.image_id = k.id AND j.active = true
 
-        WHERE i.title LIKE $1
+        WHERE i.title ILIKE $1
         GROUP BY i.movie_id, i.title, i.overview, i.release_date, i.runtime, i.popularity, i.added_date, i.trailer
         `, [`%${query}%`]).then(movies => {
             response.movies = movies;
@@ -56,7 +56,7 @@ export default (req, res) => {
             INNER JOIN image k
             on j.image_id = k.id AND j.active = true
 
-            WHERE i.title LIKE $1
+            WHERE i.title ILIKE $1
             GROUP BY i.serie_id, i.title, i.overview, i.first_air_date, i.popularity, i.added_date, i.trailer
             `, [`%${query}%`]).then(series => {
                 response.series = series;
