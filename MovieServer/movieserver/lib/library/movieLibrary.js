@@ -40,6 +40,19 @@ class MovieLibrary extends Library {
                     internalMovieID = await t.one('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3) RETURNING id', [path, this.id, movieName]);
                     internalMovieID = internalMovieID.id;
 
+
+                    // TODO: Parse it as a boolean somehow
+                    if (process.env.EXTRACT_SUBTITLES == "TRUE") {
+                        console.log(` > Trying to convert subtitles, this may take a while...`);
+                        let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+    
+                        // If the conversion failed (because the file was busy), try again.
+                        while(!subtitleConvertionResult) {
+                            await new Promise(r => setTimeout(r, 2000));
+                            subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                        }
+                    }
+
                     // Find all the audio streams (languages) for the movie
                     let audio_streams = await this.findAudioStreams(movieName, path);
                     if (audio_streams) {
@@ -88,6 +101,9 @@ class MovieLibrary extends Library {
                     break;
                 }
             }
+            // TODO: There is a bug here, if multiple movies is in the same folder we will add the subtitle for all movies
+            // However, having multiple movies in the same folder is not supported, but if that is changed
+            // this have to be fixed
             db.any("SELECT * FROM movie WHERE library = $1", [parseInt(this.id)]).then(async (movies) => {
                 for (let movie of movies) {
                     let movieFolder =  pathLib.dirname(movie.path);

@@ -183,16 +183,17 @@ class TvLibrary extends Library {
                     let internal_episode_id = await t.one('INSERT INTO serie_episode (season_number, serie_id, episode, path) VALUES ($1, (SELECT id FROM serie WHERE name = $2 AND path = $3), $4, $5) RETURNING id', [seasonNumber, serieName, showPath, episodeNumber, episodePath]);
                     internal_episode_id = internal_episode_id.id;
                     
-                    /* CURENTLY DISABLED DUE TO PERFORMANCE ISSUES
-                    console.log(` > Trying to convert subtitles, this may take a while...`);
-                    // Try to convert the subtitles from the movie
-                    let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
-                
-                    // If the conversion failed (because the file was busy), try again.
-                    while(!subtitleConvertionResult) {
-                        subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                    // TODO: Parse it as a boolean somehow
+                    if (process.env.EXTRACT_SUBTITLES == "TRUE") {
+                        console.log(` > Trying to convert subtitles, this may take a while...`);
+                        // Try to convert the subtitles from the movie
+                        let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                    
+                        // If the conversion failed (because the file was busy), try again.
+                        while(!subtitleConvertionResult) {
+                            subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                        }
                     }
-                    */
 
                     let audio_streams = await this.findAudioStreams(serieName, episodePath);
                     if (audio_streams) {
