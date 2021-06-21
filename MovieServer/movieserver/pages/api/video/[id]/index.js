@@ -65,6 +65,8 @@ export default async (req, res) => {
     try {
       if (type === 'movie') {
         audioCodecs = await getMovieCodecs(req.query.id);
+      } else if (type === "serie"){
+        audioCodecs = await getEpisodeCodecs(req.query.id);
       }
     } catch(error) {
       console.log(error);
@@ -112,6 +114,18 @@ function getMovieCodecs(movieID) {
   return new Promise((resolve, reject) => {
     // Assumes no duplicates of languages in the codec
     db.many("SELECT language, codec FROM movie_language WHERE movie_id = $1 ORDER BY stream_index", [movieID]).then(result => {
+      resolve(result);
+    }).catch(error => {
+      console.log(error);
+      reject();
+    });
+  });
+}
+
+function getEpisodeCodecs(episodeID) {
+  return new Promise((resolve, reject) => {
+    // Assumes no duplicates of languages in the codec
+    db.many("SELECT language, codec FROM serie_episode_language WHERE serie_episode_id = $1 ORDER BY stream_index", [movieID]).then(result => {
       resolve(result);
     }).catch(error => {
       console.log(error);
