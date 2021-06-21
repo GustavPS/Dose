@@ -208,7 +208,9 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
   }
 
   // Create the output options array according to the language
-  let audioSettings = []
+  let audioSettings = [
+    `-ss 1`
+  ]
   let audioSupported = !audioTranscodingNeeded(audioCodecs[0].codec, WEB_CLIENT);
   if (language !== null && language !== undefined && language !== 'unknown') {
     audioSettings.push('-map -a');
@@ -236,8 +238,8 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
         .withAudioCodec(audioCodec)
         // Might be faster with only 1 thread? TODO: Test it
         .inputOptions([
-          `-ss ${offset}`,
-          '-threads 8'
+          `-ss ${offset-1}`,
+          '-threads 8',
         ])
         .outputOptions(audioSettings)
 
