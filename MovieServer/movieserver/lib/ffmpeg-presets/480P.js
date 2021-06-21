@@ -2,7 +2,6 @@ exports.load = function(ffmpeg) {
     ffmpeg
     .withVideoCodec('libx264')
     .withVideoBitrate(1000)
-    .withAudioCodec('libmp3lame')
     .inputOption([
       '-re'
     ])

@@ -183,25 +183,34 @@ class TvLibrary extends Library {
                     let internal_episode_id = await t.one('INSERT INTO serie_episode (season_number, serie_id, episode, path) VALUES ($1, (SELECT id FROM serie WHERE name = $2 AND path = $3), $4, $5) RETURNING id', [seasonNumber, serieName, showPath, episodeNumber, episodePath]);
                     internal_episode_id = internal_episode_id.id;
                     
+                    const fileStreams = await this.getFileStreams(episodePath);
+
+
+                    // Get and save the resolutions
+                    const resolution = this.getResolutions(fileStreams);
+                    await t.none(
+                        'INSERT INTO serie_episode_resolution (episode_id, "240p", "360p", "480p", "720p", "1080p", "1440p", "4k", "8k", "codec") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',[
+                        internal_episode_id, resolution.p240, resolution.p360, resolution.p480, resolution.p720, resolution.p1080, resolution.p1440, resolution.p4k, resolution.p8k, resolution.codec
+                    ]);
+
                     // TODO: Parse it as a boolean somehow
                     if (process.env.EXTRACT_SUBTITLES == "TRUE") {
                         console.log(` > Trying to convert subtitles, this may take a while...`);
                         // Try to convert the subtitles from the movie
-                        let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                        let subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, fileStreams, episodeNumber, seasonNumber);
                     
                         // If the conversion failed (because the file was busy), try again.
                         while(!subtitleConvertionResult) {
-                            subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, episodeNumber, seasonNumber);
+                            subtitleConvertionResult = await this.convertSubtitles(serieName, episodePath, fileStreams, episodeNumber, seasonNumber);
                         }
                     }
 
-                    let audio_streams = await this.findAudioStreams(serieName, episodePath);
+                    let audio_streams = await this.findAudioStreams(episodePath, fileStreams);
                     if (audio_streams) {
                         for (let stream of audio_streams) {
-                            t.none('INSERT INTO serie_episode_language (serie_episode_id, language, stream_index) VALUES ($1, $2, $3)', [internal_episode_id, stream.language, stream.stream]);
+                            t.none('INSERT INTO serie_episode_language (serie_episode_id, language, stream_index, codec) VALUES ($1, $2, $3, $4)', [internal_episode_id, stream.language, stream.stream, stream.codec]);
                         }
                     }
-
 
                     // Get the internal serie id for the episode
                     internalSerieID = await t.one(`SELECT id FROM serie WHERE name = $1 AND path = $2`, [serieName, showPath], c => +c.id);

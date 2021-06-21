@@ -41,23 +41,35 @@ class MovieLibrary extends Library {
                     internalMovieID = internalMovieID.id;
 
 
+                    let fileStreams = await this.getFileStreams(path);
+                    if (!fileStreams) {
+                        fileStreams = [];
+                    }
+
+                    // Get and save the resolutions
+                    const resolution = this.getResolutions(fileStreams);
+                    await t.none(
+                        'INSERT INTO movie_resolution (movie_id, "240p", "360p", "480p", "720p", "1080p", "1440p", "4k", "8k", "codec") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',[
+                        internalMovieID, resolution.p240, resolution.p360, resolution.p480, resolution.p720, resolution.p1080, resolution.p1440, resolution.p4k, resolution.p8k, resolution.codec
+                    ]);
+
                     // TODO: Parse it as a boolean somehow
                     if (process.env.EXTRACT_SUBTITLES == "TRUE") {
                         console.log(` > Trying to convert subtitles, this may take a while...`);
-                        let subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                        let subtitleConvertionResult = await this.convertSubtitles(movieName, path, fileStreams);
     
                         // If the conversion failed (because the file was busy), try again.
                         while(!subtitleConvertionResult) {
                             await new Promise(r => setTimeout(r, 2000));
-                            subtitleConvertionResult = await this.convertSubtitles(movieName, path);
+                            subtitleConvertionResult = await this.convertSubtitles(movieName, path, fileStreams);
                         }
                     }
 
                     // Find all the audio streams (languages) for the movie
-                    let audio_streams = await this.findAudioStreams(movieName, path);
+                    let audio_streams = await this.findAudioStreams(fileStreams);
                     if (audio_streams) {
                         for (let stream of audio_streams) {
-                            await t.none('INSERT INTO movie_language (movie_id, language, stream_index) VALUES ($1, $2, $3)', [internalMovieID, stream.language, stream.stream]);
+                            await t.none('INSERT INTO movie_language (movie_id, language, stream_index, codec) VALUES ($1, $2, $3, $4)', [internalMovieID, stream.language, stream.stream, stream.codec]);
                         }
                     }
                 } else {

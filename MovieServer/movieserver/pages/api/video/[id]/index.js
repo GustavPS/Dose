@@ -20,6 +20,16 @@ const ALLOWED_QUALITIES = [
   'directplay'
 ];
 
+const WEB_SUPPORTED_AUDIO_CODECS = [
+  'aac',
+  'g.722',
+  'mp3',
+  'opus',
+  'vorbis',
+];
+const WEB_CLIENT = "web";
+const DEFAULT_AUDIO_CODEC = "aac";
+
 export default async (req, res) => {
     let type = req.query.type;
     let language = req.query.audio;
@@ -36,6 +46,7 @@ export default async (req, res) => {
       return;
     }
 
+    // Get movie/episode path
     let filename = "";
     try {
       if (type === 'movie') {
@@ -45,6 +56,19 @@ export default async (req, res) => {
       }
     } catch(error) {
       console.log(` > User tried to access movie/episode with id ${req.query.id} which does not exist`);
+      res.status(404).end();
+      return;
+    }
+
+    // Get movie/episode codecs
+    let audioCodecs = [];
+    try {
+      if (type === 'movie') {
+        audioCodecs = await getMovieCodecs(req.query.id);
+      }
+    } catch(error) {
+      console.log(error);
+      // Shouldn't be 404
       res.status(404).end();
       return;
     }
@@ -81,7 +105,28 @@ export default async (req, res) => {
     });
 
     let offset = req.query.start ? req.query.start : 0;
-    startFFMPEG(filename, offset, language, req, res);
+    startFFMPEG(filename, offset, language, audioCodecs, req, res);
+}
+
+function getMovieCodecs(movieID) {
+  return new Promise((resolve, reject) => {
+    // Assumes no duplicates of languages in the codec
+    db.many("SELECT language, codec FROM movie_language WHERE movie_id = $1 ORDER BY stream_index", [movieID]).then(result => {
+      resolve(result);
+    }).catch(error => {
+      console.log(error);
+      reject();
+    });
+  });
+}
+
+function audioTranscodingNeeded(codec, client) {
+  console.log(codec);
+  if (client === WEB_CLIENT) {
+    return !WEB_SUPPORTED_AUDIO_CODECS.includes(codec);
+  }
+  console.log(`ERROR: No audio config for client ${client}`);
+  return true;
 }
 
 function getMoviePath(movieID) {
@@ -136,11 +181,9 @@ function killOtherInstances(serverToken) {
   }
 }
 
-function startFFMPEG(filename, offset, language, req, res) {
+function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
   /*
-  Direct play: https://stackoverflow.com/questions/40077681/ffmpeg-converting-from-mkv-to-mp4-without-re-encoding ?
-
-
+  Direct play: https://stackoverflow.com/questions/40077681/ffmpeg-converting-from-mkv-to-mp4-without-re-encoding
   */
 
   let quality = req.query.quality;
@@ -150,13 +193,25 @@ function startFFMPEG(filename, offset, language, req, res) {
     return;
   }
 
-  // Create the output optins array according to the language
+  // Create the output options array according to the language
   let audioSettings = []
+  let audioSupported = !audioTranscodingNeeded(audioCodecs[0].codec, WEB_CLIENT);
   if (language !== null && language !== undefined && language !== 'unknown') {
     audioSettings.push('-map -a');
-    //audioSettings.push(`-map 0:m:language:${language}?`);
+
+    // TODO: We shouldn't just look for the language, client should send to us which audio stream it wants,
+    // then we doublecheck so it actually exists in the DB (already saved) and use that one.
     audioSettings.push(`-map 0:${language}?`);
+
+    // Default audioTranscoding if for some reason we don't find the language in the array (which shouldn't be possible)
+    audioSupported = true;
+    for (let stream of audioCodecs) {
+      if (stream.language === language) {
+        audioSupported = !audioTranscodingNeeded(stream.codec, WEB_CLIENT);
+      }
+    }
   }
+  const audioCodec = audioSupported ? "copy" : DEFAULT_AUDIO_CODEC;
   //audioSettings.push('-metadata ')
   
 
@@ -164,6 +219,7 @@ function startFFMPEG(filename, offset, language, req, res) {
   // https://superuser.com/questions/677576/what-is-crf-used-for-in-ffmpeg
   var proc = ffmpeg(filename, { presets: '../../../../lib/ffmpeg-presets'})
         .preset(quality)
+        .withAudioCodec(audioCodec)
         // Might be faster with only 1 thread? TODO: Test it
         .inputOptions([
           `-ss ${offset}`,

@@ -10,15 +10,12 @@ const ORDERBY = [
 
 const SUPPORTED_VIDEO_CODECS = [
   'h264',
-  'h265'
-]
-const SUPPORTED_AUDIO_CODECS = [
-  'aac',
-  'mp3',
-  'vorbis',
-  'opus'
-]
-var ffmpeg = require('fluent-ffmpeg');
+  'h265',
+  'avc',
+  'theora',
+  'vp8',
+  'vp9',
+];
 
 
 export default async(req, res) => {
@@ -40,13 +37,12 @@ export default async(req, res) => {
       return;
     }
   
-      // TODO: Error handling
-      let filename = "";
+      let resolution =[];
       try {
         if (type === 'movie') {
-          filename = await getMoviePath(req.query.id);
+          resolution = await getMovieResolution(req.query.id);
         } else if (type === 'serie') {
-          filename = await getShowPath(req.query.id);
+          resolution = await getEpisodeResolution(req.query.id);
         }
       } catch(error) {
         console.log(` > User tried to get the available resolutions movie/episode with id ${req.query.id} which does not exist`);
@@ -54,63 +50,65 @@ export default async(req, res) => {
         return;
       }
 
+      let availableResolutions = []
+      if (resolution["8k"]) {
+        availableResolutions.push("8k");
+      }
+      if (resolution["4k"]) {
+        availableResolutions.push("4k");
+      }
+      if (resolution["1440p"]) {
+        availableResolutions.push("1440p");
+      }
+      if (resolution["1080p"]) {
+        availableResolutions.push("1080p");
+      }
+      if (resolution["720p"]) {
+        availableResolutions.push("720p");
+      }
+      if (resolution["480p"]) {
+        availableResolutions.push("480p");
+      }
+      if (resolution["360p"]) {
+        availableResolutions.push("360p");
+      }
+      if (resolution["240p"]) {
+        availableResolutions.push("240p");
+      }
+
+      if (availableResolutions.length == 0) {
+        console.log(" > No saved resolutions, using 1080p");
+        availableResolutions.push("1080p");
+      }
+
+      let directPlay = SUPPORTED_VIDEO_CODECS.includes(resolution["codec"]);
+      console.log(`DEBUG: Codec: ${resolution["codec"]} gave directplay: ${directPlay}`);
   
-      ffmpeg.ffprobe(filename, function(err, metadata) {
-        if (err) {
-          console.log(err);
-        }
-        let highestResolution = metadata.streams[0].width;
-        let availableResolutions = []
-        availableResolutions.push("1080P");
-        availableResolutions.push("720P");
-        availableResolutions.push("480P");
-        availableResolutions.push("360P");
-        availableResolutions.push("240P");
+      res.status(200).json({
+          resolutions: availableResolutions,
+          directplay: directPlay
+      });
+      resolve();
+  });
+}
 
 
-        let directPlay = SUPPORTED_VIDEO_CODECS.includes(metadata.streams[0].codec_name) && SUPPORTED_AUDIO_CODECS.includes(metadata.streams[1].codec_name)
-  
-        res.status(200).json({
-            resolutions: availableResolutions,
-            directplay: directPlay
-        });
-        resolve();
+function getMovieResolution(movieID) {
+  return new Promise(resolve => {
+      db.one('SELECT "240p", "360p", "480p", "720p", "1080p", "1440p", "4k", "8k", "codec" FROM movie_resolution WHERE movie_id = $1', [movieID]).then(result => {
+          resolve(result);
+      }).catch(error => {
+        reject();
       });
   });
-
-  
-
 }
 
-
-function getMoviePath(movieID) {
-  return new Promise((resolve, reject) => {
-      db.one(`SELECT movie.path AS subpath, library.path AS basepath FROM library 
-              INNER JOIN movie
-              ON movie.library = library.id AND movie.id = $1
-            `, [movieID]).then((result) => {
-              resolve(`${result.basepath}${result.subpath}`)
-            }).catch(error => {
-              reject();
-            });
-  });
-}
-
-function getShowPath(showID) {
-  return new Promise((resolve, reject) => {
-
-    db.one(`SELECT DISTINCT serie_episode.path AS subpath, library.path AS basepath FROM serie_episode
-            INNER JOIN serie
-            ON serie.id = serie_episode.serie_id
-
-            INNER JOIN library
-            ON serie.library = library.id
-
-            WHERE serie_episode.id = $1
-`, [showID]).then(result => {
-      resolve(`${result.basepath}${result.subpath}`);
-    }).catch(error => {
-      reject();
-    });
+function getEpisodeResolution(episodeID) {
+  return new Promise(resolve => {
+      db.one('SELECT "240p", "360p", "480p", "720p", "1080p", "1440p", "4k", "8k", "codec" FROM serie_episode_resolution WHERE episode_id = $1', [episodeID]).then(result => {
+          resolve(result);
+      }).catch(error => {
+        reject();
+      });
   });
 }
