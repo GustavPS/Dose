@@ -94,7 +94,7 @@ export default async(req, res) => {
 
 
 function getMovieResolution(movieID) {
-  return new Promise(resolve, reject => {
+  return new Promise((resolve, reject) => {
       db.one('SELECT "240p", "360p", "480p", "720p", "1080p", "1440p", "4k", "8k", "codec" FROM movie_resolution WHERE movie_id = $1', [movieID]).then(result => {
           resolve(result);
       }).catch(error => {
@@ -105,7 +105,7 @@ function getMovieResolution(movieID) {
 }
 
 function getEpisodeResolution(episodeID) {
-  return new Promise(resolve, reject => {
+  return new Promise((resolve, reject) => {
       db.one('SELECT "240p", "360p", "480p", "720p", "1080p", "1440p", "4k", "8k", "codec" FROM serie_episode_resolution WHERE episode_id = $1', [episodeID]).then(result => {
           resolve(result);
       }).catch(error => {
