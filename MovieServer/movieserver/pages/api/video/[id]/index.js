@@ -17,7 +17,7 @@ const ALLOWED_QUALITIES = [
   '480P',
   '360P',
   '240P',
-  'directplay'
+  'DIRECTPLAY'
 ];
 
 const WEB_SUPPORTED_AUDIO_CODECS = [
@@ -113,7 +113,7 @@ export default async (req, res) => {
 function getMovieCodecs(movieID) {
   return new Promise((resolve, reject) => {
     // Assumes no duplicates of languages in the codec
-    db.many("SELECT language, codec FROM movie_language WHERE movie_id = $1 ORDER BY stream_index", [movieID]).then(result => {
+    db.many("SELECT language, codec, stream_index FROM movie_language WHERE movie_id = $1 ORDER BY stream_index", [movieID]).then(result => {
       resolve(result);
     }).catch(error => {
       console.log(error);
@@ -125,7 +125,7 @@ function getMovieCodecs(movieID) {
 function getEpisodeCodecs(episodeID) {
   return new Promise((resolve, reject) => {
     // Assumes no duplicates of languages in the codec
-    db.many("SELECT language, codec FROM serie_episode_language WHERE serie_episode_id = $1 ORDER BY stream_index", [episodeID]).then(result => {
+    db.many("SELECT language, codec, stream_index FROM serie_episode_language WHERE serie_episode_id = $1 ORDER BY stream_index", [episodeID]).then(result => {
       resolve(result);
     }).catch(error => {
       console.log(error);
@@ -200,7 +200,7 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
   Direct play: https://stackoverflow.com/questions/40077681/ffmpeg-converting-from-mkv-to-mp4-without-re-encoding
   */
 
-  let quality = req.query.quality;
+  let quality = req.query.quality.toUpperCase();
   if (!ALLOWED_QUALITIES.includes(quality)) {
     console.log(`${quality} is not a valid quality selector`);
     res.status(404).end();
@@ -220,9 +220,9 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
     audioSettings.push(`-map 0:${language}?`);
 
     // Default audioTranscoding if for some reason we don't find the language in the array (which shouldn't be possible)
-    audioSupported = true;
+    audioSupported = false;
     for (let stream of audioCodecs) {
-      if (stream.language === language) {
+      if (stream.stream_index === language) {
         audioSupported = !audioTranscodingNeeded(stream.codec, WEB_CLIENT);
       }
     }

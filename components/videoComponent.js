@@ -396,7 +396,13 @@ export default class VideoComponent extends React.Component {
 
     changeResolution(resolution) {
         validateServerAccess(this.server, (serverToken) => {
-            this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${serverToken}&start=${this.video.getRealWatchtime()}&quality=${resolution}`);
+            let audioSource = "";
+            let activeStream = this.state.audioStreams.activeStream;
+            if (activeStream != undefined) {
+                audioSource = `&audio=${activeStream.stream_index}`;
+            }
+
+            this.source.setAttribute('src', `${this.server.server_ip}/api/video/${this.internalID}?type=${this.type}&token=${serverToken}&start=${this.video.getRealWatchtime()}&quality=${resolution}${audioSource}`);
             // Change the watchTimeOffset to proberly sync subtitles and seekbar.
             this.video.watchTimeOffset = this.video.getRealWatchtime();
             this.changeSubtitle(this.state.subtitles.activeSubtitle);
