@@ -16,13 +16,13 @@ class Browser {
 
     videoCodecSupported(codec) {
         const supported = this.supportedVideoCodecs.includes(codec);
-        console.log(`DEBUG: Video codec ${codec} for browser ${this.type} gave supported: ${supported}`);
+        console.log(`DEBUG: Video codec ${codec} for browser ${this.type} V${this.version} gave supported: ${supported}`);
         return supported;
     }
-
+    
     audioCodecSupported(codec) {
         const supported = this.supportedAudioCodecs.includes(codec);
-        console.log(`DEBUG: Audio codec ${codec} for browser ${this.type} gave supported: ${supported}`)
+        console.log(`DEBUG: Audio codec ${codec} for browser ${this.type} V${this.version} gave supported: ${supported}`)
         return supported;
     }
 
