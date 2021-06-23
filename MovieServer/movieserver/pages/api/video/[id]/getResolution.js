@@ -1,22 +1,8 @@
 const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
-const ORDERBY = [
-  'id',
-  'added_date',
-  'release_date',
-  'popularity'
-];
-
-const SUPPORTED_VIDEO_CODECS = [
-  'h264',
-  'h265',
-  'avc',
-  'theora',
-  'vp8',
-  'vp9',
-];
-
+const getBrowser = require('../../../../lib/browsers/util');
+import { useUserAgent } from 'next-useragent'
 
 export default async(req, res) => {
   return new Promise(async (resolve, reject) => {
@@ -36,59 +22,61 @@ export default async(req, res) => {
       resolve();
       return;
     }
+
+    const userAgent = useUserAgent(req.headers['user-agent']);
+    const browser   = getBrowser(userAgent);
   
-      let resolution =[];
-      try {
-        if (type === 'movie') {
-          resolution = await getMovieResolution(req.query.id);
-        } else if (type === 'serie') {
-          resolution = await getEpisodeResolution(req.query.id);
-        }
-      } catch(error) {
-        console.log(` > User tried to get the available resolutions movie/episode with id ${req.query.id} which does not exist`);
-        res.status(404).end();
-        return;
+    let resolution =[];
+    try {
+      if (type === 'movie') {
+        resolution = await getMovieResolution(req.query.id);
+      } else if (type === 'serie') {
+        resolution = await getEpisodeResolution(req.query.id);
       }
+    } catch(error) {
+      console.log(` > User tried to get the available resolutions movie/episode with id ${req.query.id} which does not exist`);
+      res.status(404).end();
+      return;
+    }
 
-      let availableResolutions = []
-      if (resolution["8k"]) {
-        availableResolutions.push("8k");
-      }
-      if (resolution["4k"]) {
-        availableResolutions.push("4k");
-      }
-      if (resolution["1440p"]) {
-        availableResolutions.push("1440p");
-      }
-      if (resolution["1080p"]) {
-        availableResolutions.push("1080p");
-      }
-      if (resolution["720p"]) {
-        availableResolutions.push("720p");
-      }
-      if (resolution["480p"]) {
-        availableResolutions.push("480p");
-      }
-      if (resolution["360p"]) {
-        availableResolutions.push("360p");
-      }
-      if (resolution["240p"]) {
-        availableResolutions.push("240p");
-      }
+    let availableResolutions = []
+    if (resolution["8k"]) {
+      availableResolutions.push("8k");
+    }
+    if (resolution["4k"]) {
+      availableResolutions.push("4k");
+    }
+    if (resolution["1440p"]) {
+      availableResolutions.push("1440p");
+    }
+    if (resolution["1080p"]) {
+      availableResolutions.push("1080p");
+    }
+    if (resolution["720p"]) {
+      availableResolutions.push("720p");
+    }
+    if (resolution["480p"]) {
+      availableResolutions.push("480p");
+    }
+    if (resolution["360p"]) {
+      availableResolutions.push("360p");
+    }
+    if (resolution["240p"]) {
+      availableResolutions.push("240p");
+    }
 
-      if (availableResolutions.length == 0) {
-        console.log(" > No saved resolutions, using 1080p");
-        availableResolutions.push("1080p");
-      }
+    if (availableResolutions.length == 0) {
+      console.log(" > No saved resolutions, using 1080p");
+      availableResolutions.push("1080p");
+    }
 
-      let directPlay = SUPPORTED_VIDEO_CODECS.includes(resolution["codec"]);
-      console.log(`DEBUG: Codec: ${resolution["codec"]} gave directplay: ${directPlay}`);
-  
-      res.status(200).json({
-          resolutions: availableResolutions,
-          directplay: directPlay
-      });
-      resolve();
+    let directPlay = browser.videoCodecSupported(resolution["codec"]);
+
+    res.status(200).json({
+        resolutions: availableResolutions,
+        directplay: directPlay
+    });
+    resolve();
   });
 }
 

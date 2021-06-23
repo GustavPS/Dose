@@ -18,6 +18,7 @@
     "glob": "^7.1.6",
     "mime": "^2.4.5",
     "next": "^10.1.3",
+    "next-useragent": "^2.5.1",
     "node-async-locks": "^2.0.0",
     "node-fetch": "^2.6.0",
     "opensubtitles-api": "^5.1.2",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@babel/core": "^7.9.6",
     "@babel/node": "^7.8.7",
+    "@babel/plugin-proposal-class-properties": "^7.14.5",
     "@babel/preset-env": "^7.9.6",
     "nodemon": "^2.0.3"
   }

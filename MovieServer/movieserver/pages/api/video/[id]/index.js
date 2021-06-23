@@ -2,6 +2,9 @@ import { resolve } from 'path';
 import { Stream } from 'stream';
 const db = require('../../../../lib/db');
 const validateUser = require('../../../../lib/validateUser');
+const getBrowser = require('../../../../lib/browsers/util');
+import { useUserAgent } from 'next-useragent'
+
 
 var ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
@@ -20,14 +23,6 @@ const ALLOWED_QUALITIES = [
   'DIRECTPLAY'
 ];
 
-const WEB_SUPPORTED_AUDIO_CODECS = [
-  'aac',
-  'g.722',
-  'mp3',
-  'opus',
-  'vorbis',
-];
-const WEB_CLIENT = "web";
 const DEFAULT_AUDIO_CODEC = "aac";
 
 export default async (req, res) => {
@@ -134,15 +129,6 @@ function getEpisodeCodecs(episodeID) {
   });
 }
 
-function audioTranscodingNeeded(codec, client) {
-  console.log(codec);
-  if (client === WEB_CLIENT) {
-    return !WEB_SUPPORTED_AUDIO_CODECS.includes(codec);
-  }
-  console.log(`ERROR: No audio config for client ${client}`);
-  return true;
-}
-
 function getMoviePath(movieID) {
   return new Promise((resolve, reject) => {
       db.one(`SELECT movie.path AS subpath, library.path AS basepath FROM library 
@@ -200,6 +186,9 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
   Direct play: https://stackoverflow.com/questions/40077681/ffmpeg-converting-from-mkv-to-mp4-without-re-encoding
   */
 
+  const userAgent = useUserAgent(req.headers['user-agent']);
+  const browser   = getBrowser(userAgent);
+
   let quality = req.query.quality.toUpperCase();
   if (!ALLOWED_QUALITIES.includes(quality)) {
     console.log(`${quality} is not a valid quality selector`);
@@ -211,7 +200,7 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
   let audioSettings = [
     `-ss 1`
   ]
-  let audioSupported = !audioTranscodingNeeded(audioCodecs[0].codec, WEB_CLIENT);
+  let audioSupported = browser.audioCodecSupported(audioCodecs[0].codec);
   if (language !== null && language !== undefined && language !== 'unknown') {
     audioSettings.push('-map -a');
 
@@ -223,7 +212,7 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
     audioSupported = false;
     for (let stream of audioCodecs) {
       if (stream.stream_index === language) {
-        audioSupported = !audioTranscodingNeeded(stream.codec, WEB_CLIENT);
+        audioSupported = browser.audioCodecSupported(stream.codec);
       }
     }
   }
