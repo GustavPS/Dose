@@ -205,7 +205,7 @@ class TvLibrary extends Library {
                         }
                     }
 
-                    let audio_streams = await this.findAudioStreams(episodePath, fileStreams);
+                    let audio_streams = await this.findAudioStreams(fileStreams);
                     if (audio_streams) {
                         for (let stream of audio_streams) {
                             t.none('INSERT INTO serie_episode_language (serie_episode_id, language, stream_index, codec) VALUES ($1, $2, $3, $4)', [internal_episode_id, stream.language, stream.stream, stream.codec]);
