@@ -10,7 +10,7 @@ const DefaultBrowser = require('./default');
 function getBrowser(userAgent) {
     const browserVersion = userAgent.browserVersion;
     let browser;
-    if (userAgent.isDesktop) {
+    if (userAgent.isDesktop && !userAgent.isAndroid) {
       if (userAgent.isChrome) {
         browser = new Chrome(browserVersion);
       } else if (userAgent.isFirefox) {
