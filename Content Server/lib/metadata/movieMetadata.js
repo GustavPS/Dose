@@ -8,14 +8,9 @@ class MovieMetadata extends Metadata {
         super();
     }
 
-    /**
-     * Search for metadata about the movie
-     * 
-     * @param {String} movieName - The name of the movie 
-     */
-    getMetadata(movieName) {
+    getMetadataByYear(movieName, year=null) {
         return new Promise((resolve, reject) => {
-            fetch(`${this.getAPIUrl()}/search/movie?api_key=${this.getAPIKey()}&language=en-US&query=${movieName}&page=1&include_adult=true`)
+            fetch(`${this.getAPIUrl()}/search/movie?api_key=${this.getAPIKey()}&language=en-US&query=${movieName}&year=${year}&page=1&include_adult=true`)
             .then(res => res.json())
             .then(json => {
                 if (json.total_results == 0) {
@@ -55,7 +50,8 @@ class MovieMetadata extends Metadata {
                                 let result = {
                                     metadata: metadata,
                                     images: images,
-                                    trailer: trailer
+                                    trailer: trailer,
+                                    year: year
                                 }
                                 resolve(result);
                             });
@@ -63,6 +59,41 @@ class MovieMetadata extends Metadata {
                     });
                 }
             });
+        });
+    }
+
+    /**
+     * Search for metadata about the movie
+     * 
+     * @param {String} movieName - The name of the movie 
+     */
+    getMetadata(movieName, possibleReleaseYear) {
+        return new Promise(async (resolve, reject) => {
+            let found = false;
+            for (let year of possibleReleaseYear) {
+                try {
+                    let result = await this.getMetadataByYear(movieName, year);
+                    // We found the movie by looking at the year, resolve it
+                    found = true;
+                    resolve(result);
+                    break;
+                } catch (error) {
+                    if (error != "Not found") {
+                        console.log("ERROR: in getMetadata, look at next line for full error message");
+                        console.log(error);
+                    }
+                }
+            }
+
+            // If we didn't find it by looking at the year, try without the year
+            if (!found) {
+                this.getMetadataByYear(movieName).then(result => {
+                    resolve(result);
+                }).catch(error => {
+                    // Metadata not found
+                    reject(error);
+                });
+            }
         });
     }
 
