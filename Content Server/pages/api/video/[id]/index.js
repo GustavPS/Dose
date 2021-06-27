@@ -15,6 +15,9 @@ var AsyncLock = require('async-lock');
 var lock = new AsyncLock();
 
 const ALLOWED_QUALITIES = [
+  '8K',
+  '4K',
+  '1440P',
   '1080P',
   '720P',
   '480P',
