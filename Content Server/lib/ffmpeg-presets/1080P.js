@@ -1,41 +1,13 @@
-// nvidia encoding = h264_nvenc
+const PresetUtil = require('./util');
 
 exports.load = function(ffmpeg) {
+  const util = new PresetUtil();
   ffmpeg
-  .withVideoCodec('libx264')
+  .withVideoCodec(util.getVideoCodec())
   .withVideoBitrate(6000)
   .inputOption([
     '-re'
   ])
-  .outputOption([
-    /*
-    '-g 52',
-    '-map 0',
-    '-map -v',
-    '-map 0:V',
-    '-deadline realtime',
-    '-lag-in-frames 0',
-    '-static-thresh 0',
-    '-frame-parallel 1',
-    '-crf 4',
-    '-movflags frag_keyframe+empty_moov+faststart',
-    '-pix_fmt yuv420p',
-    '-sn',
-    '-max_muxing_queue_size 9999'
-    */
-    '-g 52',
-    '-map 0',
-    '-map -v',
-    '-map 0:V',
-    '-sn',
-    '-deadline realtime',
-    '-lag-in-frames 0',
-    '-static-thresh 0',
-    '-frame-parallel 1',
-    '-crf 22',
-    '-movflags frag_keyframe+empty_moov+faststart',
-    '-pix_fmt yuv420p',
-    '-preset ultrafast'
-  ])
+  .outputOption(util.getTranscodingParameters("1080P"))
   .outputFormat('mp4')
 };

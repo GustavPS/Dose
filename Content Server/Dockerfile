@@ -2,6 +2,7 @@ FROM node:16-alpine
 RUN apk add  --no-cache ffmpeg
 
 ENV NODE_ENV=production
+ENV GPU_TRANSCODING=FALSE
 
 # Create app directory
 WORKDIR .
