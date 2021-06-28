@@ -32,6 +32,7 @@ export default function Home(props) {
   const [viewTrailer, setViewTrailer] = useState(false);
   const [trailer, setTrailer] = useState(false);
 
+  const [loaded, setLoaded] = useState(false)
 
   const videoRef = useRef();
 
@@ -95,6 +96,7 @@ export default function Home(props) {
         currentTime += `${minutes}:${seconds}`
         meta.currentTimeSeconds = meta.currentTime;
         meta.currentTime = currentTime;
+        console.log(videoRef)
         videoRef.current.setTitle(meta.title);
   
         setInWatchList(meta.inwatchlist);
@@ -102,6 +104,8 @@ export default function Home(props) {
         setMetadata(meta);
         console.log(meta.trailer);
         setTrailer(meta.trailer);
+      }).then(() => {
+        setLoaded(true)
       });
     });
   }, []);
@@ -217,131 +221,144 @@ export default function Home(props) {
   
   return (
     <>
-        <Head>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
-        <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
+    <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
+                    internalID={id} Movie
+                    >
+    </VideoComponent>
+    <Head>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
 
-        <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-        <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
-        <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
+    <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
-        </Head>
-
-        <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
-                        internalID={id} Movie
-                        >
-        </VideoComponent>
-
-      {trailer !== false && viewTrailer &&
-        <VideoTrailer onClose={() => setViewTrailer(false)} videoPath={trailer} />
-      }
-
-
-        <div id="container">
-        <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
-        <div className="backIcon" onClick={() => Router.back()}></div>
-
-
-        {metadataBox &&
-          <div className="metadataBox">
-            <Form onSubmit={searchMetadata}>
-              <Form.Group controlId="formSearch">
-                <Form.Label>Uppdatera metadata för {metadata.path}</Form.Label>
-                <Form.Control ref={metadataSearch} type="text" placeholder="Sök efter ny metadata..." />
-              </Form.Group>
-              <Button variant="primary" type="submit">
-                Sök
-              </Button>
-            </Form>
-            <div style={{clear: 'both'}}></div>
-
-            <ListGroup id="metadataSearchResult">
-              {metadataSearchResult}
-            </ListGroup>
+    </Head>
+    {!loaded &&
+      <div className={Styles.loadingioSpinnerEclipse}>
+          <div className={Styles.ldio}>
+              <div></div>
           </div>
-        }
+      </div>
+    }
+    {loaded &&
+    <>
 
 
-        <div className={Styles.top}>
-          <div className={Styles.poster} style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.poster}')`}} />
-          <div className={Styles.description}>
-            <h1>{metadata.title}</h1>
-            <div className={Styles.metadata}>
-              <p className={Styles.releaseDate}>{metadata.release_date}</p>
-              <p className={Styles.runtime}>{Math.floor(metadata.runtime / 60) + "h " + metadata.runtime%60+"m"}</p>
-              <p className={Styles.endsat}>Slutar vid {metadata.finish_at}</p>
-              <p className={Styles.addedDate}>Tillagd {metadata.added_date}</p>
-            </div>
-            <div className={Styles.overview}>
-                <p>{metadata.overview}</p>
-            </div>
-            <div className={Styles.actions}>
-              {metadata.currentTimeSeconds > 0 &&
-              <div style={{marginRight: "15px"}}>
-                <div className={Styles.playButton} onClick={() => videoRef.current.show(metadata.currentTimeSeconds)}></div>
-                <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
-              </div>
-              }
-              <div style={{marginRight: "15px"}}>
-                <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
-                <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
-              </div>
-              <div>
-                <div className={Styles.playButton} onClick={() => setViewTrailer(true)}></div>
-                <p style={{marginTop: "5px", fontSize: '14px'}}>Visa trailer</p>
-              </div>
-              {watched &&
-              <>
-                  <div style={{marginLeft: "15px"}}>
-                  <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => markAsNotWatched()}></div>
-                  <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som osedd</p>
-                  </div>
-              </>
-              }
-              {!watched &&
-              <>
-                <div style={{marginLeft: "15px"}}>
-                  <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
-                  <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
-                </div>
-              </>
-              }
-              {inWatchList &&
-              <>
-                  <div style={{marginLeft: "15px"}}>
-                  <div id="inWatchList" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => removeFromWatchList()}></div>
-                  <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Ta bort från watchlist</p>
-                  </div>
-              </>
-              }
-              {!inWatchList &&
-              <>
-                <div style={{marginLeft: "15px"}}>
-                  <div id="inWatchList" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => addToWatchList()}></div>
-                  <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Lägg till i watchlist</p>
-                </div>
-              </>
-              }
-              <div>
-                <div style={{marginLeft: "15px", backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/search.svg')`}} className={Styles.playButton} onClick={() => setMetadataBox(true)}></div>
-                <p style={{marginLeft: "15px", marginTop: "5px", fontSize: '14px'}}>Uppdatera metadata</p>
-              </div>
 
-              <ChangeImages id={id} server={server} serverToken={serverToken} type="movies"></ChangeImages>
 
-            </div>
+    {trailer !== false && viewTrailer &&
+    <VideoTrailer onClose={() => setViewTrailer(false)} videoPath={trailer} />
+    }
+
+
+    <div id="container">
+    <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
+    <div className="backIcon" onClick={() => Router.back()}></div>
+
+
+    {metadataBox &&
+      <div className="metadataBox">
+        <Form onSubmit={searchMetadata}>
+          <Form.Group controlId="formSearch">
+            <Form.Label>Uppdatera metadata för {metadata.path}</Form.Label>
+            <Form.Control ref={metadataSearch} type="text" placeholder="Sök efter ny metadata..." />
+          </Form.Group>
+          <Button variant="primary" type="submit">
+            Sök
+          </Button>
+        </Form>
+        <div style={{clear: 'both'}}></div>
+
+        <ListGroup id="metadataSearchResult">
+          {metadataSearchResult}
+        </ListGroup>
+      </div>
+    }
+
+
+    <div className={Styles.top}>
+      <div className={Styles.poster} style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.poster}')`}} />
+      <div className={Styles.description}>
+        <h1>{metadata.title}</h1>
+        <div className={Styles.metadata}>
+          <p className={Styles.releaseDate}>{metadata.release_date}</p>
+          <p className={Styles.runtime}>{Math.floor(metadata.runtime / 60) + "h " + metadata.runtime%60+"m"}</p>
+          <p className={Styles.endsat}>Slutar vid {metadata.finish_at}</p>
+          <p className={Styles.addedDate}>Tillagd {metadata.added_date}</p>
+        </div>
+        <div className={Styles.overview}>
+            <p>{metadata.overview}</p>
+        </div>
+        <div className={Styles.actions}>
+          {metadata.currentTimeSeconds > 0 &&
+          <div style={{marginRight: "15px"}}>
+            <div className={Styles.playButton} onClick={() => videoRef.current.show(metadata.currentTimeSeconds)}></div>
+            <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
           </div>
-        </div>
-        <div className={Styles.bottom}>
-          <h1>Actors</h1>
-          <div className={Styles.actors}>
-            <div className={Styles.actor}>
-
-            </div>
+          }
+          <div style={{marginRight: "15px"}}>
+            <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
+            <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
           </div>
+          <div>
+            <div className={Styles.playButton} onClick={() => setViewTrailer(true)}></div>
+            <p style={{marginTop: "5px", fontSize: '14px'}}>Visa trailer</p>
+          </div>
+          {watched &&
+          <>
+              <div style={{marginLeft: "15px"}}>
+              <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => markAsNotWatched()}></div>
+              <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som osedd</p>
+              </div>
+          </>
+          }
+          {!watched &&
+          <>
+            <div style={{marginLeft: "15px"}}>
+              <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
+              <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
+            </div>
+          </>
+          }
+          {inWatchList &&
+          <>
+              <div style={{marginLeft: "15px"}}>
+              <div id="inWatchList" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => removeFromWatchList()}></div>
+              <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Ta bort från watchlist</p>
+              </div>
+          </>
+          }
+          {!inWatchList &&
+          <>
+            <div style={{marginLeft: "15px"}}>
+              <div id="inWatchList" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => addToWatchList()}></div>
+              <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Lägg till i watchlist</p>
+            </div>
+          </>
+          }
+          <div>
+            <div style={{marginLeft: "15px", backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/search.svg')`}} className={Styles.playButton} onClick={() => setMetadataBox(true)}></div>
+            <p style={{marginLeft: "15px", marginTop: "5px", fontSize: '14px'}}>Uppdatera metadata</p>
+          </div>
+
+          <ChangeImages id={id} server={server} serverToken={serverToken} type="movies"></ChangeImages>
+
         </div>
+      </div>
+    </div>
+    <div className={Styles.bottom}>
+      <h1>Actors</h1>
+      <div className={Styles.actors}>
+        <div className={Styles.actor}>
+
         </div>
-        </>
+      </div>
+    </div>
+    </div>
+    </>
+    }
+    </>
   )
 }
 
