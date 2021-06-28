@@ -24,6 +24,8 @@ export default function Home(props) {
       episodes: []
   });
 
+  const [loaded, setLoaded] = useState(false)
+
 
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
@@ -60,6 +62,8 @@ export default function Home(props) {
         setMetadata(meta);
         return () => {
         }
+      }).then(() => {
+        setLoaded(true)
       });
     });
   }, []);
@@ -91,6 +95,16 @@ export default function Home(props) {
 
   
   return (
+
+    <>
+    {!loaded &&
+      <div className={Styles.loadingioSpinnerEclipse}>
+          <div className={Styles.ldio}>
+              <div></div>
+          </div>
+      </div>
+    }
+    {loaded &&
     <>
         <Head>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
@@ -128,6 +142,8 @@ export default function Home(props) {
         </div>
         </div>
         </>
+      }
+    </>
   )
 }
 

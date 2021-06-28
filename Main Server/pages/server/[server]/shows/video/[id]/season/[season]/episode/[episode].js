@@ -21,6 +21,8 @@ export default function Home(props) {
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
 
+  const [loaded, setLoaded] = useState(false)
+
   internalID = router.query.internalID;
   season = router.query.season;
   episode = router.query.episode;
@@ -84,6 +86,8 @@ export default function Home(props) {
         videoRef.current.setTitle(meta.show_name);
         setWatched(meta.watched);
         setMetadata(meta);
+      }).then(() => {
+        setLoaded(true)
       });
     });
   }, []);
@@ -145,7 +149,7 @@ export default function Home(props) {
     
   return (
     <>
-        <Head>
+    <Head>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
         <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
         <link href="https://unpkg.com/@silvermine/videojs-quality-selector/dist/css/quality-selector.css" rel="stylesheet" />
@@ -153,78 +157,87 @@ export default function Home(props) {
         <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
         <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
-        </Head>
-
-  
-
-        <div id="container">
-        <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
-        <div className="backIcon" onClick={() => Router.back()}></div>
-        <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
+    </Head>
+    <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
                         internalID={internalID}
                         season={season}
                         episode={episode}
                         getNextEpisodeID={(cb) => getNextEpisodeID(cb)}
                         onChangeEpisode={() => onChangeEpisode()}
                         >
-        </VideoComponent>
+    </VideoComponent>
+    {!loaded &&
+      <div className={Styles.loadingioSpinnerEclipse}>
+          <div className={Styles.ldio}>
+              <div></div>
+          </div>
+      </div>
+    }
+    {loaded &&
+    <>
+      <div id="container">
+      <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
+      <div className="backIcon" onClick={() => Router.back()}></div>
+      
 
-        <div className={Styles.top}>
-          <div className={Styles.poster} style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.poster}')`}} />
-          <div className={Styles.description}>
-            <h1>{metadata.title}</h1>
-            <div className={Styles.metadata}>
-              <p className={Styles.releaseDate}>{metadata.release_date}</p>
-              <p className={Styles.runtime}>{Math.floor(metadata.runtime / 60) + "h " + metadata.runtime%60+"m"}</p>
-              <p className={Styles.endsat}>Slutar vid {metadata.finish_at}</p>
-              <p className={Styles.addedDate}>Tillagd {metadata.added_date}</p>
+      <div className={Styles.top}>
+        <div className={Styles.poster} style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.poster}')`}} />
+        <div className={Styles.description}>
+          <h1>{metadata.title}</h1>
+          <div className={Styles.metadata}>
+            <p className={Styles.releaseDate}>{metadata.release_date}</p>
+            <p className={Styles.runtime}>{Math.floor(metadata.runtime / 60) + "h " + metadata.runtime%60+"m"}</p>
+            <p className={Styles.endsat}>Slutar vid {metadata.finish_at}</p>
+            <p className={Styles.addedDate}>Tillagd {metadata.added_date}</p>
+          </div>
+          <div className={Styles.overview}>
+              <p>{metadata.overview}</p>
+          </div>
+          <div className={Styles.actions}>
+            {metadata.currentTimeSeconds > 0 &&
+            <div style={{marginRight: "15px"}}>
+              <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
+              <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
             </div>
-            <div className={Styles.overview}>
-                <p>{metadata.overview}</p>
+            }
+            <div>
+              <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
+              <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
             </div>
-            <div className={Styles.actions}>
-              {metadata.currentTimeSeconds > 0 &&
-              <div style={{marginRight: "15px"}}>
-                <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
-                <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
-              </div>
-              }
-              <div>
-                <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
-                <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
-              </div>
-              {watched &&
-              <>
-                  <div style={{marginLeft: "15px"}}>
-                  <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => markAsNotWatched()}></div>
-                  <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som osedd</p>
-                  </div>
-              </>
-              }
-              {!watched &&
-              <>
+            {watched &&
+            <>
                 <div style={{marginLeft: "15px"}}>
-                <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
-                <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
+                <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => markAsNotWatched()}></div>
+                <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som osedd</p>
                 </div>
-              </>
-              }
+            </>
+            }
+            {!watched &&
+            <>
+              <div style={{marginLeft: "15px"}}>
+              <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
+              <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
+              </div>
+            </>
+            }
 
 
 
-            </div>
           </div>
         </div>
-        <div className={Styles.bottom}>
-          <h1>Actors</h1>
-          <div className={Styles.actors}>
-            <div className={Styles.actor}>
+      </div>
+      <div className={Styles.bottom}>
+        <h1>Actors</h1>
+        <div className={Styles.actors}>
+          <div className={Styles.actor}>
 
-            </div>
           </div>
         </div>
-        </div>
-        </>
+      </div>
+      </div>
+      </>
+      }
+    </>
   )
 }
 

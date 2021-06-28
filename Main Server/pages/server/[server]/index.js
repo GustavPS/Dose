@@ -32,6 +32,9 @@ const main = (props) => {
     const [newlyAddedMovies, setNewlyAddedMovies] = useState([]);
     const [newlyAddedShows, setNewlyAddedShows] = useState([]);
     const [newlyAddedEpisodes, setNewlyAddedEpisodes] = useState([]);
+    let loading = 0;
+    const [loaded, setLoaded] = useState(false)
+
 
 
     const windowSize = useWindowSize();
@@ -277,8 +280,14 @@ const main = (props) => {
                         </Carousel.Item>
                     );
                 }
+                loading++
                 setLatesMovies(movieElements);
-            });
+
+            }).then(() => {
+                if(loading == 7) {
+                    setLoaded(true)
+                }
+            })
 
             // Get ongoing movies
             getMovieList(null, 'release_date', 20, true).then(movies => {
@@ -290,8 +299,14 @@ const main = (props) => {
                         <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                     );
                 }
+                loading++
                 setOngoingMovies(movieElements);
-            });
+
+            }).then(() => {
+                if(loading == 7) {
+                    setLoaded(true)
+                }
+            })
 
             // Get watchlist for movies
             getMovieList(null, 'release_date', 20, false, true).then(movies => {
@@ -303,8 +318,14 @@ const main = (props) => {
                         <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                     );
                 }
+                loading++
                 setMovieWatchList(movieElements);
-            });
+
+            }).then(() => {
+                if(loading == 7) {
+                    setLoaded(true)
+                }
+            })
 
             // Get newly added movies
             getMovieList(null, 'added_date', 20).then(movies => {
@@ -315,9 +336,14 @@ const main = (props) => {
                         <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                     );
                 }
+                loading++
                 setNewlyAddedMovies(movieElements);
-                
-            });
+
+            }).then(() => {
+                if(loading == 7) {
+                    setLoaded(true)
+                }
+            })
 
             // Get newly added shows
             getShowList(null, 'added_date', 20).then(shows => {
@@ -328,10 +354,14 @@ const main = (props) => {
                         <MovieBackdrop markAsDoneButton id={show.id} time={show.watchtime} runtime={show.runtime} title={show.title} overview={show.overview} runtime={show.runtime} backdrop={img} onClick={(id) => selectShow(show.id)}></MovieBackdrop>
                     );
                 }
+                loading++
                 setNewlyAddedShows(showElements);
-                
-            });
 
+            }).then(() => {
+                if(loading == 7) {
+                    setLoaded(true)
+                }
+            })
             // Get ongoing shows
             getShowList(null, 'added_date', 20, true).then(result => {
                 let showElements = [];
@@ -349,8 +379,14 @@ const main = (props) => {
                                        overview={show.overview} runtime={show.total_time} backdrop={img} onClick={(id) => selectEpisode(show.show_id, show.season_number, show.episode_number, show.internalepisodeid)}></MovieBackdrop>
                     );
                 }
+                loading++
                 setOngoingShows(showElements);
-            });
+
+            }).then(() => {
+                if(loading == 7) {
+                    setLoaded(true)
+                }
+            })
 
             getNewEpisodeList('added_date', 20).then(episodes => {
                 let episodeElements = [];
@@ -363,10 +399,15 @@ const main = (props) => {
                             onClick={(season, episode, show, internalEpisodeID) => selectEpisode(show, season, episode, internalEpisodeID)}></EpisodePoster>
                     );
                 }
+                loading++
                 setNewlyAddedEpisodes(episodeElements);
-            });
+            }).then(() => {
+                if(loading == 7) {
+                    setLoaded(true)
+                }
+            })
         });
-    }, []);
+    }, [loading]);
 
 
     const selectMovie = (id) => {
@@ -394,152 +435,161 @@ const main = (props) => {
     }
 
     // LAYOUT //
-    return (
-        <Layout searchEnabled server={server} serverToken={cookie.get('serverToken')}>
-            <Head>
-            </Head>
-            <Carousel interval={10000}>
-                {latestMovies}
-            </Carousel>
-            <br></br>
-            <div style={{color: 'white'}}>
-                <Container fluid>
-                    {ongoingMovies.length > 0 &&
-                        <>
-                            <h2 style={{textTransform: 'capitalize'}}>Pågående filmer</h2>  
-                            <div className={Styles.movieRow}>
-                                <div id="ongoingMovies" className={Styles.scrollable}>
-                                    {ongoingMovies}
-                                </div>
-                                {ongoingMovies.length * 480 > windowSize.width &&
-                                    <>
-                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" />
-                                        </div>
-                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" />
-                                        </div>
-                                    </>
-                                }
-                            </div> 
-                        <hr className={Styles.divider}></hr>
-                        </> 
-                    }
-
-                    {ongoingShows.length > 0 &&
-                        <>
-                            <h2 style={{textTransform: 'capitalize'}}>Pågående serier</h2>    
-                            <div className={Styles.movieRow}>
-                                <div id="ongoingShows" className={Styles.scrollable}>
-                                    {ongoingShows}
-                                </div>
-                                {ongoingShows.length * 480 > windowSize.width &&
-                                    <>
-                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingShows')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                        </div>
-                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingShows')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                        </div>
-                                    </>
-                                }
-                            </div> 
-                        <hr className={Styles.divider}></hr>
-                        </> 
-                    }
-
-                    {newlyAddedMovies.length > 0 &&
-                        <>
-                            <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
-                            <div className={Styles.movieRow}>
-                                <div id="newlyAddedMovies" className={Styles.scrollable}>
-                                    {newlyAddedMovies}
-                                </div>
-                                {newlyAddedMovies.length * 480 > windowSize.width &&
-                                    <>
-                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedMovies')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                        </div>
-                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedMovies')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                        </div>
-                                    </>
-                                }
-                            </div> 
-                        <hr className={Styles.divider}></hr>
-                        </> 
-                    }
-
-                    {movieWatchList.length > 0 &&
-                        <>
-                            <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Filmer att se senare</h2></a></Link>   
-                            <div className={Styles.movieRow}>
-                                <div id="movieWatchList" className={Styles.scrollable}>
-                                    {movieWatchList}
-                                </div>
-                                {movieWatchList.length * 480 > windowSize.width &&
-                                    <>
-                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('movieWatchList')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                        </div>
-                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('movieWatchList')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                        </div>
-                                    </>
-                                }
-                            </div> 
-                        <hr className={Styles.divider}></hr>
-                        </> 
-                    }
-                    
-                    {newlyAddedEpisodes.length > 0 &&
-                        <>
-                            <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda avsnitt</h2></a></Link>
-                            <div className={Styles.movieRow}>
-                                <div id="newlyAddedEpisodes" className={Styles.scrollable}>
-                                    {newlyAddedEpisodes}
-                                </div>
-                                {newlyAddedEpisodes.length * 480 > windowSize.width &&
-                                    <>
-                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedEpisodes')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                        </div>
-                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedEpisodes')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                        </div>
-                                    </>
-                                }
-                            </div> 
-                        <hr className={Styles.divider}></hr>
-                        </> 
-                    }
-                    
-                    {newlyAddedShows.length > 0 &&
-                        <>
-                            <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda serier</h2></a></Link>
-                            <div className={Styles.movieRow}>
-                                <div id="newlyAddedShows" className={Styles.scrollable}>
-                                    {newlyAddedShows}
-                                </div>
-                                {newlyAddedShows.length * 480 > windowSize.width &&
-                                    <>
-                                        <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedShows')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                        </div>
-                                        <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedShows')}>
-                                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                        </div>
-                                    </>
-                                }
-                            </div> 
-                        <hr className={Styles.divider}></hr>
-                        </> 
-                    }
-
-                    
-                </Container>
+    return (<>
+        {!loaded &&
+            <div className={Styles.loadingioSpinnerEclipse}>
+            <div className={Styles.ldio}>
+                <div></div>
             </div>
+            </div>
+        }
+        {loaded &&
+
+        <Layout searchEnabled server={server} serverToken={cookie.get('serverToken')}>
+        <Head>
+        </Head>
+        <Carousel interval={10000}>
+            {latestMovies}
+        </Carousel>
+        <br></br>
+        <div style={{color: 'white'}}>
+            <Container fluid>
+                {ongoingMovies.length > 0 &&
+                    <>
+                        <h2 style={{textTransform: 'capitalize'}}>Pågående filmer</h2>  
+                        <div className={Styles.movieRow}>
+                            <div id="ongoingMovies" className={Styles.scrollable}>
+                                {ongoingMovies}
+                            </div>
+                            {ongoingMovies.length * 480 > windowSize.width &&
+                                <>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" />
+                                    </div>
+                                </>
+                            }
+                        </div> 
+                    <hr className={Styles.divider}></hr>
+                    </> 
+                }
+
+                {ongoingShows.length > 0 &&
+                    <>
+                        <h2 style={{textTransform: 'capitalize'}}>Pågående serier</h2>    
+                        <div className={Styles.movieRow}>
+                            <div id="ongoingShows" className={Styles.scrollable}>
+                                {ongoingShows}
+                            </div>
+                            {ongoingShows.length * 480 > windowSize.width &&
+                                <>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingShows')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingShows')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                    </div>
+                                </>
+                            }
+                        </div> 
+                    <hr className={Styles.divider}></hr>
+                    </> 
+                }
+
+                {newlyAddedMovies.length > 0 &&
+                    <>
+                        <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
+                        <div className={Styles.movieRow}>
+                            <div id="newlyAddedMovies" className={Styles.scrollable}>
+                                {newlyAddedMovies}
+                            </div>
+                            {newlyAddedMovies.length * 480 > windowSize.width &&
+                                <>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedMovies')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedMovies')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                    </div>
+                                </>
+                            }
+                        </div> 
+                    <hr className={Styles.divider}></hr>
+                    </> 
+                }
+
+                {movieWatchList.length > 0 &&
+                    <>
+                        <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Filmer att se senare</h2></a></Link>   
+                        <div className={Styles.movieRow}>
+                            <div id="movieWatchList" className={Styles.scrollable}>
+                                {movieWatchList}
+                            </div>
+                            {movieWatchList.length * 480 > windowSize.width &&
+                                <>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('movieWatchList')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('movieWatchList')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                    </div>
+                                </>
+                            }
+                        </div> 
+                    <hr className={Styles.divider}></hr>
+                    </> 
+                }
+                
+                {newlyAddedEpisodes.length > 0 &&
+                    <>
+                        <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda avsnitt</h2></a></Link>
+                        <div className={Styles.movieRow}>
+                            <div id="newlyAddedEpisodes" className={Styles.scrollable}>
+                                {newlyAddedEpisodes}
+                            </div>
+                            {newlyAddedEpisodes.length * 480 > windowSize.width &&
+                                <>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedEpisodes')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedEpisodes')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                    </div>
+                                </>
+                            }
+                        </div> 
+                    <hr className={Styles.divider}></hr>
+                    </> 
+                }
+                
+                {newlyAddedShows.length > 0 &&
+                    <>
+                        <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda serier</h2></a></Link>
+                        <div className={Styles.movieRow}>
+                            <div id="newlyAddedShows" className={Styles.scrollable}>
+                                {newlyAddedShows}
+                            </div>
+                            {newlyAddedShows.length * 480 > windowSize.width &&
+                                <>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedShows')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedShows')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                    </div>
+                                </>
+                            }
+                        </div> 
+                    <hr className={Styles.divider}></hr>
+                    </> 
+                }
+            </Container>
+        </div>
         </Layout>
+        }
+        </>
     )
 }
 
