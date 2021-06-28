@@ -26,7 +26,7 @@ class MovieLibrary extends Library {
         return 'MOVIES';
     }
 
-    async addMovieIfNotSaved(movieName, path) {
+    async addMovieIfNotSaved(movieName, path, possibleReleaseYear) {
         return new Promise(async (resolve) => {
             let internalMovieID;
             let alreadyAdded = false;
@@ -77,8 +77,15 @@ class MovieLibrary extends Library {
                 }
             }).then(data => {
                 if (!alreadyAdded) {
-                    this.metadata.getMetadata(movieName).then(result => {
-                        console.log(` > Saving metadata for movie '${movieName}'`);
+                    this.metadata.getMetadata(movieName, possibleReleaseYear).then(result => {
+                        let logYearInfo;
+                        if (result.year != null) {
+                            logYearInfo = `(${result.year})`;
+                        } else {
+                            logYearInfo = `(Unknown year)`;
+                        }
+
+                        console.log(` > Saving metadata for movie '${movieName}' ${logYearInfo}`);
                         this.metadata.insertMetadata(result.metadata, result.images,
                                                      result.trailer, internalMovieID).then(() => {
                             resolve();
@@ -148,11 +155,13 @@ class MovieLibrary extends Library {
         let movieName;
         let type;
         let parentFolder;
+        let possibleReleaseYear = [];
         try {
             let result = this.cleanNameAndType(path);
             movieName = result.name;
             type = result.type;
             parentFolder = result.parentFolder;
+            possibleReleaseYear = result.possibleReleaseYear;
         } catch(e) {
             if (e.name === 'UnsupportedFormat') {
                 console.log("\x1b[33m", `> ${path} is not a supported format.`, "\x1b[0m");
@@ -164,7 +173,7 @@ class MovieLibrary extends Library {
         let t = this;
 	    lock.enter(async function (token) {
             if (type === 'MOVIE') {
-                t.addMovieIfNotSaved(movieName, path).then(() => {
+                t.addMovieIfNotSaved(movieName, path, possibleReleaseYear).then(() => {
                     lock.leave(token);
                 });
             } else if (type === 'SUBTITLE') {

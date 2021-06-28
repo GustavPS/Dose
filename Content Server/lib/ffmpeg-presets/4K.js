@@ -1,13 +1,14 @@
 const PresetUtil = require('./util');
 
+
 exports.load = function(ffmpeg) {
   const util = new PresetUtil();
   ffmpeg
   .withVideoCodec(util.getVideoCodec())
-  .withVideoBitrate(1000)
+  .withVideoBitrate(26000)
   .inputOption([
     '-re'
   ])
-  .outputOption(util.getTranscodingParameters("360P"))
+  .outputOption(util.getTranscodingParameters("4K"))
   .outputFormat('mp4')
 };

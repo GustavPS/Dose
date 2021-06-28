@@ -4,10 +4,10 @@ exports.load = function(ffmpeg) {
   const util = new PresetUtil();
   ffmpeg
   .withVideoCodec(util.getVideoCodec())
-  .withVideoBitrate(1000)
+  .withVideoBitrate(45000)
   .inputOption([
     '-re'
   ])
-  .outputOption(util.getTranscodingParameters("360P"))
+  .outputOption(util.getTranscodingParameters("8K"))
   .outputFormat('mp4')
 };

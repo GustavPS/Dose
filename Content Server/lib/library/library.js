@@ -255,6 +255,19 @@ class Library {
         return name;
     }
 
+    getReleaseYear(fileName) {
+        let re = new RegExp("[\\.(](\\d{4})[\\.)]", "gm");
+        let matches = re.exec(fileName);
+        let possibleReleaseYear = [];
+        if (matches != null && matches.length >= 2) {
+            // First match includes dots, so skipp it
+            for (let i = 1; i < matches.length; i++) {
+                possibleReleaseYear.push(matches[i]); 
+            }
+        }
+        return possibleReleaseYear;
+    }
+
     cleanNameAndType(path) {
         let fileExtension = path.substring(path.lastIndexOf('.') + 1);
         if (!MOVIE_FORMATS.includes(fileExtension) && !SUB_FORMATS.includes(fileExtension)) {
@@ -270,6 +283,7 @@ class Library {
         name = name.substring(name.lastIndexOf("/") + 1);
         name = name.substring(name.lastIndexOf("\\") + 1);
 
+        let possibleReleaseYear = this.getReleaseYear(name);
         name = this.nameMatch(name);
 
         // Get the folder name (for subtitles)
@@ -278,6 +292,7 @@ class Library {
         return {
             name: name,
             type: type,
+            possibleReleaseYear: possibleReleaseYear,
             parentFolder: parentFolder
         }
     }
