@@ -52,7 +52,8 @@ export default class VideoComponent extends React.Component {
             nextEpisode: this.type === 'serie' ? {
                 timeLeft: null,
                 internalID: null,
-                show: false
+                show: false,
+                foundNextEpisode: false
             } : undefined,
             videoPaused: true,
             isBuffering: true,
@@ -110,6 +111,10 @@ export default class VideoComponent extends React.Component {
         this.loadSubtitles();
         this.loadAudioStreams();
 
+        if (this.type === 'serie') {
+            this.getNextEpisodeID(this.setNextEpisodeID);
+        }
+
 
         this.video.ontimeupdate = () => {
             if (!this.video.isSeeking) {
@@ -117,11 +122,7 @@ export default class VideoComponent extends React.Component {
                 document.getElementById('seekbar').value = percentage
                 this.updateSeekTime();
                 
-                if (this.type === 'serie' && this.video.getRealWatchtime() >= this.video.realDuration - 40) {
-                    // If we havn't gotten the ID for the next episode yet, call the function from the parent
-                    if (this.getNextEpisodeID != undefined && !this.state.nextEpisode.show) {
-                        this.getNextEpisodeID(this.setNextEpisodeID);
-                    }
+                if (this.type === 'serie' && this.video.getRealWatchtime() >= this.video.realDuration - 40 && this.state.nextEpisode.foundNextEpisode) {
                     this.displayNextEpisodeBox();
                 }
             }
@@ -167,10 +168,16 @@ export default class VideoComponent extends React.Component {
         this.togglePlay();
     }
 
-    setNextEpisodeID(id) {
-        console.log("ID: " + id)
+    setNextEpisodeID(id, foundNextEpisode) {
+        console.log(`Found next episode: ${foundNextEpisode}, episodeID: ${id}`);
         let nextEpisode = this.state.nextEpisode;
-        nextEpisode.internalID = id;
+
+        if (foundNextEpisode) {
+            nextEpisode.internalID = id;
+            nextEpisode.foundNextEpisode = true;
+        } else {
+            nextEpisode.foundNextEpisode = false;
+        }
         this.setState({nextEpisode: nextEpisode});
     }
 
@@ -193,6 +200,7 @@ export default class VideoComponent extends React.Component {
         nextEpisode.timeLeft = null;
         nextEpisode.internalID = null;
         nextEpisode.show = false;
+        nextEpisode.foundNextEpisode = false;
         this.video.watchTimeOffset = 0;
 
         await this.loadAudioStreams();
