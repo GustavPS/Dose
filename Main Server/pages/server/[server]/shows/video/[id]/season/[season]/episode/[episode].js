@@ -95,13 +95,19 @@ export default function Home(props) {
 
   const getNextEpisodeID = (cb) => {
     validateServerAccess(server, (serverToken) => {
+      console.log("EP: " + episode);
       fetch(`${server.server_ip}/api/series/getNextEpisode?serie_id=${id}&season=${season}&episode=${episode}&token=${serverToken}`)
       .then(r => r.json())
       .then(result => {
-        season = result.season;
-        episode = result.episode;
-        internalID = result.internalID;
-        cb(result.internalID);
+        if (result.foundEpisode) {
+          season = result.season;
+          episode = result.episode;
+          internalID = result.internalID;
+          cb(result.internalID,result.foundEpisode);
+        } else {
+          cb(-1,result.foundEpisode);
+        }
+
       });
     });
   }
@@ -109,8 +115,12 @@ export default function Home(props) {
   const onChangeEpisode = () => {
     // Change the URL so if the user reloads the page they get to the new episode
     window.history.replaceState('state', 'Video', `${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}/season/${season}/episode/${episode}?internalID=${internalID}`);
+    console.log("EP: " + episode);
     videoRef.current.setSeason(season);
     videoRef.current.setEpisode(episode);
+
+    // This will indirectly call getNextEpisodeID() from [episode].js
+    videoRef.current.getNextEpisodeID(videoRef.current.setNextEpisodeID);
   }
 
   const markAsWatched = () => {
