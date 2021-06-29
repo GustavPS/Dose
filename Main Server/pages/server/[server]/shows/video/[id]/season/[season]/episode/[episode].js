@@ -11,7 +11,7 @@ import cookies from 'next-cookies'
 import validateServerAccess from '../../../../../../../../../lib/validateServerAccess';
 import VideoComponent from '../../../../../../../../../components/videoComponent';
 
-let internalID, season, episode;
+let internalID, season, episode, show;
 
 export default function Home(props) {
   const server = props.server;
@@ -26,6 +26,7 @@ export default function Home(props) {
   internalID = router.query.internalID;
   season = router.query.season;
   episode = router.query.episode;
+  show = router.query.id; // show id
 
   const videoRef = useRef();
 
@@ -92,35 +93,19 @@ export default function Home(props) {
     });
   }, []);
 
-
-  const getNextEpisodeID = (cb) => {
-    validateServerAccess(server, (serverToken) => {
-      console.log("EP: " + episode);
-      fetch(`${server.server_ip}/api/series/getNextEpisode?serie_id=${id}&season=${season}&episode=${episode}&token=${serverToken}`)
-      .then(r => r.json())
-      .then(result => {
-        if (result.foundEpisode) {
-          season = result.season;
-          episode = result.episode;
-          internalID = result.internalID;
-          cb(result.internalID,result.foundEpisode);
-        } else {
-          cb(-1,result.foundEpisode);
-        }
-
+  const onChangeEpisode = (newSeason, newEpisode, newInternalID) => {
+    console.log("Season: " + newSeason + " episode: " + newEpisode);
+    // Change the URL so if the user reloads the page they get to the new episode
+    window.history.replaceState('state', 'Video', `${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}/season/${newSeason}/episode/${newEpisode}?internalID=${newInternalID}`);
+    season = newSeason;
+    episode = newEpisode;
+    internalID = newInternalID;
+    console.log("EP: " + newEpisode);
+    videoRef.current.setSeason(newSeason, () => {
+      videoRef.current.setEpisode(newEpisode, () =>{
+        videoRef.current.getNextEpisodeID();
       });
     });
-  }
-
-  const onChangeEpisode = () => {
-    // Change the URL so if the user reloads the page they get to the new episode
-    window.history.replaceState('state', 'Video', `${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}/season/${season}/episode/${episode}?internalID=${internalID}`);
-    console.log("EP: " + episode);
-    videoRef.current.setSeason(season);
-    videoRef.current.setEpisode(episode);
-
-    // This will indirectly call getNextEpisodeID() from [episode].js
-    videoRef.current.getNextEpisodeID(videoRef.current.setNextEpisodeID);
   }
 
   const markAsWatched = () => {
@@ -133,7 +118,7 @@ export default function Home(props) {
         } else {
           console.log("ERROR MARKING AS WATCHED: " + status);
         }
-      })      .catch(err => {
+      }).catch(err => {
         console.log(err);
       });
     });
@@ -172,8 +157,8 @@ export default function Home(props) {
                         internalID={internalID}
                         season={season}
                         episode={episode}
-                        getNextEpisodeID={(cb) => getNextEpisodeID(cb)}
-                        onChangeEpisode={() => onChangeEpisode()}
+                        show={show}
+                        onChangeEpisode={(season, episode, internalID) => onChangeEpisode(season, episode, internalID)}
                         >
     </VideoComponent>
     {!loaded &&
