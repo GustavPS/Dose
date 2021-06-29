@@ -200,9 +200,7 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
   }
 
   // Create the output options array according to the language
-  let audioSettings = [
-    `-ss 1`
-  ]
+  let audioSettings = [];
   let audioSupported = browser.audioCodecSupported(audioCodecs[0].codec);
   if (language !== null && language !== undefined && language !== 'unknown') {
     audioSettings.push('-map -a');
@@ -220,8 +218,13 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
     }
   }
   const audioCodec = audioSupported ? "copy" : DEFAULT_AUDIO_CODEC;
-  //audioSettings.push('-metadata ')
-  
+
+  // If we have to transcode the audio but not the video, sync the audio with the video
+  // If video is starting at the beginning, we don't need to sync the video
+  if (!audioSupported && quality === "DIRECTPLAY" && offset != 0) {
+    audioSettings.push('-ss 1');
+    offset--;
+  }
 
   // crf = constant rate factor, lower is better
   // https://superuser.com/questions/677576/what-is-crf-used-for-in-ffmpeg
@@ -230,7 +233,7 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
         .withAudioCodec(audioCodec)
         // Might be faster with only 1 thread? TODO: Test it
         .inputOptions([
-          `-ss ${offset-1}`,
+          `-ss ${offset}`,
           '-threads 8',
         ])
         .outputOptions(audioSettings)
