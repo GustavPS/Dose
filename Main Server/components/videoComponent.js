@@ -20,7 +20,7 @@ export default class VideoComponent extends React.Component {
         this.elementCounter = 0;
         // Function to call on time change events
         this.onTimeChange = props.onTimeChange;
-        this.getNextEpisodeID = props.getNextEpisodeID;
+        //this.getNextEpisodeID = props.getNextEpisodeID;
 
         this.onChangeEpisode = props.onChangeEpisode;
 
@@ -52,6 +52,8 @@ export default class VideoComponent extends React.Component {
             nextEpisode: this.type === 'serie' ? {
                 timeLeft: null,
                 internalID: null,
+                season: null,
+                episode: null,
                 show: false,
                 foundNextEpisode: false
             } : undefined,
@@ -59,7 +61,8 @@ export default class VideoComponent extends React.Component {
             isBuffering: true,
             title: props.title,
             season: props.season,
-            episode: props.episode
+            episode: props.episode,
+            show: props.show
         }
 
         this.enterFullScreen      = this.enterFullScreen.bind(this);
@@ -78,8 +81,7 @@ export default class VideoComponent extends React.Component {
         this.showControls         = this.showControls.bind(this);
         this.setNextEpisodeID     = this.setNextEpisodeID.bind(this);
         this.playNextEpisode      = this.playNextEpisode.bind(this);
-
-
+        this.getNextEpisodeID     = this.getNextEpisodeID.bind(this);
     }
 
     componentWillUnmount() {
@@ -112,7 +114,7 @@ export default class VideoComponent extends React.Component {
         this.loadAudioStreams();
 
         if (this.type === 'serie') {
-            this.getNextEpisodeID(this.setNextEpisodeID);
+            this.getNextEpisodeID();
         }
 
 
@@ -168,17 +170,30 @@ export default class VideoComponent extends React.Component {
         this.togglePlay();
     }
 
-    setNextEpisodeID(id, foundNextEpisode) {
+    setNextEpisodeID(id, season, episode, foundNextEpisode) {
         console.log(`Found next episode: ${foundNextEpisode}, episodeID: ${id}`);
         let nextEpisode = this.state.nextEpisode;
 
         if (foundNextEpisode) {
             nextEpisode.internalID = id;
             nextEpisode.foundNextEpisode = true;
+            nextEpisode.season = season;
+            nextEpisode.episode = episode;
         } else {
             nextEpisode.foundNextEpisode = false;
         }
         this.setState({nextEpisode: nextEpisode});
+    }
+
+    getNextEpisodeID() {
+        validateServerAccess(this.server, (serverToken) => {
+            console.log("EP: " + this.state.episode)
+            fetch(`${this.server.server_ip}/api/series/getNextEpisode?serie_id=${this.state.show}&season=${this.state.season}&episode=${this.state.episode}&token=${serverToken}`)
+            .then(r => r.json())
+            .then(result => {
+                this.setNextEpisodeID(result.internalID, result.season, result.episode, result.foundEpisode);
+            });
+        });
     }
 
     displayNextEpisodeBox() {
@@ -207,7 +222,7 @@ export default class VideoComponent extends React.Component {
         this.loadSources(true).then(() => {
             this.loadSubtitles();
             if (this.onChangeEpisode != undefined) {
-                this.onChangeEpisode();
+                this.onChangeEpisode(this.state.nextEpisode.season, this.state.nextEpisode.episode, this.internalID);
             }
         });
         this.setState({nextEpisode: nextEpisode});
@@ -640,12 +655,16 @@ export default class VideoComponent extends React.Component {
         this.setState({title: title});
     }
 
-    setEpisode(episode) {
-        this.setState({episode: episode});
+    setEpisode(episode, cb) {
+        this.setState({episode: episode}, () => {
+            cb();
+        });
     }
 
-    setSeason(season) {
-        this.setState({season: season});
+    setSeason(season, cb) {
+        this.setState({season: season}, () => {
+            cb();
+        });
     }
 
     render() {
