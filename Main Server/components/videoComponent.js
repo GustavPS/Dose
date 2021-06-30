@@ -444,6 +444,9 @@ export default class VideoComponent extends React.Component {
         if (subtitle == undefined) {
             return;
         }
+        // Fix to prevent subs getting "stuck" when seeking
+        this.video.textTracks[0].mode = 'hidden';
+
         if (subtitle.id === -1) {
             this.video.textTracks[0].mode = 'hidden';
             stateSubs.activeSubtitle = subtitle;
