@@ -115,7 +115,9 @@ class MovieLibrary extends Library {
             let fileName = pathLib.basename(path);
             let language = null;
             for (let lang of LANGUAGE_LIST) {
-                if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
+                let foundLanguage = fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName) ||
+                                    fileName.toString().toLocaleLowerCase().includes('.' + lang.shortName + ".");
+                if (foundLanguage) {
                     language = lang.longName;
                     break;
                 }
