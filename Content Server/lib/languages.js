@@ -25,6 +25,14 @@ const LANGUAGES = [
     }, {
         shortName: 'unknown',
         longName: 'Unknown'
+    },
+    {
+        shortName: 'sv',
+        longName: 'Swedish'
+    },
+    {
+        shortName: 'en',
+        longName: 'English'
     }
 ];
 
