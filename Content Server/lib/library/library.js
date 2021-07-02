@@ -3,6 +3,7 @@ const pathLib = require('path');
 const fs = require('fs');
 const glob = require('glob');
 const Resolution = require('../resolution');
+const LANGUAGE_LIST = require('../../lib/languages');
 
 
 const MOVIE_FORMATS = [
@@ -295,6 +296,28 @@ class Library {
             possibleReleaseYear: possibleReleaseYear,
             parentFolder: parentFolder
         }
+    }
+
+    getSubtitleInfo(fileName) {
+        let subtitleInfo = {
+            language: "Unknown",
+            extracted: false,
+            synced: false
+        }
+        subtitleInfo.synced = fileName.toString().toLocaleLowerCase().includes('_synced_') ||
+                              fileName.toString().toLocaleLowerCase().includes('.synced.');
+        subtitleInfo.extracted = fileName.toString().toLocaleLowerCase().includes('_extracted_') ||
+                                 fileName.toString().toLocaleLowerCase().includes('.extracted.');
+
+        for (let lang of LANGUAGE_LIST) {
+            let foundLanguage = fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName) ||
+                                fileName.toString().toLocaleLowerCase().includes('.' + lang.shortName + ".");
+            if (foundLanguage) {
+                subtitleInfo.language = lang.longName;
+                break;
+            }
+        }
+        return subtitleInfo;
     }
 }
 

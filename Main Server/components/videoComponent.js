@@ -383,8 +383,17 @@ export default class VideoComponent extends React.Component {
         } else if (this.state.settings.subtitleControl) {
             for (let subtitle of this.state.subtitles.availableSubtitles) {
                 elements.push(
-                    <a href="#" key={this.elementCounter} className={this.state.subtitles.activeSubtitle != undefined && subtitle.id === this.state.subtitles.activeSubtitle.id ? Styles.active : ''} onClick={() => this.changeSubtitle(subtitle)}>{subtitle.language}</a>
+                    <a href="#" style={{position: 'relative'}} key={this.elementCounter} className={this.state.subtitles.activeSubtitle != undefined && subtitle.id === this.state.subtitles.activeSubtitle.id ? Styles.active : ''} onClick={() => this.changeSubtitle(subtitle)}>
+                        {subtitle.extracted && 
+                            <img className={Styles.subtitleVariant} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/check.png`} />
+                        }
+                        {!subtitle.extracted && subtitle.synced &&
+                            <img className={Styles.subtitleVariant} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/hourglass.png`} />
+                        }
+                        {subtitle.language}
+                        </a>
                 )
+                elements.push(<hr style={{margin: '0', padding: '0'}}></hr>)
                 this.elementCounter++;
             }
 
