@@ -11,7 +11,19 @@ const fetcher = url =>
   fetch(url)
     .then(r => {
       return r.json().then(result => {
-        return result;
+        console.log(result)
+        console.log(result["servers"].length)
+        if(result["servers"].length != 1) {
+          return result;
+        } else {
+          let server = result["servers"][0]
+          cookie.set('server', JSON.stringify({
+            id: server.server_id,
+            name: server.server_name,
+            ip: server.server_ip
+          }));
+          Router.push(`/server/${server.server_id}`);
+        }
       });
     }
   );
