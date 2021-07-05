@@ -20,7 +20,7 @@ export default class VideoComponent extends React.Component {
         this.elementCounter = 0;
         // Function to call on time change events
         this.onTimeChange = props.onTimeChange;
-        this.getNextEpisodeID = props.getNextEpisodeID;
+        //this.getNextEpisodeID = props.getNextEpisodeID;
 
         this.onChangeEpisode = props.onChangeEpisode;
 
@@ -52,13 +52,17 @@ export default class VideoComponent extends React.Component {
             nextEpisode: this.type === 'serie' ? {
                 timeLeft: null,
                 internalID: null,
-                show: false
+                season: null,
+                episode: null,
+                show: false,
+                foundNextEpisode: false
             } : undefined,
             videoPaused: true,
             isBuffering: true,
             title: props.title,
             season: props.season,
-            episode: props.episode
+            episode: props.episode,
+            show: props.show
         }
 
         this.enterFullScreen      = this.enterFullScreen.bind(this);
@@ -77,8 +81,7 @@ export default class VideoComponent extends React.Component {
         this.showControls         = this.showControls.bind(this);
         this.setNextEpisodeID     = this.setNextEpisodeID.bind(this);
         this.playNextEpisode      = this.playNextEpisode.bind(this);
-
-
+        this.getNextEpisodeID     = this.getNextEpisodeID.bind(this);
     }
 
     componentWillUnmount() {
@@ -110,6 +113,10 @@ export default class VideoComponent extends React.Component {
         this.loadSubtitles();
         this.loadAudioStreams();
 
+        if (this.type === 'serie') {
+            this.getNextEpisodeID();
+        }
+
 
         this.video.ontimeupdate = () => {
             if (!this.video.isSeeking) {
@@ -117,11 +124,7 @@ export default class VideoComponent extends React.Component {
                 document.getElementById('seekbar').value = percentage
                 this.updateSeekTime();
                 
-                if (this.type === 'serie' && this.video.getRealWatchtime() >= this.video.realDuration - 40) {
-                    // If we havn't gotten the ID for the next episode yet, call the function from the parent
-                    if (this.getNextEpisodeID != undefined && !this.state.nextEpisode.show) {
-                        this.getNextEpisodeID(this.setNextEpisodeID);
-                    }
+                if (this.type === 'serie' && this.video.getRealWatchtime() >= this.video.realDuration - 40 && this.state.nextEpisode.foundNextEpisode) {
                     this.displayNextEpisodeBox();
                 }
             }
@@ -167,11 +170,30 @@ export default class VideoComponent extends React.Component {
         this.togglePlay();
     }
 
-    setNextEpisodeID(id) {
-        console.log("ID: " + id)
+    setNextEpisodeID(id, season, episode, foundNextEpisode) {
+        console.log(`Found next episode: ${foundNextEpisode}, episodeID: ${id}`);
         let nextEpisode = this.state.nextEpisode;
-        nextEpisode.internalID = id;
+
+        if (foundNextEpisode) {
+            nextEpisode.internalID = id;
+            nextEpisode.foundNextEpisode = true;
+            nextEpisode.season = season;
+            nextEpisode.episode = episode;
+        } else {
+            nextEpisode.foundNextEpisode = false;
+        }
         this.setState({nextEpisode: nextEpisode});
+    }
+
+    getNextEpisodeID() {
+        validateServerAccess(this.server, (serverToken) => {
+            console.log("EP: " + this.state.episode)
+            fetch(`${this.server.server_ip}/api/series/getNextEpisode?serie_id=${this.state.show}&season=${this.state.season}&episode=${this.state.episode}&token=${serverToken}`)
+            .then(r => r.json())
+            .then(result => {
+                this.setNextEpisodeID(result.internalID, result.season, result.episode, result.foundEpisode);
+            });
+        });
     }
 
     displayNextEpisodeBox() {
@@ -193,13 +215,14 @@ export default class VideoComponent extends React.Component {
         nextEpisode.timeLeft = null;
         nextEpisode.internalID = null;
         nextEpisode.show = false;
+        nextEpisode.foundNextEpisode = false;
         this.video.watchTimeOffset = 0;
 
         await this.loadAudioStreams();
         this.loadSources(true).then(() => {
             this.loadSubtitles();
             if (this.onChangeEpisode != undefined) {
-                this.onChangeEpisode();
+                this.onChangeEpisode(this.state.nextEpisode.season, this.state.nextEpisode.episode, this.internalID);
             }
         });
         this.setState({nextEpisode: nextEpisode});
@@ -360,8 +383,17 @@ export default class VideoComponent extends React.Component {
         } else if (this.state.settings.subtitleControl) {
             for (let subtitle of this.state.subtitles.availableSubtitles) {
                 elements.push(
-                    <a href="#" key={this.elementCounter} className={this.state.subtitles.activeSubtitle != undefined && subtitle.id === this.state.subtitles.activeSubtitle.id ? Styles.active : ''} onClick={() => this.changeSubtitle(subtitle)}>{subtitle.language}</a>
+                    <a href="#" style={{position: 'relative'}} key={this.elementCounter} className={this.state.subtitles.activeSubtitle != undefined && subtitle.id === this.state.subtitles.activeSubtitle.id ? Styles.active : ''} onClick={() => this.changeSubtitle(subtitle)}>
+                        {subtitle.extracted && 
+                            <img className={Styles.subtitleVariant} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/check.png`} />
+                        }
+                        {!subtitle.extracted && subtitle.synced &&
+                            <img className={Styles.subtitleVariant} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/hourglass.png`} />
+                        }
+                        {subtitle.language}
+                        </a>
                 )
+                elements.push(<hr style={{margin: '0', padding: '0'}}></hr>)
                 this.elementCounter++;
             }
 
@@ -421,6 +453,9 @@ export default class VideoComponent extends React.Component {
         if (subtitle == undefined) {
             return;
         }
+        // Fix to prevent subs getting "stuck" when seeking
+        this.video.textTracks[0].mode = 'hidden';
+
         if (subtitle.id === -1) {
             this.video.textTracks[0].mode = 'hidden';
             stateSubs.activeSubtitle = subtitle;
@@ -632,12 +667,16 @@ export default class VideoComponent extends React.Component {
         this.setState({title: title});
     }
 
-    setEpisode(episode) {
-        this.setState({episode: episode});
+    setEpisode(episode, cb) {
+        this.setState({episode: episode}, () => {
+            cb();
+        });
     }
 
-    setSeason(season) {
-        this.setState({season: season});
+    setSeason(season, cb) {
+        this.setState({season: season}, () => {
+            cb();
+        });
     }
 
     render() {

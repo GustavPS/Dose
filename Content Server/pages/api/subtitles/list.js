@@ -15,14 +15,14 @@ export default (req, res) => {
         }
     
         if (type == 'movie') {
-            db.any('SELECT id, language FROM subtitle WHERE movie_id = $1', [contentID]).then(subtitles => {
+            db.any('SELECT id, language, synced, extracted FROM subtitle WHERE movie_id = $1', [contentID]).then(subtitles => {
                 res.status(200).json({
                     subtitles: subtitles
                 });
                 resolve();
             })
         } else if (type == 'serie') {
-            db.any('SELECT id, language FROM serie_episode_subtitle WHERE episode_id = $1', [contentID]).then(subtitles => {
+            db.any('SELECT id, language, synced, extracted FROM serie_episode_subtitle WHERE episode_id = $1', [contentID]).then(subtitles => {
                 res.status(200).json({
                     subtitles: subtitles
                 });

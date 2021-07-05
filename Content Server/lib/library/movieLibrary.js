@@ -6,9 +6,6 @@ var ffmpeg = require('fluent-ffmpeg');
 var AsyncLock = require('async-lock');
 const lock = require('../globalLock');
 
-const LANGUAGE_LIST = require('../../lib/languages');
-
-
 class MovieLibrary extends Library {
 
     /**
@@ -113,13 +110,8 @@ class MovieLibrary extends Library {
     addSubtitleIfNotSaved(movieName, path, parentFolder) {
         return new Promise(async (resolve, reject) => {
             let fileName = pathLib.basename(path);
-            let language = null;
-            for (let lang of LANGUAGE_LIST) {
-                if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
-                    language = lang.longName;
-                    break;
-                }
-            }
+            let subtitleInfo = this.getSubtitleInfo(fileName);
+
             // TODO: There is a bug here, if multiple movies is in the same folder we will add the subtitle for all movies
             // However, having multiple movies in the same folder is not supported, but if that is changed
             // this have to be fixed
@@ -129,8 +121,13 @@ class MovieLibrary extends Library {
                     if (movieFolder === parentFolder) {
                         let result = await db.any('SELECT * FROM subtitle WHERE movie_id = $1 AND path = $2 AND library_id = $3', [movie.id, path, movie.library]);
                         if (result.length === 0) {
-                            console.log(` > Saving subtitle for ${movieName} in library ${movie.library}`);
-                            await db.none('INSERT INTO subtitle (path, movie_id, library_id, language) VALUES ($1, $2, $3, $4)', [path, movie.id, movie.library, language]);
+                            console.log(` > Saving subtitle for ${movieName} in library ${movie.library}. Language: ${subtitleInfo.language}`);
+                            await db.none('INSERT INTO subtitle (path, movie_id, library_id, language, synced, extracted) VALUES ($1, $2, $3, $4, $5, $6)',[path,
+                                movie.id,
+                                movie.library,
+                                subtitleInfo.language,
+                                subtitleInfo.synced,
+                                subtitleInfo.extracted]);
                         }
                     }
     

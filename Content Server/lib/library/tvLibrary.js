@@ -4,9 +4,6 @@ const SerieMetadata = require('../metadata/tvMetadata');
 const db = require('../db');
 const lock = require('../globalLock');
 
-const LANGUAGE_LIST = require('../../lib/languages');
-
-
 const MOVIE_FORMATS = [
     'mp4', 'ts', 'mkv', 'webm', 'avi', 'm4v'
 ];
@@ -97,20 +94,20 @@ class TvLibrary extends Library {
     addSubtitleIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber) {
         return new Promise(async (resolve, reject) => {
             let fileName = pathLib.basename(path);
-            let language = null;
-            for (let lang of LANGUAGE_LIST) {
-                if (fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName)) {
-                    language = lang.longName;
-                    break;
-                }
-            }
+            let subtitleInfo = this.getSubtitleInfo(fileName);
+
             await db.one('SELECT * FROM serie_episode WHERE serie_id = (SELECT id FROM serie WHERE path = $1 AND library = $2) AND episode = $3 AND season_number = $4', [showPath, this.id, episodeNumber, seasonNumber])
             .then(episode => {
                 db.any('SELECT * FROM serie_episode_subtitle WHERE episode_id = $1 AND path = $2 AND library_id = $3', [episode.id, path, this.id])
                 .then(async (result) => {
                     if (result.length === 0) {
-                        console.log(` > Saving subtitle for ${showName} in library ${this.name}`);
-                        await db.none('INSERT INTO serie_episode_subtitle (path, episode_id, library_id, language) VALUES ($1, $2, $3, $4)', [path, episode.id, this.id, language]);
+                        console.log(` > Saving subtitle for ${showName} Season ${seasonNumber} Episode ${episodeNumber} in library ${this.name}. Language: ${subtitleInfo.language}`);
+                        await db.none('INSERT INTO serie_episode_subtitle (path, episode_id, library_id, language, synced, extracted) VALUES ($1, $2, $3, $4, $5, $6)', [path,
+                            episode.id,
+                            this.id,
+                            subtitleInfo.language,
+                            subtitleInfo.synced,
+                            subtitleInfo.extracted]);
                     }
                     resolve();
                 });
