@@ -16,6 +16,7 @@ export default (req, res) => {
     return new Promise(async (resolve) => {
         res.setHeader('Access-Control-Allow-Origin', "*");
         res.setHeader('Access-Control-Allow-Headers', "*");
+        res.setHeader('content-type', 'text/plain; charset=utf-8');
 
         let token = req.query.token;
         if (!validateUser(token)) {
