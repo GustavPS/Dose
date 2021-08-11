@@ -162,7 +162,7 @@ class TvLibrary extends Library {
                 }
             }).catch(err => {
                 console.log("TRANSACTION ERROR in addSeasonIfNotSaved");
-                console.log(error);
+                console.log(err);
                 reject();
             });
         });
@@ -236,7 +236,7 @@ class TvLibrary extends Library {
                 }
             }).catch(err => {
                 console.log("TRANSACTION ERROR in addEpisodeIfNotSaved");
-                console.log(error);
+                console.log(err);
                 reject();
             });
         });
