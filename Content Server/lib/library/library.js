@@ -253,7 +253,6 @@ class Library {
             name = name.replace(/\./g, ' ');
             name = name.trim();
         }
-        name = name.split(".").join("");
         return name;
     }
 

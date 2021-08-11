@@ -10,13 +10,13 @@ class MovieMetadata extends Metadata {
 
     getMetadataByYear(movieName, year=null) {
         return new Promise((resolve, reject) => {
-            fetch(`${this.getAPIUrl()}/search/movie?api_key=${this.getAPIKey()}&language=en-US&query=${movieName}&year=${year}&page=1&include_adult=true`)
+            fetch(encodeURI(`${this.getAPIUrl()}/search/movie?api_key=${this.getAPIKey()}&language=en-US&query=${movieName}&year=${year}&page=1&include_adult=true`))
             .then(res => res.json())
             .then(json => {
                 if (json.total_results == 0) {
                     reject("Not found");
                 } else {
-                    fetch(`${this.getAPIUrl()}/movie/${json.results[0].id}?api_key=${this.getAPIKey()}&language=en-US`)
+                    fetch(encodeURI(`${this.getAPIUrl()}/movie/${json.results[0].id}?api_key=${this.getAPIKey()}&language=en-US`))
                     .then(res => res.json())
                     .then(metadata => {
                         this.getImages(json.results[0].id)
@@ -100,7 +100,7 @@ class MovieMetadata extends Metadata {
 
     getImages(movieID) {
         return new Promise((resolve, reject) => {
-            fetch(`${this.getAPIUrl()}/movie/${movieID}/images?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`)
+            fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/images?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`))
             .then(res => res.json())
             .then(images => {
                 resolve(images);
@@ -110,7 +110,7 @@ class MovieMetadata extends Metadata {
 
     getTrailer(movieID) {
         return new Promise((resolve, reject) => {
-            fetch(`${this.getAPIUrl()}/movie/${movieID}/videos?api_key=${this.getAPIKey()}`)
+            fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/videos?api_key=${this.getAPIKey()}`))
             .then(res => res.json())
             .then(videos => {
                 for (let video of videos.results) {

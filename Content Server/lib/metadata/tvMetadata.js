@@ -9,7 +9,7 @@ class TvMetadata extends Metadata {
 
     getImages(serieID) {
         return new Promise((resolve, reject) => {
-            fetch(`${this.getAPIUrl()}/tv/${serieID}/images?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`)
+            fetch(encodeURI(`${this.getAPIUrl()}/tv/${serieID}/images?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`))
             .then(res => res.json())
             .then(images => {
                 resolve(images);
@@ -131,7 +131,7 @@ class TvMetadata extends Metadata {
 
     getSeasonMetadata(serieTmdbID, season) {
         return new Promise((resolve, reject) => {
-            fetch(`${this.getAPIUrl()}/tv/${serieTmdbID}/season/${season}?api_key=${this.getAPIKey()}&language=en-US`)
+            fetch(encodeURI(`${this.getAPIUrl()}/tv/${serieTmdbID}/season/${season}?api_key=${this.getAPIKey()}&language=en-US`))
             .then(res => res.json())
             .then(json => {
                 if (!json.success && json.status_code == 34) {
@@ -149,7 +149,7 @@ class TvMetadata extends Metadata {
 
     getEpisodeMetadata(serieTmdbID, season, episode) {
         return new Promise((resolve, reject) => {
-            fetch(`${this.getAPIUrl()}/tv/${serieTmdbID}/season/${season}/episode/${episode}?api_key=${this.getAPIKey()}&language=en-US`)
+            fetch(encodeURI(`${this.getAPIUrl()}/tv/${serieTmdbID}/season/${season}/episode/${episode}?api_key=${this.getAPIKey()}&language=en-US`))
             .then(res => res.json())
             .then(json => {
                 if (!json.success && json.status_code == 34) {
@@ -168,7 +168,7 @@ class TvMetadata extends Metadata {
     getShowMetadata(serieName) {
         return new Promise((resolve, reject) => {
             // Search for the show by name
-            fetch(`${this.getAPIUrl()}/search/tv?api_key=${this.getAPIKey()}&language=en-US&query=${serieName}&page=1&include_adult=true`)
+            fetch(encodeURI(`${this.getAPIUrl()}/search/tv?api_key=${this.getAPIKey()}&language=en-US&query=${serieName}&page=1&include_adult=true`))
             .then(res => res.json())
             .then(json => {
                 if (json.total_results == 0) {
@@ -177,7 +177,7 @@ class TvMetadata extends Metadata {
                 }
 
                 // Get the details for the show
-                fetch(`${this.getAPIUrl()}/tv/${json.results[0].id}?api_key=${this.getAPIKey()}&language=en-US`)
+                fetch(encodeURI(`${this.getAPIUrl()}/tv/${json.results[0].id}?api_key=${this.getAPIKey()}&language=en-US`))
                 .then(res => res.json())
                 .then(metadata => {
                     // Get all the images for the show
