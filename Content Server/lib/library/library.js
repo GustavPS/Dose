@@ -265,6 +265,12 @@ class Library {
                 }
             });
 
+            if (trailer == null || trailer == undefined || trailer == "") {
+                shouldDownload = false;
+                resolve(false);
+                return;
+            }
+
             if (shouldDownload) {
                 let path = pathLib.join(fullPath, `${name}_downloaded_trailer_not_cropted.mp4`);
                 const info = await ytdl.getInfo(trailer);
