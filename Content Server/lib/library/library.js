@@ -338,7 +338,7 @@ class Library {
                             console.log(` > Removing black bars from trailer, using crop ${maxKey}`);
                             let cropProc = ffmpeg(path)
                             .inputOptions([
-                                '-ss 5'
+                                '-ss 10'
                             ])
                             .outputOptions([
                                 `-vf crop=${maxKey}`,
