@@ -203,7 +203,11 @@ class MovieMetadata extends Metadata {
             }
 
             await db.tx(async t => {
+                let addedActors = [];
                 for (const actor of actors) {
+                    if(addedActors.includes(actor.id)) {
+                        continue;
+                    }
                     // Check if we have already saved this actor
                     let actorInDb = await t.any('SELECT * FROM actor WHERE id = $1', [actor.id]);
                     // If we haven't saved the actor, save it
@@ -212,6 +216,7 @@ class MovieMetadata extends Metadata {
                     }
                     // Save the actor to the movie
                     await t.none("INSERT INTO movie_actor (actor_id, movie_id, character_name, order_in_credit) VALUES ($1, $2, $3, $4)", [actor.id, internalMovieID, actor.character, actor.order]);
+                    addedActors.push(actor.id);
                 }
             });
 

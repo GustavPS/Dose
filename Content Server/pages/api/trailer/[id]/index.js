@@ -24,6 +24,10 @@ export default (req, res) => {
         console.log("Only movies supported");
         res.status(404).end();
       }
+      if (file == false) {
+        res.end(err);
+        return;
+      }
 
       fs.stat(file, function (err, stats) {
         if (err) {
@@ -68,7 +72,7 @@ function getMovieTrailerPath(movieID) {
             `, [movieID]).then((result) => {
               resolve(`${result.basepath}${result.subpath}`)
       }).catch(error => {
-        reject();
+        reject(false);
       });
   });
 }

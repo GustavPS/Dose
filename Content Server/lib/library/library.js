@@ -300,6 +300,12 @@ class Library {
                             }
                         }
                     });
+                    download.on('error', err => {
+                        console.log(err);
+                        download.destroy();
+                        resolve(false);
+                        return;
+                    });
 
                     download.on('end', () => {
                         let proc = ffmpeg(path).inputOptions([

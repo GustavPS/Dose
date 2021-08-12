@@ -14,7 +14,6 @@ export default (req, res) => {
       res = cors(res);
       let token = req.query.token;
       const needTrailer = req.query.trailer == "true";
-      console.log(needTrailer);
       if (!validateUser(token)) {
           res.status(403).end();
           resolve();
@@ -27,7 +26,6 @@ export default (req, res) => {
       } else {
         movies = await db.any("SELECT id FROM movie");
       }
-      console.log(movies);
       if (movies.length === 0) {
         const response = {
             status: 'fail'
