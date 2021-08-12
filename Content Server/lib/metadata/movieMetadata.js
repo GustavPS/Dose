@@ -21,44 +21,49 @@ class MovieMetadata extends Metadata {
                     .then(metadata => {
                         this.getActors(json.results[0].id)
                         .then(actors => {
-                            this.getImages(json.results[0].id)
-                            .then(images => {
-                                let active = true;
-                                let foundPrefferedLanguage = false;
-                                let count = 0;
-                                let prefferedLanguageIndex = -1;
-                                for (let image of images.backdrops) {
-                                    if (image.iso_639_1 == 'en' && !foundPrefferedLanguage) {
-                                        image.active = true;
-                                        foundPrefferedLanguage = true;
-                                        prefferedLanguageIndex = count;
-                                        active = false;
-                                    } else {
+                            this.getRecommended(json.results[0].id)
+                            .then(recommendations => {
+                                this.getImages(json.results[0].id)
+                                .then(images => {
+                                    let active = true;
+                                    let foundPrefferedLanguage = false;
+                                    let count = 0;
+                                    let prefferedLanguageIndex = -1;
+                                    for (let image of images.backdrops) {
+                                        if (image.iso_639_1 == 'en' && !foundPrefferedLanguage) {
+                                            image.active = true;
+                                            foundPrefferedLanguage = true;
+                                            prefferedLanguageIndex = count;
+                                            active = false;
+                                        } else {
+                                            image.active = active;
+                                            active = false;
+                                        }
+                                        count++;
+                                    }
+                                    if (foundPrefferedLanguage && images.backdrops.length > 0 && prefferedLanguageIndex != 0) {
+                                        images.backdrops[0].active = false;
+                                    }
+                                    active = true;
+                                    for (let image of images.posters) {
                                         image.active = active;
                                         active = false;
                                     }
-                                    count++;
-                                }
-                                if (foundPrefferedLanguage && images.backdrops.length > 0 && prefferedLanguageIndex != 0) {
-                                    images.backdrops[0].active = false;
-                                }
-                                active = true;
-                                for (let image of images.posters) {
-                                    image.active = active;
-                                    active = false;
-                                }
-    
-                                this.getTrailer(json.results[0].id).then(trailer => {
-                                    let result = {
-                                        metadata: metadata,
-                                        images: images,
-                                        actors: actors,
-                                        trailer: trailer,
-                                        year: year
-                                    }
-                                    resolve(result);
+        
+                                    this.getTrailer(json.results[0].id).then(trailer => {
+                                        let result = {
+                                            metadata: metadata,
+                                            images: images,
+                                            actors: actors,
+                                            recommendations: recommendations,
+                                            trailer: trailer,
+                                            year: year
+                                        }
+                                        resolve(result);
+                                    });
                                 });
                             });
+
                         });
 
                     });
@@ -115,7 +120,6 @@ class MovieMetadata extends Metadata {
 
     getActors(movieID) {
         return new Promise((resolve, reject) => {
-            console.log(movieID);
             fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/credits?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`))
             .then(res => res.json())
             .then(credits => credits.cast)
@@ -130,6 +134,45 @@ class MovieMetadata extends Metadata {
                 }
                 resolve(actors);
             });
+        });
+    }
+
+    getRecommended(movieID) {
+        return new Promise(async (resolve, reject) => {
+            const request = (page, list=[]) => {
+                return new Promise((resolve) => {
+                    fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/recommendations?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null&page=${page}`))
+                    .then(res => res.json())
+                    .then(result => {
+                        const pages = result.total_pages;
+                        const recommendations = result.results;
+                        //list.push.apply(list, recommendations);
+                        for(const recommendation of recommendations) {
+                            list.push(recommendation.id);
+                        }
+                        if (page+1 > pages) {
+                            resolve(list);
+                        } else {
+                            resolve(request(page+1, list));
+                        }
+                    });
+                });
+            };
+
+            const recommendations = await request(1);
+            console.log(recommendations.length);
+            const existingMovies = await this.getMoviesByTmdbIds(recommendations);
+            resolve(existingMovies);
+        });
+    }
+
+
+    getMoviesByTmdbIds(IDs) {
+        return new Promise(async (resolve) => {
+            console.log(IDs);
+            const result = await db.any("SELECT movie_id FROM movie_metadata WHERE tmdb_id = ANY ($1)", [IDs]);
+            console.log(result);
+            resolve(result);
         });
     }
 
@@ -155,7 +198,7 @@ class MovieMetadata extends Metadata {
      * @param {Object} metadata 
      * @param {Integer} internalMovieID 
      */
-    async insertMetadata(metadata, images, actors, trailer, internalMovieID) {
+    async insertMetadata(metadata, images, actors, recommendations, trailer, internalMovieID) {
         return new Promise(async (resolve, reject) => {
             // If the metadata doesn't have any genre, add one (All movies need to have a genre)
             if (metadata.genres.length === 0) {
@@ -176,7 +219,7 @@ class MovieMetadata extends Metadata {
 
             }
             // SAVE METADATA
-            await db.none("INSERT INTO movie_metadata (movie_id, title, overview, poster, release_date, runtime, popularity, backdrop, added_date, trailer, run_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)", [
+            await db.none("INSERT INTO movie_metadata (movie_id, title, overview, poster, release_date, runtime, popularity, backdrop, added_date, trailer, run_time, tmdb_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", [
                 internalMovieID,
                 metadata.title,
                 metadata.overview,
@@ -187,7 +230,8 @@ class MovieMetadata extends Metadata {
                 metadata.backdrop_path,
                 `${Date.now()}`,
                 trailer,
-                metadata.runtime === -1 ? -1 : metadata.runtime * 60 // insert -1 if runtime is -1 (when we use dummy metadata)
+                metadata.runtime === -1 ? -1 : metadata.runtime * 60, // insert -1 if runtime is -1 (when we use dummy metadata)
+                metadata.id
             ]);
 
 
@@ -218,6 +262,16 @@ class MovieMetadata extends Metadata {
                     await t.none("INSERT INTO movie_actor (actor_id, movie_id, character_name, order_in_credit) VALUES ($1, $2, $3, $4)", [actor.id, internalMovieID, actor.character, actor.order]);
                     addedActors.push(actor.id);
                 }
+                return;
+            });
+
+            // Save recommendations
+
+            await db.tx(t => {
+                for (const movie of recommendations) {
+                    t.none("INSERT INTO movie_recommended (movie_id_1, movie_id_2) VALUES ($1, $2)", [internalMovieID, movie.movie_id]);
+                }
+                return;
             });
 
             // SAVE IMAGES

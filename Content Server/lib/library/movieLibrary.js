@@ -83,7 +83,7 @@ class MovieLibrary extends Library {
                         }
 
                         console.log(` > Saving metadata for movie '${movieName}' ${logYearInfo}`);
-                        this.metadata.insertMetadata(result.metadata, result.images, result.actors,
+                        this.metadata.insertMetadata(result.metadata, result.images, result.actors, result.recommendations,
                                                         result.trailer, internalMovieID).then(() => {
                                 console.log(` > Downloading trailer for movie '${movieName}' ${logYearInfo}`)
                                 this.downloadTrailer(result.trailer, movieName, path)
