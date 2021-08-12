@@ -716,7 +716,7 @@ export default class VideoComponent extends React.Component {
                 }
 
                 <div className={Styles.overlay} id="overlay">
-                    <div className={Styles.back} onClick={() => Router.reload(window.location.pathname)}></div>
+                    <div className={Styles.back} onClick={() => Router.back()}></div>
                     {this.type === 'serie' &&
                         <>
                             <h1>{this.state.title}</h1>

@@ -104,6 +104,10 @@ export default function Home(props) {
         setMetadata(meta);
         console.log(meta.trailer);
         setTrailer(meta.trailer);
+
+        if (router.query.autoPlay) {
+          videoRef.current.show();
+        }
       }).then(() => {
         setLoaded(true)
       });

@@ -32,6 +32,7 @@ const main = (props) => {
     const [newlyAddedMovies, setNewlyAddedMovies] = useState([]);
     const [newlyAddedShows, setNewlyAddedShows] = useState([]);
     const [newlyAddedEpisodes, setNewlyAddedEpisodes] = useState([]);
+    const [recommendedMovie, setRecommendedMovie] = useState([]);
     let loading = 0;
     const [loaded, setLoaded] = useState(false)
 
@@ -258,6 +259,24 @@ const main = (props) => {
 
     useEffect(() => {
         validateServerAccess(server, (serverToken) => {
+            // Get recommended video (random video right now)
+            fetch(`${server.server_ip}/api/movies/list/random?trailer=true&token=${cookie.get('serverToken')}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then((r) => r.json())
+            .then(result => {
+                console.log(result);
+                if (result.status === 'success') {
+                    setRecommendedMovie(result.movie);
+                } else {
+                    console.log("Error getting recommended movie");
+                }
+            })
+            
+
             // Get all the newest released movies (The slieshow)
             getMovieList(null, 'release_date', 5).then(movies => {
                 movies.reverse();
@@ -448,12 +467,28 @@ const main = (props) => {
         <Layout searchEnabled server={server} serverToken={cookie.get('serverToken')}>
         <Head>
         </Head>
-        <Carousel interval={10000}>
-            {latestMovies}
-        </Carousel>
+
+        <div className={Styles.recommended}>
+            <video  autoPlay={true} loop={true} preload="auto" muted>
+                <source src={`${server.server_ip}/api/trailer/${recommendedMovie["id"]}?type=MOVIE&token=${cookie.get('serverToken')}`}type="video/mp4" />
+            </video>
+            <div className={Styles.recommendedInformation}>
+                <h1>{recommendedMovie["title"]}</h1>
+                <p>{recommendedMovie["overview"]}</p>
+                <div className={Styles.controls}>
+                    <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}?autoPlay=true`}>
+                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/001-play-button.png`} />
+                    </Link>
+                    <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}`}>
+                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/002-information.png`} />
+                    </Link>
+                </div>
+            </div>
+        </div>
+            
         <br></br>
         <div style={{color: 'white'}}>
-            <Container fluid>
+            <Container fluid className={Styles.contentRows}>
                 {ongoingMovies.length > 0 &&
                     <>
                         <h2 style={{textTransform: 'capitalize'}}>Pågående filmer</h2>  

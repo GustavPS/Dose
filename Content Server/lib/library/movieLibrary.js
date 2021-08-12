@@ -82,11 +82,21 @@ class MovieLibrary extends Library {
                             logYearInfo = `(Unknown year)`;
                         }
 
-                        console.log(` > Saving metadata for movie '${movieName}' ${logYearInfo}`);
-                        this.metadata.insertMetadata(result.metadata, result.images,
-                                                     result.trailer, internalMovieID).then(() => {
-                            resolve();
+                        console.log(` > Downloading trailer for movie '${movieName}' ${logYearInfo}`)
+                        this.downloadTrailer(result.trailer, movieName, path)
+                        .then((trailerPath) => {
+                            if (trailerPath != false) {
+                                db.none('UPDATE movie SET trailer = $1 WHERE id = $2', [trailerPath, internalMovieID])
+                            }
+                            
+                            console.log(` > Saving metadata for movie '${movieName}' ${logYearInfo}`);
+                            this.metadata.insertMetadata(result.metadata, result.images,
+                                                         result.trailer, internalMovieID).then(() => {
+                                resolve();
+                            });
                         });
+
+
                     }).catch(async (error) => {
                         console.log(` > Couldn't find any metadata for movie (using dummy data) '${movieName}'`);
                         let images = {
@@ -167,6 +177,11 @@ class MovieLibrary extends Library {
             }
             return;
         }
+
+        if (this.isFileTrailer(movieName)) {
+            return;
+        }
+
         let t = this;
 	    lock.enter(async function (token) {
             if (type === 'MOVIE') {

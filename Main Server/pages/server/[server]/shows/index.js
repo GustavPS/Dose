@@ -237,7 +237,7 @@ export default (props) => {
             if (genre.movieElements.length != 0) {
                 render.push(
                     <>
-                        <h2 style={{textTransform: 'capitalize'}}>{genre.name}</h2>    
+                        <h2 className={Styles.heading} style={{textTransform: 'capitalize'}}>{genre.name}</h2>    
                     <div className={Styles.movieRow}>
                         <div id={genre.name + "Movies"} className={Styles.scrollable}>
                             {genre.movieElements}

@@ -4,6 +4,10 @@ const fs = require('fs');
 const glob = require('glob');
 const Resolution = require('../resolution');
 const LANGUAGE_LIST = require('../../lib/languages');
+const ytdl = require('ytdl-core');
+var ffmpeg = require('fluent-ffmpeg');
+const eol = require("eol")
+
 
 
 const MOVIE_FORMATS = [
@@ -14,6 +18,7 @@ const SUB_FORMATS = [
 ]
 
 var AsyncLock = require('async-lock');
+const { rejects } = require('assert');
 
 class Library {
     constructor(name, path, id, metadata) {
@@ -243,6 +248,106 @@ class Library {
     }
     removeEntry(path) {
         throw('removeEntry must be implemented.');
+    }
+
+    downloadTrailer(trailer, name, savePath) {
+        let folderPath = pathLib.dirname(savePath);
+        let fullPath = pathLib.join(this.path, folderPath);
+        return new Promise(async (resolve) => {
+            let shouldDownload = true;
+            // Don't download if we have already downloaded the trailer
+            fs.readdirSync(fullPath).forEach(file => {
+                console.log(file);
+                if (file.includes("_downloaded_trailer") && file.includes(".mp4")) {
+                    shouldDownload = false;
+                    resolve(false);
+                    return;
+                }
+            });
+
+            if (shouldDownload) {
+                let path = pathLib.join(fullPath, `${name}_downloaded_trailer_not_cropted.mp4`);
+                const info = await ytdl.getInfo(trailer);
+                const download = ytdl("https://www.youtube.com/watch?v=" + trailer, {quality: 'highestvideo', filter: format => format.container === 'mp4'});
+                download.pipe(fs.createWriteStream(path));
+                download.on('end', () => {
+                    let proc = ffmpeg(path).inputOptions([
+                        '-ss 10'
+                    ]).outputOptions([
+                        '-vframes 10',
+                        '-vf cropdetect',
+                        '-f null'
+                    ]).on('end', (stdout, stderr) => {
+                        const lines = eol.split(stderr);
+                        let crops = {};
+
+                        lines.forEach(line => {
+                            console.log(line);
+                            if (line.includes("crop=")) {
+                                let re = new RegExp("crop=(-?\\d+:-?\\d+:-?\\d+:-?\\d+)", 'gm');
+                                const matches = re.exec(line);
+                                if (matches != null && matches.length >= 2) {
+                                    if (matches[1] in crops) {
+                                        crops[matches[1]]++;
+                                    } else {
+                                        crops[matches[1]] = 1;
+                                    }
+                                }
+                            }
+                        });
+                        let maxKey, maxValue = 0;
+                        for(const [key, value] of Object.entries(crops)) {
+                            if(value > maxValue) {
+                              maxValue = value;
+                              maxKey = key;
+                            }
+                        }
+                        // Remove all "-"
+                        maxKey = maxKey.split('-').join('');
+
+                        console.log(' > Removing black bars from trailer');
+                        let cropProc = ffmpeg(path)
+                        .outputOptions([
+                            `-vf crop=${maxKey}`,
+                            '-c:a copy'
+                        ]).output(pathLib.join(fullPath, `${name}_downloaded_trailer.mp4`))
+                        .on('end', (stdout, stderr) => {
+                            resolve(pathLib.join(folderPath, `${name}_downloaded_trailer.mp4`));
+                            try {
+                                fs.unlinkSync(path)
+                                //file removed
+                              } catch(err) {
+                                console.error(err)
+                              }
+                        })
+                        .on('start', (cmd) => {
+                            console.log(cmd);
+                        })
+                        .on('error', function(err, stdout, stderr) {
+                            console.log(err);
+                            console.log(stdout);
+                            console.log(stderr);
+                            resolve(false);
+                        }).run();
+                    })
+                    .on('start', (cmd) => {
+                        console.log(cmd);
+                    })
+                    .on('error', function(err, stdout, stderr) {
+                        console.log(err);
+                        console.log(stdout);
+                        console.log(stderr);
+                        resolve(false);
+                    })
+                    .output("/dev/null").run();
+
+                });
+            }
+        });
+    }
+
+    isFileTrailer(name) {
+        return name.includes("downloaded_trailer");
     }
 
     nameMatch(name) {
