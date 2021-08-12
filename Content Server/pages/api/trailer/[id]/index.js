@@ -29,6 +29,7 @@ export default (req, res) => {
         if (err) {
           console.log(err);
           res.end(err);
+          return;
         }
         var range = req.headers.range;
         if (!range) {
