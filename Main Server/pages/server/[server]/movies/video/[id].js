@@ -473,24 +473,24 @@ export default function Home(props) {
 
     <h1>Recommended</h1>
     {recommended.length > 0 &&
-                    <>
+                    <div style={{position: 'relative'}}>
                         <div className={Styles.movieRow}>
                             <div id="recommended" className={Styles.scrollable}>
                                 {getRecommended()}
                             </div>
                             {recommended.length * 480 > windowSize.width &&
-                                <>
+                                <div>
                                     <div className={Styles.scrollButton} onClick={() => scrollLeft('recommended')}>
                                         <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
                                     </div>
                                     <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('recommended')}>
                                         <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
                                     </div>
-                                </>
+                                </div>
                             }
                         </div> 
                     <hr className={Styles.divider}></hr>
-                    </> 
+                    </div> 
                 }
     </div>
     </div>

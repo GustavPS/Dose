@@ -187,4 +187,19 @@
     top: 42%;
     transform: translateY(-50%);
     cursor: pointer;
+    z-index: 110;
 }
+
+.scrollable {
+    overflow: auto;
+    overflow-y: visible;
+    -ms-overflow-style: none;
+    white-space: nowrap;
+    scroll-behavior: smooth;
+    position: relative;
+    z-index: 105;
+}
+
+.scrollable::-webkit-scrollbar {
+    display: none;
+  }
