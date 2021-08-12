@@ -237,6 +237,7 @@ class MovieMetadata extends Metadata {
                 actors.push({
                     id: -1,
                     name: 'Unknown',
+                    character: 'Unknown',
                     profile_path: 'no_image',
                     order: 0
                 });

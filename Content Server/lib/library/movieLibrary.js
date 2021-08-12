@@ -106,8 +106,8 @@ class MovieLibrary extends Library {
                         }
                         let metadata = this.metadata.getDummyMetadata(movieName);
                         let trailer = "";
-                        
-                        this.metadata.insertMetadata(metadata, images, trailer, internalMovieID).then(() => {
+                        console.log(internalMovieID);
+                        this.metadata.insertMetadata(metadata, images, [], [], trailer, internalMovieID).then(() => {
                             resolve();
                         });
                     });

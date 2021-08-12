@@ -27,32 +27,41 @@ export default (req, res) => {
         fetch(`${metadataObj.getAPIUrl()}/movie/${metadataID}?api_key=${metadataObj.getAPIKey()}&language=en-US`)
         .then(res => res.json())
         .then(metadata => {
-            // Get all the images for the new metadata
-            metadataObj.getImages(metadataID)
-            .then(images => {
-                let active = true;
-                for (let image of images.backdrops) {
-                    image.active = active;
-                    active = false;
-                }
-                active = true;
-                for (let image of images.posters) {
-                    image.active = active;
-                    active = false;
-                }
+
+            metadataObj.getActors(metadataID)
+            .then(actors => {
+                metadataObj.getRecommended(metadataID)
+                .then(recommendations => {
+                    // Get all the images for the new metadata
+                    metadataObj.getImages(metadataID)
+                    .then(images => {
+                        let active = true;
+                        for (let image of images.backdrops) {
+                            image.active = active;
+                            active = false;
+                        }
+                        active = true;
+                        for (let image of images.posters) {
+                            image.active = active;
+                            active = false;
+                        }
 
 
-                // Get the trailer for the new metadata
-                metadataObj.getTrailer(metadataID).then(async (trailer) => {
-                    // TODO: Remove the old images from the image table
-                    // Remove the old metadata
-                    await db.none('DELETE FROM movie_metadata WHERE movie_id = $1', [movieID]);
-                    await db.none('DELETE FROM movie_category WHERE movie_id = $1', [movieID]);
-                    await db.none('DELETE FROM movie_image WHERE movie_id = $1', [movieID]);
-                    // Inser the new metadata
-                    metadataObj.insertMetadata(metadata, images, trailer, movieID);
-                    res.status(200).json({success: true});
-                    resolve();
+                        // Get the trailer for the new metadata
+                        metadataObj.getTrailer(metadataID).then(async (trailer) => {
+                            // TODO: Remove the old images from the image table
+                            // Remove the old metadata
+                            await db.none('DELETE FROM movie_metadata WHERE movie_id = $1', [movieID]);
+                            await db.none('DELETE FROM movie_category WHERE movie_id = $1', [movieID]);
+                            await db.none('DELETE FROM movie_image WHERE movie_id = $1', [movieID]);
+                            await db.none('DELETE FROM movie_recommended WHERE movie_id_1 = $1 OR movie_id_2 = $1', [movieID]);
+                            await db.none('DELETE FROM movie_actor WHERE movie_id = $1', [movieID]);
+                            // Inser the new metadata
+                            metadataObj.insertMetadata(metadata, images, actors, recommendations, trailer, movieID);
+                            res.status(200).json({success: true});
+                            resolve();
+                        });
+                    });
                 });
             });
         });
