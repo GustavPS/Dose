@@ -146,7 +146,6 @@ class MovieMetadata extends Metadata {
                     .then(result => {
                         const pages = result.total_pages;
                         const recommendations = result.results;
-                        //list.push.apply(list, recommendations);
                         for(const recommendation of recommendations) {
                             list.push(recommendation.id);
                         }
@@ -160,7 +159,6 @@ class MovieMetadata extends Metadata {
             };
 
             const recommendations = await request(1);
-            console.log(recommendations.length);
             const existingMovies = await this.getMoviesByTmdbIds(recommendations);
             resolve(existingMovies);
         });
@@ -265,11 +263,12 @@ class MovieMetadata extends Metadata {
                 return;
             });
 
-            // Save recommendations
-
+            // SAVE RECOMMENDATIONS
             await db.tx(t => {
+                let i = 0;
                 for (const movie of recommendations) {
-                    t.none("INSERT INTO movie_recommended (movie_id_1, movie_id_2) VALUES ($1, $2)", [internalMovieID, movie.movie_id]);
+                    t.none("INSERT INTO movie_recommended (movie_id_1, movie_id_2, priority) VALUES ($1, $2, $3)", [internalMovieID, movie.movie_id, i]);
+                    i++;
                 }
                 return;
             });
