@@ -305,7 +305,7 @@ class Library {
                         let proc = ffmpeg(path).inputOptions([
                             '-ss 10'
                         ]).outputOptions([
-                            '-vframes 150',
+                            '-vframes 500',
                             '-vf cropdetect',
                             '-f null'
                         ]).on('end', (stdout, stderr) => {
