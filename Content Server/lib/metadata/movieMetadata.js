@@ -167,9 +167,7 @@ class MovieMetadata extends Metadata {
 
     getMoviesByTmdbIds(IDs) {
         return new Promise(async (resolve) => {
-            console.log(IDs);
             const result = await db.any("SELECT movie_id FROM movie_metadata WHERE tmdb_id = ANY ($1)", [IDs]);
-            console.log(result);
             resolve(result);
         });
     }

@@ -259,7 +259,11 @@ class Library {
             fs.readdirSync(fullPath).forEach(file => {
                 if (file.includes("_downloaded_trailer") && file.includes(".mp4")) {
                     shouldDownload = false;
-                    resolve(false);
+                    if (!file.includes("_not_cropted")) {
+                        resolve(pathLib.join(folderPath, `${name}_downloaded_trailer.mp4`));
+                    } else {
+                        resolve(false);
+                    }
                     return;
                 }
             });

@@ -26,11 +26,13 @@ export default (req, res) => {
       } else {
         movies = await db.any("SELECT id FROM movie");
       }
+      console.log(movies);
       if (movies.length === 0) {
         const response = {
             status: 'fail'
         }
         res.status(200).json(response);
+        return;
       }
 
       const id = Math.floor(Math.random() * (movies.length - 1));

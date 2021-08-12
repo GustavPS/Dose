@@ -32,7 +32,7 @@ const main = (props) => {
     const [newlyAddedMovies, setNewlyAddedMovies] = useState([]);
     const [newlyAddedShows, setNewlyAddedShows] = useState([]);
     const [newlyAddedEpisodes, setNewlyAddedEpisodes] = useState([]);
-    const [recommendedMovie, setRecommendedMovie] = useState([]);
+    const [recommendedMovie, setRecommendedMovie] = useState(false);
     let loading = 0;
     const [loaded, setLoaded] = useState(false)
 
@@ -468,25 +468,28 @@ const main = (props) => {
         <Head>
         </Head>
 
-        <div className={Styles.recommended}>
-            <video  autoPlay={true} loop={true} preload="auto" muted>
-                <source src={`${server.server_ip}/api/trailer/${recommendedMovie["id"]}?type=MOVIE&token=${cookie.get('serverToken')}`}type="video/mp4" />
-            </video>
-            <div className={Styles.recommendedInformation}>
-                <h1>{recommendedMovie["title"]}</h1>
-                <p>{recommendedMovie["overview"]}</p>
-                <div className={Styles.controls}>
-                    <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}?autoPlay=true`}>
-                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/001-play-button.png`} />
-                    </Link>
-                    <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}`}>
-                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/002-information.png`} />
-                    </Link>
+        {recommendedMovie != false &&
+            <div className={Styles.recommended}>
+                <video  autoPlay={true} loop={true} preload="auto" muted>
+                    <source src={`${server.server_ip}/api/trailer/${recommendedMovie["id"]}?type=MOVIE&token=${cookie.get('serverToken')}`}type="video/mp4" />
+                </video>
+                <div className={Styles.recommendedInformation}>
+                    <h1>{recommendedMovie["title"]}</h1>
+                    <p>{recommendedMovie["overview"]}</p>
+                    <div className={Styles.controls}>
+                        <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}?autoPlay=true`}>
+                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/001-play-button.png`} />
+                        </Link>
+                        <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}`}>
+                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/002-information.png`} />
+                        </Link>
+                    </div>
                 </div>
+    
+    
             </div>
+        }
 
-
-        </div>
             
         <br></br>
         <div style={{color: 'white'}}>
