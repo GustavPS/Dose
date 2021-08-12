@@ -23,20 +23,20 @@ export default (req, res) => {
 
       let movies;
       if(needTrailer) {
-        movies = await db.one("SELECT COUNT(*) FROM movie WHERE trailer IS NOT NULL");
+        movies = await db.any('SELECT id FROM movie WHERE (trailer <> $1) IS TRUE', ["''"]);
       } else {
-        movies = await db.one("SELECT COUNT(*) FROM movie");
+        movies = await db.any("SELECT id FROM movie");
       }
       console.log(movies);
-      if (movies["count"] === 0) {
+      if (movies.length === 0) {
         const response = {
             status: 'fail'
         }
         res.status(200).json(response);
       }
 
-      const id = Math.floor(Math.random() * (movies["count"] - 1));
-
+      const id = Math.floor(Math.random() * (movies.length - 1));
+      const movieId = parseInt(movies[id].id);
       db.one(`
         SELECT i.movie_id AS id, i.title, i.overview, i.release_date, i.runtime, i.popularity, i.added_date, i.trailer, array_agg(DISTINCT t.name) AS genres
         FROM movie_metadata i
@@ -53,12 +53,13 @@ export default (req, res) => {
         INNER JOIN image k
         ON j.image_id = k.id AND j.active = true
 
+        INNER JOIN movie l
+        ON i.movie_id = l.id
+
+        WHERE i.movie_id = $1
         GROUP BY i.id, i.title
-        ORDER BY id
-        DESC
-        OFFSET $1
         LIMIT 1
-      `, [id]).then(result => {
+      `, [movieId]).then(result => {
           const response = {
               status: 'success',
               movie: result

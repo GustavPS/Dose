@@ -257,7 +257,6 @@ class Library {
             let shouldDownload = true;
             // Don't download if we have already downloaded the trailer
             fs.readdirSync(fullPath).forEach(file => {
-                console.log(file);
                 if (file.includes("_downloaded_trailer") && file.includes(".mp4")) {
                     shouldDownload = false;
                     resolve(false);
@@ -274,80 +273,111 @@ class Library {
             if (shouldDownload) {
                 let path = pathLib.join(fullPath, `${name}_downloaded_trailer_not_cropted.mp4`);
                 const info = await ytdl.getInfo(trailer);
-                const download = ytdl("https://www.youtube.com/watch?v=" + trailer, {quality: 'highestvideo', filter: format => format.container === 'mp4'});
-                download.pipe(fs.createWriteStream(path));
-                download.on('end', () => {
-                    let proc = ffmpeg(path).inputOptions([
-                        '-ss 10'
-                    ]).outputOptions([
-                        '-vframes 10',
-                        '-vf cropdetect',
-                        '-f null'
-                    ]).on('end', (stdout, stderr) => {
-                        const lines = eol.split(stderr);
-                        let crops = {};
-
-                        lines.forEach(line => {
-                            console.log(line);
-                            if (line.includes("crop=")) {
-                                let re = new RegExp("crop=(-?\\d+:-?\\d+:-?\\d+:-?\\d+)", 'gm');
-                                const matches = re.exec(line);
-                                if (matches != null && matches.length >= 2) {
-                                    if (matches[1] in crops) {
-                                        crops[matches[1]]++;
-                                    } else {
-                                        crops[matches[1]] = 1;
-                                    }
-                                }
-                            }
-                        });
-                        let maxKey, maxValue = 0;
-                        for(const [key, value] of Object.entries(crops)) {
-                            if(value > maxValue) {
-                              maxValue = value;
-                              maxKey = key;
+                const maxAttempts = 20;
+                let ignoreThrottling = false;
+                let currentAttempts = 1;
+                const startDownload = () => {
+                    let starttime = null;
+                    const download = ytdl("https://www.youtube.com/watch?v=" + trailer, {quality: 'highestvideo', filter: format => format.container === 'mp4'});
+                    download.pipe(fs.createWriteStream(path));
+                    download.once("response", () => {
+                        starttime = Date.now();
+                    });
+                    download.on("progress", (chunkLength, downloaded, total) => {
+                        const percent = downloaded / total;
+                        const downloaded_minutes = (Date.now() - starttime) / 1000 / 60;
+                        const estimated_download_time = downloaded_minutes / percent - downloaded_minutes;
+                
+                        // if the estimated download time is more than 2 minutes then we cancel and restart the download, this value works fine for me but you may need to change it based on your server/internet speed.
+                        if (estimated_download_time.toFixed(2) >= 2) {
+                            if (currentAttempts++ >= maxAttempts && !ignoreThrottling) {
+                                console.warn(`Youtube is throttling, but have already tried ${maxAttempts} times, continuing..`);
+                                ignoreThrottling = true;
+                            } else if (!ignoreThrottling) {
+                                console.warn("Seems like YouTube is limiting our download speed, restarting the download to mitigate the problem..");
+                                download.destroy();
+                                startDownload();
                             }
                         }
-                        // Remove all "-"
-                        maxKey = maxKey.split('-').join('');
+                    });
 
-                        console.log(' > Removing black bars from trailer');
-                        let cropProc = ffmpeg(path)
-                        .outputOptions([
-                            `-vf crop=${maxKey}`,
-                            '-c:a copy'
-                        ]).output(pathLib.join(fullPath, `${name}_downloaded_trailer.mp4`))
-                        .on('end', (stdout, stderr) => {
-                            resolve(pathLib.join(folderPath, `${name}_downloaded_trailer.mp4`));
-                            try {
-                                fs.unlinkSync(path)
-                                //file removed
-                              } catch(err) {
-                                console.error(err)
-                              }
+                    download.on('end', () => {
+                        let proc = ffmpeg(path).inputOptions([
+                            '-ss 10'
+                        ]).outputOptions([
+                            '-vframes 150',
+                            '-vf cropdetect',
+                            '-f null'
+                        ]).on('end', (stdout, stderr) => {
+                            const lines = eol.split(stderr);
+                            let crops = {};
+    
+                            lines.forEach(line => {
+                                if (line.includes("crop=")) {
+                                    let re = new RegExp("crop=(-?\\d+:-?\\d+:-?\\d+:-?\\d+)", 'gm');
+                                    const matches = re.exec(line);
+                                    if (matches != null && matches.length >= 2) {
+                                        if (matches[1] in crops) {
+                                            crops[matches[1]]++;
+                                        } else {
+                                            crops[matches[1]] = 1;
+                                        }
+                                    }
+                                }
+                            });
+                            let maxKey, maxValue = 0;
+                            for(const [key, value] of Object.entries(crops)) {
+                                if(value > maxValue) {
+                                  maxValue = value;
+                                  maxKey = key;
+                                }
+                            }
+                            // Remove all "-"
+                            maxKey = maxKey.split('-').join('');
+    
+                            console.log(` > Removing black bars from trailer, using crop ${maxKey}`);
+                            let cropProc = ffmpeg(path)
+                            .inputOptions([
+                                '-ss 5'
+                            ])
+                            .outputOptions([
+                                `-vf crop=${maxKey}`,
+                                '-c:a copy'
+                            ]).output(pathLib.join(fullPath, `${name}_downloaded_trailer.mp4`))
+                            .on('end', (stdout, stderr) => {
+                                resolve(pathLib.join(folderPath, `${name}_downloaded_trailer.mp4`));
+                                console.log(" > Done!");
+                                try {
+                                    fs.unlinkSync(path)
+                                    //file removed
+                                  } catch(err) {
+                                    console.error(err)
+                                  }
+                            })
+                            .on('start', (cmd) => {
+                                //console.log(cmd);
+                            })
+                            .on('error', function(err, stdout, stderr) {
+                                console.log(err);
+                                console.log(stdout);
+                                console.log(stderr);
+                                resolve(false);
+                            }).run();
                         })
                         .on('start', (cmd) => {
-                            console.log(cmd);
+                            //console.log(cmd);
                         })
                         .on('error', function(err, stdout, stderr) {
                             console.log(err);
                             console.log(stdout);
                             console.log(stderr);
                             resolve(false);
-                        }).run();
-                    })
-                    .on('start', (cmd) => {
-                        console.log(cmd);
-                    })
-                    .on('error', function(err, stdout, stderr) {
-                        console.log(err);
-                        console.log(stdout);
-                        console.log(stderr);
-                        resolve(false);
-                    })
-                    .output("/dev/null").run();
-
-                });
+                        })
+                        .output("/dev/null").run();
+    
+                    });
+                }
+                startDownload();
             }
         });
     }
