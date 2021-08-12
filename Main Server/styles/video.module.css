@@ -73,8 +73,13 @@
 
 .actions {
     width: 100%;
+    text-align: center;
     height: 50px;
     display: inline-flex;
+}
+
+.actions div {
+    cursor: pointer
 }
 
 .playButton {
@@ -85,7 +90,7 @@
     background-size: 30px;
     background-color: rgba(85, 85, 85, 0.08);
     border-radius: 10px;
-    width: 100%;
+    width: 120px;
     height: 70px;
 }
 
