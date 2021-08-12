@@ -13,6 +13,9 @@ import cookies from 'next-cookies'
 import VideoComponent from '../../../../../components/videoComponent';
 import VideoTrailer from '.././../../../../components/videoTrailer';
 import validateServerAccess from '../../../../../lib/validateServerAccess';
+import Actor from '../../../../../components/actor';
+import useWindowSize from '../../../../../components/hooks/WindowSize';
+
 
 import ChangeImages from '../../../../../components/changeImages';
 
@@ -28,6 +31,7 @@ export default function Home(props) {
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
   const [inWatchList, setInWatchList] = useState(false);
+  const [actors, setActors] = useState([]);
 
   const [viewTrailer, setViewTrailer] = useState(false);
   const [trailer, setTrailer] = useState(false);
@@ -35,6 +39,8 @@ export default function Home(props) {
   const [loaded, setLoaded] = useState(false)
 
   const videoRef = useRef();
+  const windowSize = useWindowSize();
+
 
 
   // Used for manual metadata search
@@ -102,8 +108,11 @@ export default function Home(props) {
         setInWatchList(meta.inwatchlist);
         setWatched(meta.watched);
         setMetadata(meta);
-        console.log(meta.trailer);
         setTrailer(meta.trailer);
+        meta.actors = meta.actors.sort((a, b) => {
+          return parseFloat(a.order) - parseFloat(b.order);
+        });
+        setActors(meta.actors);
 
         if (router.query.autoPlay) {
           videoRef.current.show();
@@ -221,6 +230,30 @@ export default function Home(props) {
         }
       });
     });
+  }
+
+
+  const getActors = () => {
+    let elements = [];
+    console.log(actors);
+    for (const actor of actors) {
+      elements.push(
+        <Actor name={actor.name} characterName={actor.character} image={actor.image} />
+      )
+    }
+    return elements;
+  }
+
+  
+  const scrollLeft = (id) => {
+    document.getElementById(id).scrollLeft -= (window.innerWidth)*0.8;
+    window.scrollTo(window.scrollX, window.scrollY - 1);
+    window.scrollTo(window.scrollX, window.scrollY + 1);
+  }
+  const scrollRight = (id) => {
+      document.getElementById(id).scrollLeft += (window.innerWidth)*0.8;
+      window.scrollTo(window.scrollX, window.scrollY - 1);
+      window.scrollTo(window.scrollX, window.scrollY + 1);
   }
   
   return (
@@ -354,9 +387,19 @@ export default function Home(props) {
     <div className={Styles.bottom}>
       <h1>Actors</h1>
       <div className={Styles.actors}>
-        <div className={Styles.actor}>
-
+        <div id="actors" className={Styles.actorBox}>
+          {getActors()}
         </div>
+        {actors.length * 200 > windowSize.width &&
+                                <>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('actors')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('actors')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                    </div>
+                                </>
+                            }
       </div>
     </div>
     </div>

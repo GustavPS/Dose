@@ -83,15 +83,16 @@ class MovieLibrary extends Library {
                         }
 
                         console.log(` > Saving metadata for movie '${movieName}' ${logYearInfo}`);
-                        this.metadata.insertMetadata(result.metadata, result.images,
+                        this.metadata.insertMetadata(result.metadata, result.images, result.actors,
                                                         result.trailer, internalMovieID).then(() => {
-                                                            
                                 console.log(` > Downloading trailer for movie '${movieName}' ${logYearInfo}`)
                                 this.downloadTrailer(result.trailer, movieName, path)
                                 .then((trailerPath) => {
                                     if (trailerPath != false) {
                                         db.none('UPDATE movie SET trailer = $1 WHERE id = $2', [trailerPath, internalMovieID])
-                                }
+                                    } else {
+                                        console.log(` > Trailer already downloaded`);
+                                    }
                                 resolve();
                             });
                         });
