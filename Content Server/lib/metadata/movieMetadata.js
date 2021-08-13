@@ -139,7 +139,7 @@ class MovieMetadata extends Metadata {
 
     getRecommended(movieID) {
         return new Promise(async (resolve, reject) => {
-            const request = (page, list=[]) => {
+            const request = (page, list=[], count=0) => {
                 return new Promise((resolve) => {
                     fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/recommendations?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null&page=${page}`))
                     .then(res => res.json())
@@ -147,27 +147,45 @@ class MovieMetadata extends Metadata {
                         const pages = result.total_pages;
                         const recommendations = result.results;
                         for(const recommendation of recommendations) {
-                            list.push(recommendation.id);
+                            list.push({
+                                id: recommendation.id,
+                                priority: count
+                            });
+                            count++;
                         }
                         if (page+1 > pages) {
                             resolve(list);
                         } else {
-                            resolve(request(page+1, list));
+                            resolve(request(page+1, list, count));
                         }
                     });
                 });
             };
 
             const recommendations = await request(1);
-            const existingMovies = await this.getMoviesByTmdbIds(recommendations);
-            resolve(existingMovies);
+            const unorderedMovies = [];
+            for (let i = 0; i < recommendations.length; i++) {
+                unorderedMovies.push(recommendations[i].id);
+            }
+            const existingMovies = await this.getMoviesByTmdbIds(unorderedMovies);
+
+            let orderedRecommendations = [];
+            for (let i = 0; i < recommendations.length; i++) {
+                for (let j = 0; j < existingMovies.length; j++) {
+                    if (parseInt(recommendations[i].id) === parseInt(existingMovies[j].tmdb_id)) {
+                        orderedRecommendations.push(existingMovies[i]);
+                        break;
+                    }
+                }
+            }
+            resolve(orderedRecommendations);
         });
     }
 
 
     getMoviesByTmdbIds(IDs) {
         return new Promise(async (resolve) => {
-            const result = await db.any("SELECT movie_id FROM movie_metadata WHERE tmdb_id = ANY ($1)", [IDs]);
+            const result = await db.any("SELECT movie_id, tmdb_id FROM movie_metadata WHERE tmdb_id = ANY ($1)", [IDs]);
             resolve(result);
         });
     }
