@@ -33,6 +33,7 @@ const main = (props) => {
     const [newlyAddedShows, setNewlyAddedShows] = useState([]);
     const [newlyAddedEpisodes, setNewlyAddedEpisodes] = useState([]);
     const [recommendedMovie, setRecommendedMovie] = useState(false);
+    const [popularMovies, setPopularMovies] = useState([]);
     let loading = 0;
     const [loaded, setLoaded] = useState(false)
 
@@ -48,13 +49,15 @@ const main = (props) => {
      * @param {string} orderby 
      * @param {int} limit 
      */
-    const getMovieList = async (genre=null, orderby=null, limit=20, ongoing=false, watchlist=false) => {
+    const getMovieList = async (genre=null, orderby=null, limit=20, ongoing=false, watchlist=false, popular=false) => {
         return new Promise((resolve, reject) => {
             let url;
             if (ongoing) {
                 url = `${server.server_ip}/api/movies/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             } else if(watchlist) {
                 url = `${server.server_ip}/api/movies/list/watchlist?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
+            } else if(popular) {
+                url = `${server.server_ip}/api/movies/list/popular?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             } else {
                 url = `${server.server_ip}/api/movies/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
             }
@@ -308,6 +311,25 @@ const main = (props) => {
                 }
             })
 
+            // Get popular movies
+            getMovieList(null, 'release_date', 20, false, false, true).then(movies => {
+                movies.reverse();
+                let movieElements = [];
+                for (let movie of movies) {
+                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+                    movieElements.push(
+                        <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                    );
+                }
+                loading++
+                setPopularMovies(movieElements);
+
+            }).then(() => {
+                if(loading == 7) {
+                    setLoaded(true)
+                }
+            })
+
             // Get ongoing movies
             getMovieList(null, 'release_date', 20, true).then(movies => {
                 movies.reverse();
@@ -494,6 +516,28 @@ const main = (props) => {
         <br></br>
         <div style={{color: 'white'}}>
             <Container fluid className={Styles.contentRows}>
+            {popularMovies.length > 0 &&
+                    <>
+                        <h2 style={{textTransform: 'capitalize'}}>Populärt just nu</h2>  
+                        <div className={Styles.movieRow}>
+                            <div id="popularMovies" className={Styles.scrollable}>
+                                {popularMovies}
+                            </div>
+                            {popularMovies.length * 480 > windowSize.width &&
+                                <>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('popularMovies')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('popularMovies')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" />
+                                    </div>
+                                </>
+                            }
+                        </div> 
+                    <hr className={Styles.divider}></hr>
+                    </> 
+                }
+
                 {ongoingMovies.length > 0 &&
                     <>
                         <h2 style={{textTransform: 'capitalize'}}>Pågående filmer</h2>  

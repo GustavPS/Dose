@@ -3,6 +3,7 @@ const { parse } = require('url')
 const next = require('next')
 const Watcher = require('./lib/watcher');
 const MovieLibrary = require('./lib/library/movieLibrary');
+const MovieMetadata = require('./lib/metadata/movieMetadata');
 const fs = require("fs");
 
 
@@ -47,10 +48,26 @@ function startWebServer() {
           }
         }).listen(3001, err => {
           if (err) throw err
-          console.log('> Ready on http://localhost:4000')
+          console.log(' > Ready on http://localhost:4000')
+
+          updatePopularMovies();
+          setInterval(updatePopularMovies, 24 * 60 * 60 * 1000);
         })
       })
 }
+
+// Setup timer for getting popular movies
+const updatePopularMovies = () => {
+  console.log(` > Updating popular movies`);
+  const metadataObj = new MovieMetadata();
+  metadataObj.getPopularMovies()
+  .then(movies => {
+    console.log(` > Found ${movies.length} popular movie(s)`);
+    metadataObj.updatePopularMovies(movies);
+  });
+};
+
+
 
 
 const watcher = new Watcher();

@@ -199,6 +199,48 @@ class MovieMetadata extends Metadata {
         });
     }
 
+    getPopularMovies() {
+        return new Promise(async (resolve) => {
+            const request = (page=0, list=[]) => {
+                return new Promise((resolve) => {
+                    fetch(encodeURI(`${this.getAPIUrl()}/movie/popular?api_key=${this.getAPIKey()}`))
+                    .then(res => res.json())
+                    .then(result => {
+                        const movies = result.results;
+                        for (const movie of movies) {
+                            list.push(movie.id);
+                        }
+
+                        // Get max 3 pages (60 results)
+                        if (page + 1 >= result.total_pages || page + 1 >= 3) {
+                            resolve(list);
+                        } else {
+                            resolve(request(page+1, list));
+                        }
+                    });
+                });
+            };
+
+            const movies = await request();
+            this.getMoviesByTmdbIds(movies)
+            .then(movies => {
+                resolve(movies);
+            });
+        });
+    }
+
+    updatePopularMovies(movies) {
+        return new Promise(async (resolve) => {
+            db.tx(async t => {
+                await t.none("TRUNCATE movie_popular");
+                for (const movie of movies) {
+                    t.none("INSERT INTO movie_popular (movie_id) VALUES ($1)", movie.movie_id);
+                }
+                return;
+            });
+        });
+    }
+
     getTrailer(movieID) {
         return new Promise((resolve, reject) => {
             fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/videos?api_key=${this.getAPIKey()}`))
