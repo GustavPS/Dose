@@ -173,8 +173,17 @@ class MovieMetadata extends Metadata {
             for (let i = 0; i < recommendations.length; i++) {
                 for (let j = 0; j < existingMovies.length; j++) {
                     if (parseInt(recommendations[i].id) === parseInt(existingMovies[j].tmdb_id)) {
-                        orderedRecommendations.push(existingMovies[j]);
-                        break;
+                        let alreadyAdded = false;
+                        for (let k = 0; k < orderedRecommendations.length; k++) {
+                            if (orderedRecommendations[k].movie_id === existingMovies[j].movie_id) {
+                                alreadyAdded = true;
+                                break;
+                            }
+                        }
+                        if (!alreadyAdded) {
+                            orderedRecommendations.push(existingMovies[j]);
+                            break;
+                        }
                     }
                 }
             }
