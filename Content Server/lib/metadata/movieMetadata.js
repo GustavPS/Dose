@@ -237,7 +237,9 @@ class MovieMetadata extends Metadata {
                     t.none("INSERT INTO movie_popular (movie_id) VALUES ($1)", movie.movie_id);
                 }
                 return;
-            });
+            }).then(result => {
+                resolve();
+            })
         });
     }
 

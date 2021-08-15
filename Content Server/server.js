@@ -51,7 +51,7 @@ function startWebServer() {
           console.log(' > Ready on http://localhost:4000')
 
           updatePopularMovies();
-          setInterval(updatePopularMovies, 24 * 60 * 60 * 1000);
+          setInterval(updatePopularMovies, 43200000); // 12 hours
         })
       })
 }
