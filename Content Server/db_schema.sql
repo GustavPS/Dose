@@ -10,7 +10,7 @@ alter table category owner to postgres;
 
 create table if not exists image
 (
-	id bigserial not null
+	id bigserial
 		constraint image_pkey
 			primary key,
 	path text
@@ -20,7 +20,7 @@ alter table image owner to postgres;
 
 create table if not exists library
 (
-	id bigserial not null
+	id bigserial
 		constraint library_pkey
 			primary key,
 	name text not null
@@ -34,14 +34,15 @@ alter table library owner to postgres;
 
 create table if not exists movie
 (
-	id bigserial not null
+	id bigserial
 		constraint movie_pkey
 			primary key,
 	path text,
 	library integer not null
 		constraint library
 			references library,
-	name text default 'no_name'::text not null
+	name text default 'no_name'::text not null,
+	trailer text
 );
 
 alter table movie owner to postgres;
@@ -80,25 +81,9 @@ create table if not exists movie_image
 
 alter table movie_image owner to postgres;
 
-create table if not exists movie_language
-(
-	id serial not null
-		constraint movie_language_pkey
-			primary key,
-	movie_id integer not null
-		constraint movie_id
-			references movie
-				on delete cascade,
-	language text not null,
-	stream_index integer not null,
-	codec text not null
-);
-
-alter table movie_language owner to postgres;
-
 create table if not exists movie_metadata
 (
-	id bigserial not null
+	id bigserial
 		constraint movie_metadata_pkey
 			primary key,
 	movie_id integer not null
@@ -114,14 +99,15 @@ create table if not exists movie_metadata
 	added_date text,
 	popularity numeric,
 	trailer text,
-	run_time integer
+	run_time integer,
+	tmdb_id integer default '-1'::integer
 );
 
 alter table movie_metadata owner to postgres;
 
 create table if not exists serie
 (
-	id bigserial not null
+	id bigserial
 		constraint serie_pkey
 			primary key,
 	path text not null,
@@ -159,7 +145,7 @@ create table if not exists serie_episode
 	season_number integer not null,
 	episode integer not null,
 	path text not null,
-	id bigserial not null
+	id bigserial
 		constraint iduniqie
 			unique,
 	constraint serie_episode_pkey
@@ -167,43 +153,6 @@ create table if not exists serie_episode
 );
 
 alter table serie_episode owner to postgres;
-
-create table if not exists serie_episode_subtitle
-(
-	id bigserial not null
-		constraint episode_subtitle_pkey
-			primary key,
-	path text not null,
-	episode_id integer not null
-		constraint episodeid
-			references serie_episode (id)
-				on delete cascade,
-	library_id integer not null
-		constraint libraryid
-			references library
-				on delete cascade,
-	language text,
-	synced boolean not null,
-	extracted boolean not null
-);
-
-alter table serie_episode_subtitle owner to postgres;
-
-create table if not exists serie_episode_language
-(
-	id serial not null
-		constraint serie_episode_language_pkey
-			primary key,
-	serie_episode_id integer not null
-		constraint serie_episode_id
-			references serie_episode (id)
-				on delete cascade,
-	language text not null,
-	stream_index integer not null,
-	codec text not null
-);
-
-alter table serie_episode_language owner to postgres;
 
 create table if not exists serie_episode_metadata
 (
@@ -246,7 +195,7 @@ alter table serie_image owner to postgres;
 
 create table if not exists serie_metadata
 (
-	id bigserial not null
+	id bigserial
 		constraint serie_metadata_pkey
 			primary key,
 	serie_id integer not null
@@ -296,30 +245,9 @@ create table if not exists serie_season_metadata
 
 alter table serie_season_metadata owner to postgres;
 
-create table if not exists subtitle
-(
-	id bigserial not null
-		constraint subtitle_pkey
-			primary key,
-	path text,
-	movie_id integer not null
-		constraint movieid
-			references movie
-				on delete cascade,
-	library_id integer not null
-		constraint libraryid
-			references library
-				on delete cascade,
-	language text,
-	synced boolean not null,
-	extracted boolean not null
-);
-
-alter table subtitle owner to postgres;
-
 create table if not exists users
 (
-	id bigserial not null
+	id bigserial
 		constraint user_pkey
 			primary key,
 	username text not null,
@@ -403,7 +331,7 @@ alter table user_next_episode owner to postgres;
 
 create table if not exists user_refresh_token
 (
-	id serial not null
+	id serial
 		constraint user_refresh_token_pkey
 			primary key,
 	user_id integer not null
@@ -473,4 +401,136 @@ create table if not exists serie_episode_resolution
 );
 
 alter table serie_episode_resolution owner to postgres;
+
+create table if not exists serie_episode_language
+(
+	id serial
+		constraint serie_episode_language_pkey
+			primary key,
+	serie_episode_id integer not null
+		constraint serie_episode_id
+			references serie_episode (id)
+				on delete cascade,
+	language text not null,
+	stream_index integer not null,
+	codec text not null
+);
+
+alter table serie_episode_language owner to postgres;
+
+create table if not exists movie_language
+(
+	id serial
+		constraint movie_language_pkey
+			primary key,
+	movie_id integer not null
+		constraint movie_id
+			references movie
+				on delete cascade,
+	language text not null,
+	stream_index integer not null,
+	codec text not null
+);
+
+alter table movie_language owner to postgres;
+
+create table if not exists serie_episode_subtitle
+(
+	id bigserial
+		constraint episode_subtitle_pkey
+			primary key,
+	path text not null,
+	episode_id integer not null
+		constraint episodeid
+			references serie_episode (id)
+				on delete cascade,
+	library_id integer not null
+		constraint libraryid
+			references library
+				on delete cascade,
+	language text,
+	synced boolean not null,
+	extracted boolean not null
+);
+
+alter table serie_episode_subtitle owner to postgres;
+
+create table if not exists subtitle
+(
+	id bigserial
+		constraint subtitle_pkey
+			primary key,
+	path text,
+	movie_id integer not null
+		constraint movieid
+			references movie
+				on delete cascade,
+	library_id integer not null
+		constraint libraryid
+			references library
+				on delete cascade,
+	language text,
+	synced boolean not null,
+	extracted boolean not null
+);
+
+alter table subtitle owner to postgres;
+
+create table if not exists actor
+(
+	id integer not null
+		constraint actor_pk
+			primary key,
+	name text not null,
+	image text
+);
+
+alter table actor owner to postgres;
+
+create table if not exists movie_actor
+(
+	actor_id integer not null
+		constraint movie_actor_actor_id_fk
+			references actor
+				on delete cascade,
+	movie_id integer not null
+		constraint movie_actor_movie_id_fk
+			references movie
+				on delete cascade,
+	character_name text not null,
+	order_in_credit integer not null,
+	constraint movie_actor_pk
+		primary key (actor_id, movie_id)
+);
+
+alter table movie_actor owner to postgres;
+
+create table if not exists movie_recommended
+(
+	movie_id_1 integer not null
+		constraint movie_recommended_movie_id_fk
+			references movie
+				on delete cascade,
+	movie_id_2 integer not null
+		constraint movie_recommended_movie_id_fk_2
+			references movie
+				on delete cascade,
+	priority integer not null,
+	constraint movie_recommended_pk
+		primary key (movie_id_1, movie_id_2)
+);
+
+alter table movie_recommended owner to postgres;
+
+create table if not exists movie_popular
+(
+	movie_id integer not null
+		constraint movie_popular_pk
+			primary key
+		constraint movie_popular_movie_id_fk
+			references movie
+				on delete cascade
+);
+
+alter table movie_popular owner to postgres;
 
