@@ -508,7 +508,7 @@ const main = (props) => {
                 </video>
                 <div className={Styles.recommendedInformation}>
                     {recommendedMovie["activeLogo"] != false &&
-                    <img src={`https://image.tmdb.org/t/p/original/${recommendedMovie["activeLogo"].path}`} width="100%" className={Styles.logo} />
+                    <img src={`https://image.tmdb.org/t/p/original/${recommendedMovie["activeLogo"].path}`} className={Styles.logo} />
                     }
                     {recommendedMovie["activeLogo"] == false &&
                     <h1>{recommendedMovie["title"]}</h1>
