@@ -102,7 +102,8 @@ class MovieLibrary extends Library {
                         console.log(` > Couldn't find any metadata for movie (using dummy data) '${movieName}'`);
                         let images = {
                             backdrops: [],
-                            posters: []
+                            posters: [],
+                            logos: []
                         }
                         let metadata = this.metadata.getDummyMetadata(movieName);
                         let trailer = "";
