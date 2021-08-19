@@ -8,6 +8,30 @@ class MovieMetadata extends Metadata {
         super();
     }
 
+    setPrefferedImage(language, images) {
+        let active = true;
+        let foundPrefferedLanguage = false;
+        let count = 0;
+        let prefferedLanguageIndex = -1;
+        for (let image of images) {
+            if (image.iso_639_1 == language && !foundPrefferedLanguage) {
+                image.active = true;
+                foundPrefferedLanguage = true;
+                prefferedLanguageIndex = count;
+                active = false;
+            } else {
+                image.active = active;
+                active = false;
+            }
+            count++;
+        }
+        if (foundPrefferedLanguage && images.length > 0 && prefferedLanguageIndex != 0) {
+            images[0].active = false;
+        }
+
+        return images;
+    }
+
     getMetadataByYear(movieName, year=null) {
         return new Promise((resolve, reject) => {
             fetch(encodeURI(`${this.getAPIUrl()}/search/movie?api_key=${this.getAPIKey()}&language=en-US&query=${movieName}&year=${year}&page=1&include_adult=true`))
@@ -25,30 +49,10 @@ class MovieMetadata extends Metadata {
                             .then(recommendations => {
                                 this.getImages(json.results[0].id)
                                 .then(images => {
-                                    let active = true;
-                                    let foundPrefferedLanguage = false;
-                                    let count = 0;
-                                    let prefferedLanguageIndex = -1;
-                                    for (let image of images.backdrops) {
-                                        if (image.iso_639_1 == 'en' && !foundPrefferedLanguage) {
-                                            image.active = true;
-                                            foundPrefferedLanguage = true;
-                                            prefferedLanguageIndex = count;
-                                            active = false;
-                                        } else {
-                                            image.active = active;
-                                            active = false;
-                                        }
-                                        count++;
-                                    }
-                                    if (foundPrefferedLanguage && images.backdrops.length > 0 && prefferedLanguageIndex != 0) {
-                                        images.backdrops[0].active = false;
-                                    }
-                                    active = true;
-                                    for (let image of images.posters) {
-                                        image.active = active;
-                                        active = false;
-                                    }
+                                    images.backdrops = this.setPrefferedImage('en', images.backdrops);
+                                    images.posters   = this.setPrefferedImage('en', images.posters);
+                                    images.logos     = this.setPrefferedImage('en', images.logos);
+                                    console.log(images);
         
                                     this.getTrailer(json.results[0].id).then(trailer => {
                                         let result = {
@@ -357,8 +361,14 @@ class MovieMetadata extends Metadata {
                     active: true
                 })
             }
-            // TODO: This will push "no_name" to image even if it already exist. That is not needed
+            if (images.logos.length === 0) {
+                images.logos.push({
+                    file_path: 'no_image',
+                    active: true
+                })
+            }
             await db.tx(async t => {
+                // TODO: This will push "no_name" to image even if it already exist. That is not needed
                 for (let backdrop of images.backdrops) {
                     const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [backdrop.file_path], c => +c.id);
                     t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'BACKDROP')", [internalMovieID, imageId, backdrop.active]);
@@ -368,6 +378,12 @@ class MovieMetadata extends Metadata {
                 for (let poster of images.posters) {
                     const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [poster.file_path], c => +c.id);
                     t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'POSTER')", [internalMovieID, imageId, poster.active]);
+                }
+
+                // TODO: This will push "no_name" to image even if it already exist. That is not needed.
+                for (let logo of images.logos) {
+                    const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
+                    t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'LOGO')", [internalMovieID, imageId, logo.active]);
                 }
                 return;
             });

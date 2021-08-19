@@ -260,6 +260,15 @@ const main = (props) => {
         });
     }
 
+    const getActiveImage = (images, type) => {
+        for (let image of images) {
+            if (image.type === type && image.active) {
+                return image;
+            }
+        }
+        return false;
+    }
+
     useEffect(() => {
         validateServerAccess(server, (serverToken) => {
             // Get recommended video (random video right now)
@@ -271,8 +280,10 @@ const main = (props) => {
             })
             .then((r) => r.json())
             .then(result => {
-                console.log(result);
                 if (result.status === 'success') {
+                    result.movie.activeLogo = getActiveImage(result.movie.images, 'LOGO');
+                    console.log(result);
+
                     setRecommendedMovie(result.movie);
                 } else {
                     console.log("Error getting recommended movie");
@@ -496,7 +507,12 @@ const main = (props) => {
                     <source src={`${server.server_ip}/api/trailer/${recommendedMovie["id"]}?type=MOVIE&token=${cookie.get('serverToken')}`}type="video/mp4" />
                 </video>
                 <div className={Styles.recommendedInformation}>
+                    {recommendedMovie["activeLogo"] != false &&
+                    <img src={`https://image.tmdb.org/t/p/original/${recommendedMovie["activeLogo"].path}`} width="100%" className={Styles.logo} />
+                    }
+                    {recommendedMovie["activeLogo"] == false &&
                     <h1>{recommendedMovie["title"]}</h1>
+                    }
                     <p>{recommendedMovie["overview"]}</p>
                     <div className={Styles.controls}>
                         <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}?autoPlay=true`}>
