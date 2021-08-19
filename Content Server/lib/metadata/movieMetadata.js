@@ -8,13 +8,37 @@ class MovieMetadata extends Metadata {
         super();
     }
 
-    setPrefferedImage(language, images) {
+    setPrefferedImage(language, images, useLowestAspectRatio=false) {
         let active = true;
         let foundPrefferedLanguage = false;
         let count = 0;
         let prefferedLanguageIndex = -1;
+        let highestAspectRatio = -1;
+
         for (let image of images) {
-            if (image.iso_639_1 == language && !foundPrefferedLanguage) {
+            if (image.iso_639_1 == language) {
+                if (useLowestAspectRatio) {
+                    // If this image has a better aspect ratio
+                    if (image.aspect_ratio > highestAspectRatio) {
+                        highestAspectRatio = image.aspect_ratio;
+
+                        // If we have already found another one, set the other one to not active
+                        if (foundPrefferedLanguage) {
+                            images[prefferedLanguageIndex].active = false;
+                        }
+                    } else if (foundPrefferedLanguage) {
+                        // If this didn't have better aspect ratio, skip this one
+                        image.active = false;
+                        active = false;
+                        count++;
+                        continue;
+                    }
+                } else if (foundPrefferedLanguage) {
+                    image.active = false;
+                    count++;
+                    continue;
+                }
+
                 image.active = true;
                 foundPrefferedLanguage = true;
                 prefferedLanguageIndex = count;
@@ -31,6 +55,8 @@ class MovieMetadata extends Metadata {
 
         return images;
     }
+
+
 
     getMetadataByYear(movieName, year=null) {
         return new Promise((resolve, reject) => {
@@ -51,7 +77,8 @@ class MovieMetadata extends Metadata {
                                 .then(images => {
                                     images.backdrops = this.setPrefferedImage('en', images.backdrops);
                                     images.posters   = this.setPrefferedImage('en', images.posters);
-                                    images.logos     = this.setPrefferedImage('en', images.logos);
+                                    images.logos     = this.setPrefferedImage('en', images.logos, true);
+                                    console.log(images.logos);
         
                                     this.getTrailer(json.results[0].id).then(trailer => {
                                         let result = {
