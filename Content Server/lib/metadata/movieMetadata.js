@@ -52,7 +52,6 @@ class MovieMetadata extends Metadata {
                                     images.backdrops = this.setPrefferedImage('en', images.backdrops);
                                     images.posters   = this.setPrefferedImage('en', images.posters);
                                     images.logos     = this.setPrefferedImage('en', images.logos);
-                                    console.log(images);
         
                                     this.getTrailer(json.results[0].id).then(trailer => {
                                         let result = {
