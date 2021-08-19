@@ -262,7 +262,7 @@ const main = (props) => {
 
     const getActiveImage = (images, type) => {
         for (let image of images) {
-            if (image.type === type && image.active) {
+            if (image.type === type && image.active && image.path != "no_image") {
                 return image;
             }
         }
