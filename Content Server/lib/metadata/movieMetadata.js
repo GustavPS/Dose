@@ -2,6 +2,8 @@ const Metadata = require('./metadata');
 const fetch = require('node-fetch');
 const db = require('../db');
 
+const sockets = require('../../sockets');
+
 
 class MovieMetadata extends Metadata {
     constructor() {
@@ -413,6 +415,8 @@ class MovieMetadata extends Metadata {
                 }
                 return;
             });
+
+            sockets.emit("MOVIE", metadata)
             resolve();
         });
     }

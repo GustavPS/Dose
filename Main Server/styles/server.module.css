@@ -60,6 +60,7 @@
     scroll-behavior: smooth;
 }
 
+
 .scrollable::-webkit-scrollbar {
     display: none;
   }

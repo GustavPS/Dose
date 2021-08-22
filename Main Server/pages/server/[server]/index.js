@@ -11,6 +11,9 @@ import useWindowSize from '../../../components/hooks/WindowSize';
 import Styles from '../../../styles/server.module.css';
 import MovieBackdrop from '../../../components/movieBackdrop';
 import EpisodePoster from '../../../components/episodePoster';
+import socketIOClient from "socket.io-client";
+import movieStyles from '../../../components/movieBackdrop.module.css'
+import { useTransition, animated, setItems } from 'react-spring';
 
 const fetcher = url =>
   fetch(url)
@@ -36,6 +39,17 @@ const main = (props) => {
     const [popularMovies, setPopularMovies] = useState([]);
     let loading = 0;
     const [loaded, setLoaded] = useState(false)
+    const socket = socketIOClient(server.server_ip);
+
+
+    const transitions = useTransition(newlyAddedMovies, {
+        from: { opacity: 0 },
+        enter: { opacity: 1 },
+        delay: 200,
+        onRest: () => setNewlyAddedMovies(newlyAddedMovies),
+    })
+    
+    
 
 
 
@@ -271,6 +285,17 @@ const main = (props) => {
 
     useEffect(() => {
         validateServerAccess(server, (serverToken) => {
+            socket.on("MOVIE", movie => {
+                console.log(movie);
+                let movieElements = newlyAddedMovies;
+                let img = movie.backdrop_path !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop_path}` : 'https://via.placeholder.com/2000x1000' 
+                movieElements.push(
+                    <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                );
+                setNewlyAddedMovies(movieElements);
+            });      
+            
+            
             // Get recommended video (random video right now)
             fetch(`${server.server_ip}/api/movies/list/random?trailer=true&token=${cookie.get('serverToken')}`, {
                 method: 'POST',
@@ -603,7 +628,7 @@ const main = (props) => {
                         <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
                         <div className={Styles.movieRow}>
                             <div id="newlyAddedMovies" className={Styles.scrollable}>
-                                {newlyAddedMovies}
+                              {newlyAddedMovies}
                             </div>
                             {newlyAddedMovies.length * 480 > windowSize.width &&
                                 <>

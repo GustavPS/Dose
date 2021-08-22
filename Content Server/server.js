@@ -1,4 +1,4 @@
-const { createServer } = require('http')
+const http = require('http')
 const { parse } = require('url')
 const next = require('next')
 const Watcher = require('./lib/watcher');
@@ -6,10 +6,15 @@ const MovieLibrary = require('./lib/library/movieLibrary');
 const MovieMetadata = require('./lib/metadata/movieMetadata');
 const fs = require("fs");
 
-
+const port = parseInt(process.env.PORT || '3001', 10);
 const dev = process.env.NODE_ENV !== 'production'
-const app = next({ dev })
-const handle = app.getRequestHandler();
+const nextApp = next({ dev })
+const nextHandler = nextApp.getRequestHandler();
+
+
+const sockets = require('./sockets');
+const express = require('express');
+
 var crypto = require('crypto');
 
 console.log(`######                       
@@ -28,32 +33,20 @@ if (dev) {
 
 
 function startWebServer() {
-    //const httpsOptions = {
-    //    key: fs.readFileSync("./certs/localhost.key"),
-    //    cert: fs.readFileSync("./certs/localhost.crt"),
-    //};
-    app.prepare().then(() => {
-        createServer((req, res) => {
-          // Be sure to pass `true` as the second argument to `url.parse`.
-          // This tells it to parse the query portion of the URL.
-          const parsedUrl = parse(req.url, true)
-          const { pathname, query } = parsedUrl
-      
-          if (pathname === '/a') {
-            app.render(req, res, '/b', query)
-          } else if (pathname === '/b') {
-            app.render(req, res, '/a', query)
-          } else {
-            handle(req, res, parsedUrl)
-          }
-        }).listen(3001, err => {
-          if (err) throw err
-          console.log(' > Ready on http://localhost:4000')
+  nextApp.prepare().then(async() => {
+    const expressApp = express();
+    const server = http.createServer(expressApp);
+    sockets.connect(server);
 
-          updatePopularMovies();
-          setInterval(updatePopularMovies, 43200000); // 12 hours
-        })
-      })
+    expressApp.all('*', (req, res) => nextHandler(req, res));
+
+    server.listen(port, () => {
+      console.log(' > Ready on http://localhost:' + port)
+
+      updatePopularMovies();
+      setInterval(updatePopularMovies, 43200000); // 12 hours
+    });
+  });
 }
 
 // Setup timer for getting popular movies
@@ -82,5 +75,7 @@ crypto.randomBytes(256, function(ex, buf) {
   watcher.init(() => {
     watcher.startWatcher();
     startWebServer();
+    sockets.emit("status", "hello there obi-wan")
+
   })
 });
