@@ -13,7 +13,7 @@ import MovieBackdrop from '../../../components/movieBackdrop';
 import EpisodePoster from '../../../components/episodePoster';
 import socketIOClient from "socket.io-client";
 import movieStyles from '../../../components/movieBackdrop.module.css'
-import { useTransition, animated, setItems } from 'react-spring';
+import {TransitionGroup, CSSTransition} from 'react-transition-group';
 
 const fetcher = url =>
   fetch(url)
@@ -42,13 +42,7 @@ const main = (props) => {
     const socket = socketIOClient(server.server_ip);
 
 
-    const transitions = useTransition(newlyAddedMovies, {
-        from: { opacity: 0 },
-        enter: { opacity: 1 },
-        delay: 200,
-        onRest: () => setNewlyAddedMovies(newlyAddedMovies),
-    })
-    
+
     
 
 
@@ -285,17 +279,8 @@ const main = (props) => {
 
     useEffect(() => {
         validateServerAccess(server, (serverToken) => {
-            socket.on("MOVIE", movie => {
-                console.log(movie);
-                let movieElements = newlyAddedMovies;
-                let img = movie.backdrop_path !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop_path}` : 'https://via.placeholder.com/2000x1000' 
-                movieElements.push(
-                    <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                );
-                setNewlyAddedMovies(movieElements);
-            });      
-            
-            
+                
+           
             // Get recommended video (random video right now)
             fetch(`${server.server_ip}/api/movies/list/random?trailer=true&token=${cookie.get('serverToken')}`, {
                 method: 'POST',
@@ -483,9 +468,24 @@ const main = (props) => {
                     setLoaded(true)
                 }
             })
+
+
         });
     }, [loading]);
 
+    useEffect(() => {
+        socket.on("MOVIE", movie => {
+            console.log(movie);
+            let img = movie.backdrop_path !== undefined ? `https://image.tmdb.org/t/p/w500/${movie.backdrop_path}` : 'https://via.placeholder.com/2000x1000';
+            let element = <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+            if(!newlyAddedMovies.includes(element)){
+                setNewlyAddedMovies([element].concat(newlyAddedMovies));
+                console.log("already updated that shit")
+            }
+            console.log(newlyAddedMovies.length);
+            console.log("reeee it no render")
+        });
+    }, [newlyAddedMovies])
 
     const selectMovie = (id) => {
         Router.push(`/server/${server.server_id}/movies/video/${id}`);
@@ -622,7 +622,7 @@ const main = (props) => {
                     <hr className={Styles.divider}></hr>
                     </> 
                 }
-
+     
                 {newlyAddedMovies.length > 0 &&
                     <>
                         <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   

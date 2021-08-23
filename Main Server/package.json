@@ -8,6 +8,7 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
+    "@types/react-transition-group": "^4.4.2",
     "bootstrap": "^4.4.1",
     "cookies": "^0.8.0",
     "didyoumean": "^1.2.1",
