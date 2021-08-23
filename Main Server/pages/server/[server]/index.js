@@ -40,11 +40,7 @@ const main = (props) => {
     let loading = 0;
     const [loaded, setLoaded] = useState(false)
     const socket = socketIOClient(server.server_ip);
-
-
-
-    
-
+    let movieIds = 0;
 
 
     const windowSize = useWindowSize();
@@ -395,7 +391,7 @@ const main = (props) => {
                 for (let movie of movies) {
                     let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
                     movieElements.push(
-                        <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                        <MovieBackdrop key={movieIds++} markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                     );
                 }
                 loading++
@@ -477,15 +473,16 @@ const main = (props) => {
         socket.on("MOVIE", movie => {
             console.log(movie);
             let img = movie.backdrop_path !== undefined ? `https://image.tmdb.org/t/p/w500/${movie.backdrop_path}` : 'https://via.placeholder.com/2000x1000';
-            let element = <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+            let element = <MovieBackdrop key={movieIds++} markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
             if(!newlyAddedMovies.includes(element)){
-                setNewlyAddedMovies([element].concat(newlyAddedMovies));
+                setNewlyAddedMovies(oldArray => [element, ...oldArray]);
                 console.log("already updated that shit")
             }
             console.log(newlyAddedMovies.length);
             console.log("reeee it no render")
         });
-    }, [newlyAddedMovies])
+    }, []);
+
 
     const selectMovie = (id) => {
         Router.push(`/server/${server.server_id}/movies/video/${id}`);
