@@ -96,14 +96,12 @@ class MovieLibrary extends Library {
                                     }
                                     let back = undefined;
                                     for (let backdrop of result.images.backdrops) {
-                                        console.log(backdrop);
                                         if(backdrop.active == true){
                                             back = backdrop.file_path
                                             break;
                                         }
                                     }
-                                    console.log({"id": result.metadata.id, "title": result.metadata.title, "overview": result.metadata.overview, "backdrop_path": back})
-                                    sockets.emit("MOVIE", {"id": result.metadata.id, "title": result.metadata.title, "overview": result.metadata.overview, "backdrop_path": back})
+                                    sockets.emit("MOVIE", {"id": result.metadata.id, "title": result.metadata.title, "overview": result.metadata.overview, "backdrop_path": back} )
                                     
                                 resolve();
                             });

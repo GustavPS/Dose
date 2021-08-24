@@ -472,7 +472,7 @@ const main = (props) => {
         socket.on("MOVIE", movie => {
             console.log(movie);
             let img = movie.backdrop_path !== undefined ? `https://image.tmdb.org/t/p/w500/${movie.backdrop_path}` : 'https://via.placeholder.com/2000x1000';
-            let element = <MovieBackdrop key={movieIds++} markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+            let element = <MovieBackdrop animate={true} key={movieIds++} markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
             if(!newlyAddedMovies.includes(element)){
                 setNewlyAddedMovies(oldArray => [element, ...oldArray]);
                 console.log("already updated that shit")
@@ -624,27 +624,7 @@ const main = (props) => {
                         <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
                         <div className={Styles.movieRow}>
                             <div id="newlyAddedMovies" className={Styles.scrollable}>
-                            <TransitionGroup >
-                                {newlyAddedMovies.map(
-                                (movieElem) => (
-                                <CSSTransition
-                                key={movieElem.key}
-
-                                appear={true}
-                                enter={true}
-                                timeout={2000}
-                                transitionName={{
-                                    enter: Styles.fadeEnter,
-                                    enterActive: Styles.fadeEnterActive,
-                                    exit: Styles.fadeExit,
-                                    exitActive: Styles.fadeExitActive
-                                  }}
-                                >
-                                    {movieElem}
-                                </CSSTransition>
-                                )
-                                )}
-                            </TransitionGroup>
+                            {newlyAddedMovies}
                             </div>
                             {newlyAddedMovies.length * 480 > windowSize.width &&
                                 <>
