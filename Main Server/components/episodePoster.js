@@ -14,7 +14,7 @@ export default class EpisodePoster extends React.Component {
             img: this.poster,
             hover: false
         };
-
+        this.animate = props.animate ? props.animate : false
         this.toggleHover = this.toggleHover.bind(this);
     }
 
@@ -34,13 +34,20 @@ export default class EpisodePoster extends React.Component {
 
     }
 
+    getAnimation() {
+        if(this.animate) {
+            return style.posterWithAnimation
+        }
+        return ''
+    }
+
     render() {
         let stateStyle = {
             backgroundImage: `url('${this.state.img}')`
         }
 
         return (
-            <div onClick={() => this.props.onClick(this.season, this.episode, this.show, this.internalEpisodeID)} className={style.poster} onMouseEnter={this.toggleHover} onMouseLeave={this.toggleHover} >
+            <div onClick={() => this.props.onClick(this.season, this.episode, this.show, this.internalEpisodeID)} className={style.poster + ' ' + this.getAnimation()}onMouseEnter={this.toggleHover} onMouseLeave={this.toggleHover} >
                 <div className={style.posterImage} style={stateStyle}>
                     <div className={style.episodeInfo}>
                         <h3 className={style.seasonName}>S{this.season} E{this.episode}</h3>

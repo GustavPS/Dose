@@ -3,6 +3,8 @@ const pathLib = require('path');
 const SerieMetadata = require('../metadata/tvMetadata');
 const db = require('../db');
 const lock = require('../globalLock');
+const sockets = require('../../sockets');
+
 
 const MOVIE_FORMATS = [
     'mp4', 'ts', 'mkv', 'webm', 'avi', 'm4v'
@@ -66,6 +68,14 @@ class TvLibrary extends Library {
                             console.log(` > Saving metadata for serie '${serieName}'`);
                             // Insert metadata
                             this.metadata.insertShowMetadata(metadata, images, trailer, internalSerieID).then(() => {
+                                let back = undefined;
+                                for (let image of images.backdrops) {
+                                    if(image.active == true){
+                                        back = image.file_path
+                                        break;
+                                    }
+                                }
+                                sockets.emit("newShow", {"id": metadata.id, "title": metadata.name, "overview": metadata.overview, "backdrop_path": back} )
                                 resolve(internalSerieID);
                             });
                         }).catch(async (error) => {
@@ -145,7 +155,6 @@ class TvLibrary extends Library {
                     // Get the metadata for this season
                     this.metadata.getSeasonMetadata(serieTmdbId, seasonNumber).then(async (result) => {
                         let metadata = result.metadata;
-
                         // If we found metadata, save it to the database
                         console.log(` > Saving metadata for season ${seasonNumber} of serie ${serieName}`);
                         this.metadata.insertSeasonMetadata(metadata, internalSerieID, seasonNumber).then(() => {
@@ -223,6 +232,12 @@ class TvLibrary extends Library {
                         
                         console.log(` > Saving metadata for season ${seasonNumber} episode ${episodeNumber} of serie ${serieName}`);
                         this.metadata.insertEpisodeMetadata(metadata, internalSerieID, seasonNumber, episodeNumber).then(() => {
+                            console.log(metadata)
+                            db.tx(async t => {
+                            let imgId = await t.one('SELECT * FROM serie_image WHERE serie_id = $1 AND active = $2 AND type = $3', [internalSerieID, true, "POSTER"]);
+                            let poster = await t.one('SELECT path FROM image WHERE id = $1', [imgId.image_id]);
+                            sockets.emit("newEpisode", {"serie_id": internalSerieID, "season": seasonNumber, "episode": episodeNumber, "poster": poster.path} )
+                            });
                             resolve();
                         });
                     }).catch(async (error) => {

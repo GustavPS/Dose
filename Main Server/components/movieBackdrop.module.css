@@ -18,10 +18,10 @@
 
 .backdropWithAnimation {
     animation: animation 1s;
-    -webkit-animation: animation 2s;
-    -moz-animation: animation 2s;
-    -o-animation: animation 2s;
-    -ms-animation: animation 2s;
+    -webkit-animation: animation 1s;
+    -moz-animation: animation 1s;
+    -o-animation: animation 1s;
+    -ms-animation: animation 1s;
 }
 
 @keyframes animation {
