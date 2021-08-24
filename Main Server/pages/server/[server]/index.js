@@ -12,7 +12,6 @@ import Styles from '../../../styles/server.module.css';
 import MovieBackdrop from '../../../components/movieBackdrop';
 import EpisodePoster from '../../../components/episodePoster';
 import socketIOClient from "socket.io-client";
-import movieStyles from '../../../components/movieBackdrop.module.css'
 import {TransitionGroup, CSSTransition} from 'react-transition-group';
 
 const fetcher = url =>
@@ -335,7 +334,7 @@ const main = (props) => {
                 for (let movie of movies) {
                     let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
                     movieElements.push(
-                        <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                        <MovieBackdrop key={movie.id} markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                     );
                 }
                 loading++
@@ -354,7 +353,7 @@ const main = (props) => {
                 for (let movie of movies) {
                     let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
                     movieElements.push(
-                        <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+                        <MovieBackdrop key={movie.id} markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
                     );
                 }
                 loading++
@@ -625,7 +624,27 @@ const main = (props) => {
                         <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
                         <div className={Styles.movieRow}>
                             <div id="newlyAddedMovies" className={Styles.scrollable}>
-                              {newlyAddedMovies}
+                            <TransitionGroup >
+                                {newlyAddedMovies.map(
+                                (movieElem) => (
+                                <CSSTransition
+                                key={movieElem.key}
+
+                                appear={true}
+                                enter={true}
+                                timeout={2000}
+                                transitionName={{
+                                    enter: Styles.fadeEnter,
+                                    enterActive: Styles.fadeEnterActive,
+                                    exit: Styles.fadeExit,
+                                    exitActive: Styles.fadeExitActive
+                                  }}
+                                >
+                                    {movieElem}
+                                </CSSTransition>
+                                )
+                                )}
+                            </TransitionGroup>
                             </div>
                             {newlyAddedMovies.length * 480 > windowSize.width &&
                                 <>

@@ -5,6 +5,7 @@ const pathLib = require('path');
 var ffmpeg = require('fluent-ffmpeg');
 var AsyncLock = require('async-lock');
 const lock = require('../globalLock');
+const sockets = require('../../sockets');
 
 class MovieLibrary extends Library {
 
@@ -93,6 +94,17 @@ class MovieLibrary extends Library {
                                     } else {
                                         console.log(` > Trailer already downloaded`);
                                     }
+                                    let back = undefined;
+                                    for (let backdrop of result.images.backdrops) {
+                                        console.log(backdrop);
+                                        if(backdrop.active == true){
+                                            back = backdrop.file_path
+                                            break;
+                                        }
+                                    }
+                                    console.log({"id": result.metadata.id, "title": result.metadata.title, "overview": result.metadata.overview, "backdrop_path": back})
+                                    sockets.emit("MOVIE", {"id": result.metadata.id, "title": result.metadata.title, "overview": result.metadata.overview, "backdrop_path": back})
+                                    
                                 resolve();
                             });
                         });
