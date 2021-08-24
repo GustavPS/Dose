@@ -16,6 +16,21 @@
     border-radius: 15px;
 }
 
+.backdropWithAnimation {
+    animation: animation 1s;
+    -webkit-animation: animation 1s;
+    -moz-animation: animation 1s;
+    -o-animation: animation 1s;
+    -ms-animation: animation 1s;
+}
+
+@keyframes animation {
+    0% {width: 0; opacity: 0;}
+    50% { width: 395px; opacity: 0; }
+    100% { width: 395px; opacity: 1;}
+}
+
+
 .backdrop:hover {
     width: 450px;
     cursor: pointer;

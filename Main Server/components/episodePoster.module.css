@@ -39,3 +39,17 @@
 .poster:hover > .posterImage {
     opacity: 0.5;
 }
+
+.posterWithAnimation {
+    animation: animation 200ms;
+    -webkit-animation: animation 200ms;
+    -moz-animation: animation 200ms;
+    -o-animation: animation 200ms;
+    -ms-animation: animation 200ms;
+}
+
+@keyframes animation {
+    0% {width: 0; opacity: 0;}
+    50% { width: 395px; opacity: 0; }
+    100% { width: 395px; opacity: 1;}
+}
