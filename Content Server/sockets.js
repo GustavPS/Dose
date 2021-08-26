@@ -10,7 +10,6 @@ module.exports = {
     emit: function(event, values) {
         if (io) {
             io.sockets.emit(event, values);
-            console.log("emmiting")
         }
     }
 }

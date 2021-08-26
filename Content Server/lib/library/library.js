@@ -7,6 +7,8 @@ const LANGUAGE_LIST = require('../../lib/languages');
 const ytdl = require('ytdl-core');
 var ffmpeg = require('fluent-ffmpeg');
 const eol = require("eol")
+const Logger = require('../logger');
+const logger = new Logger().getInstance();
 
 
 
@@ -27,37 +29,6 @@ class Library {
         this.id = id;
         this.metadata = metadata;
         this.lock = new AsyncLock();
-        /*
-        this.subLanguages = [
-            {
-                shortName: 'eng',
-                longName: 'English'
-            },
-            {
-                shortName: 'swe',
-                longName: 'Swedish'
-            },
-            {
-                shortName: 'ara',
-                longName: 'Arabic'
-            },
-            {
-                shortName: 'chi',
-                longName: 'Chinese'
-            },
-            {
-                shortName: 'fre',
-                longName: 'French'
-            },
-            {
-                shortName: 'pol',
-                longName: 'Polish'
-            }, {
-                shortName: 'unknown',
-                longName: 'Unknown'
-            }
-        ]
-        */
     }
 
     async findAudioStreams(streams) {
@@ -199,19 +170,18 @@ class Library {
                             ])
                             .output(outputPath)
                             .on('start', function(commandLine) {
-                                //console.log(commandLine);
+                                logger.DEBUG(`Extract sub command: ${commandLine}`);
+                                logger.INFO(`Found a subtitle (${stream.tags.language}) for ${name}. Converting it now..`);
                             })
                             .on('error', function(err, stdout, stderr) {
-                                console.log('an error happened converting subtitle: ' + err.message);
-                                console.log(stdout);
-                                console.log(stderr);
+                                logger.ERROR('An error happened converting subtitle: ' + err.message);
+                                logger.ERROR(stdout);
+                                logger.ERROR(stderr);
                                 done(true);
                             })
                             .on('progress', function(progress) {
-                                process.stdout.write(` > Found a subtitle (${stream.tags.language}) for ${name}. Converting it now. - ${progress.percent}% \r`);
                             })
                             .on('end', function(stdout, stderr) {
-                                console.log(` > Found a subtitle (${stream.tags.language}) for ${name}. Converting it now. - 100% (done)                            `);
                                 done(true);
                             })
                             .run();
@@ -222,7 +192,7 @@ class Library {
                     }
                 }
                 if (!found) {
-                    console.log(` > No subtitles found in ${name}`);
+                    logger.INFO(`No subtitles found in ${name}`);
                     resolve(true);
                 }
             } else {
@@ -295,17 +265,17 @@ class Library {
                         // if the estimated download time is more than 2 minutes then we cancel and restart the download, this value works fine for me but you may need to change it based on your server/internet speed.
                         if (estimated_download_time.toFixed(2) >= 2) {
                             if (currentAttempts++ >= maxAttempts && !ignoreThrottling) {
-                                console.warn(`Youtube is throttling, but have already tried ${maxAttempts} times, continuing..`);
+                                logger.WARNING(`Youtube is throttling, but have already tried ${maxAttempts} times, continuing..`);
                                 ignoreThrottling = true;
                             } else if (!ignoreThrottling) {
-                                console.warn("Seems like YouTube is limiting our download speed, restarting the download to mitigate the problem..");
+                                logger.WARNING("Seems like YouTube is limiting our download speed, restarting the download to mitigate the problem..");
                                 download.destroy();
                                 startDownload();
                             }
                         }
                     });
                     download.on('error', err => {
-                        console.log(err);
+                        logger.ERR(`Error downloading trailer: ${err}`);
                         download.destroy();
                         resolve(false);
                         return;
@@ -345,7 +315,7 @@ class Library {
                             // Remove all "-"
                             maxKey = maxKey.split('-').join('');
     
-                            console.log(` > Removing black bars from trailer, using crop ${maxKey}`);
+                            logger.DEBUG(`Removing black bars from trailer, using crop ${maxKey}`);
                             let cropProc = ffmpeg(path)
                             .inputOptions([
                                 '-ss 10'
@@ -356,35 +326,34 @@ class Library {
                             ]).output(pathLib.join(fullPath, `${name}_downloaded_trailer.mp4`))
                             .on('end', (stdout, stderr) => {
                                 resolve(pathLib.join(folderPath, `${name}_downloaded_trailer.mp4`));
-                                console.log(" > Done!");
+                                logger.INFO("Done!");
                                 try {
                                     fs.unlinkSync(path)
                                     //file removed
                                   } catch(err) {
-                                    console.error(err)
+                                      logger.ERROR(err);
                                   }
                             })
                             .on('start', (cmd) => {
-                                //console.log(cmd);
+                                logger.DEBUG(`Remove black bars cmd: ${cmd}`);
                             })
                             .on('error', function(err, stdout, stderr) {
-                                console.log(err);
-                                console.log(stdout);
-                                console.log(stderr);
+                                logger.ERROR(`Error removing black bars: ${err}`);
+                                logger.ERROR(stdout);
+                                logger.ERROR(stderr);
                                 resolve(false);
                             }).run();
                         })
                         .on('start', (cmd) => {
-                            //console.log(cmd);
+                            logger.DEBUG(`Cropdetect cmd: ${cmd}`);
                         })
                         .on('error', function(err, stdout, stderr) {
-                            console.log(err);
-                            console.log(stdout);
-                            console.log(stderr);
+                            logger.ERROR(`Error during cropdetect: ${err}`);
+                            logger.ERROR(stdout);
+                            logger.ERROR(stderr);
                             resolve(false);
                         })
                         .output("/dev/null").run();
-    
                     });
                 }
                 startDownload();

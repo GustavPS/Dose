@@ -10,7 +10,8 @@ const port = parseInt(process.env.PORT || '3001', 10);
 const dev = process.env.NODE_ENV !== 'production'
 const nextApp = next({ dev })
 const nextHandler = nextApp.getRequestHandler();
-
+const Logger = require('./lib/logger');
+const logger = new Logger().getInstance();
 
 const sockets = require('./sockets');
 const express = require('express');
@@ -27,8 +28,7 @@ console.log(`######
 console.log("\n\n");
 
 if (dev) {
-  console.log("\x1b[33m", 'Server running in development mode');
-  console.log("\x1b[0m", "")
+  logger.WARNING("Server running in development mode");
 }
 
 
@@ -41,7 +41,7 @@ function startWebServer() {
     expressApp.all('*', (req, res) => nextHandler(req, res));
 
     server.listen(port, () => {
-      console.log(' > Ready on http://localhost:' + port)
+      logger.INFO(`Ready on port ${port}`);
 
       updatePopularMovies();
       setInterval(updatePopularMovies, 43200000); // 12 hours
@@ -51,11 +51,11 @@ function startWebServer() {
 
 // Setup timer for getting popular movies
 const updatePopularMovies = () => {
-  console.log(` > Updating popular movies`);
+  logger.INFO(`Updating popular movies`);
   const metadataObj = new MovieMetadata();
   metadataObj.getPopularMovies()
   .then(movies => {
-    console.log(` > Found ${movies.length} popular movie(s)`);
+    logger.INFO(`Found ${movies.length} popular movie(s)`);
     metadataObj.updatePopularMovies(movies);
   });
 };
@@ -66,16 +66,14 @@ const updatePopularMovies = () => {
 const watcher = new Watcher();
 
 // Generate webtoken secret
-console.log("Generating token before starting..");
+logger.DEBUG(`Generating token before starting..`);
 crypto.randomBytes(256, function(ex, buf) {
   if (ex) throw ex;
   process.env.SECRET = buf;
-  console.log(" > Done\n");
+  logger.DEBUG("Done");
 
   watcher.init(() => {
     watcher.startWatcher();
     startWebServer();
-    sockets.emit("status", "hello there obi-wan")
-
   })
 });
