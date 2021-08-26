@@ -126,6 +126,7 @@ const main = (props) => {
                 .then((response) => {
                     // Mark the movies active image
                     response.result.forEach(episode => {
+                        console.log(episode)
                         for (let image of episode.images) {
                             if (image.active) {
                                 if (image.type === 'BACKDROP') {
@@ -445,9 +446,9 @@ const main = (props) => {
 
             getNewEpisodeList('added_date', 20).then(episodes => {
                 let episodeElements = [];
-
+                console.log(episodes)
                 for (let episode of episodes) {
-                    let poster = episode.poster !== null ? `https://image.tmdb.org/t/p/w500/${episode.poster}` : 'https://via.placeholder.com/500x1000';
+                    let poster = episode.poster !== null ? `https://image.tmdb.org/t/p/w500/${episode.season_poster}` : 'https://via.placeholder.com/500x1000';
                     let backdrop = episode.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${episode.backdrop}` : 'https://via.placeholder.com/500x1000' 
                     episodeElements.push(
                         <EpisodePoster key={episodeIds++} show={episode.serie_id} season={episode.season} episode={episode.episode} poster={poster} internalEpisodeID={episode.internalepisodeid} backdrop={backdrop}

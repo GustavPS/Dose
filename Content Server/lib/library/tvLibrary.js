@@ -234,11 +234,11 @@ class TvLibrary extends Library {
                         this.metadata.insertEpisodeMetadata(metadata, internalSerieID, seasonNumber, episodeNumber).then(() => {
                             console.log(metadata)
                             db.tx(async t => {
-                            let imgId = await t.one('SELECT * FROM serie_image WHERE serie_id = $1 AND active = $2 AND type = $3', [internalSerieID, true, "POSTER"]);
-                            let poster = await t.one('SELECT path FROM image WHERE id = $1', [imgId.image_id]);
+                            let poster = await t.one('SELECT poster_path FROM serie_season_metadata WHERE serie_id = $1 AND season_id = $2;', [internalSerieID, seasonNumber]);
+                            //let poster = await t.one('SELECT path FROM image WHERE id = $1', [imgId.image_id]);
                             let episode_id = await t.one('SELECT id FROM serie_episode WHERE serie_id = $1 AND season_number = $2 AND episode = $3', [internalSerieID, seasonNumber, episodeNumber]);
-
-                            sockets.emit("newEpisode", {"serie_id": internalSerieID, "internalepisodeid": episode_id, "season": seasonNumber, "episode": episodeNumber, "poster": poster.path} )
+                            
+                            sockets.emit("newEpisode", {"serie_id": internalSerieID, "internalepisodeid": episode_id, "season": seasonNumber, "episode": episodeNumber, "poster": poster.poster_path} )
                             });
                             resolve();
                         });
