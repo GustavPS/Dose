@@ -37,7 +37,6 @@ const main = (props) => {
     const [popularMovies, setPopularMovies] = useState([]);
     let loading = 0;
     const [loaded, setLoaded] = useState(false)
-    const socket = socketIOClient(server.server_ip);
     let movieIds = 0;
     let episodeIds = 0;
 
@@ -468,6 +467,8 @@ const main = (props) => {
     }, [loading]);
 
     useEffect(() => {
+        const socket = socketIOClient(server.server_ip);
+
         socket.on("newMovie", movie => {
             console.log(movie);
             let img = movie.backdrop_path !== undefined ? `https://image.tmdb.org/t/p/w500/${movie.backdrop_path}` : 'https://via.placeholder.com/2000x1000';
