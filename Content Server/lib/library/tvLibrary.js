@@ -239,7 +239,7 @@ class TvLibrary extends Library {
                             let episode_id = await t.one('SELECT id FROM serie_episode WHERE serie_id = $1 AND season_number = $2 AND episode = $3', [internalSerieID, seasonNumber, episodeNumber]);
                             
                             sockets.emit("newEpisode", {"serie_id": internalSerieID, "internalepisodeid": episode_id, "season": seasonNumber, "episode": episodeNumber, "poster": poster.poster_path} )
-                            });
+                      });
                             resolve();
                         });
                     }).catch(async (error) => {
