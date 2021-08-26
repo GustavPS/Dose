@@ -488,7 +488,7 @@ const main = (props) => {
         });
         socket.on("newShow", show => {
             let img = show.backdrop_path !== undefined ? `https://image.tmdb.org/t/p/w500/${show.backdrop_path}` : 'https://via.placeholder.com/2000x1000';
-            let element = <MovieBackdrop animate={true} key={show.id} markAsDoneButton id={show.id} time={show.watchtime} runtime={show.runtime} title={show.title} overview={show.overview} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+            let element = <MovieBackdrop animate={true} key={show.id} markAsDoneButton id={show.id} time={show.watchtime} runtime={show.runtime} title={show.title} overview={show.overview} backdrop={img} onClick={(id) => selectShow(show.id)}></MovieBackdrop>
             if(!newlyAddedShows.includes(element)){
                 setNewlyAddedShows(oldArray => [element, ...oldArray.slice(0, 19)]);
             }
