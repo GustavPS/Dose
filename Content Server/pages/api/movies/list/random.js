@@ -1,6 +1,10 @@
 const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
+const Logger = require('../../../../lib/logger');
+const logger = new Logger().getInstance();
+
+
 
 const ORDERBY = [
   'id',
@@ -26,7 +30,6 @@ export default (req, res) => {
       } else {
         movies = await db.any("SELECT id FROM movie");
       }
-      console.log(movies);
       if (movies.length === 0) {
         const response = {
             status: 'fail'
@@ -68,7 +71,7 @@ export default (req, res) => {
           resolve();
       })
       .catch(err => {
-          console.log(err);
+          logger.ERROR(`Error getting random movie: ${err}`);
           const response = {
               status: 'fail'
           }

@@ -2,6 +2,8 @@ const db = require('../../../../lib/db');
 const LANGUAGES_LIST = require('../../../../lib/languages');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
+const Logger = require('../../../../lib/logger');
+const logger = new Logger().getInstance();
 const ORDERBY = [
   'id',
   'added_date',
@@ -82,7 +84,6 @@ function getEpisodeLanguages(episodeID) {
 function getMovieLanguages(movieID) {
     return new Promise(resolve => {
         db.any('SELECT language, id, stream_index FROM movie_language WHERE movie_id = $1', [movieID]).then(result => {
-            console.log(result);
             resolve(result);
         });
     });

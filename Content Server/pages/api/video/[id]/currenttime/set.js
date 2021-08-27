@@ -1,5 +1,7 @@
 const db = require('../../../../../lib/db');
 const cors = require('../../../../../lib/cors');
+const Logger = require('../../../../../lib/logger');
+const logger = new Logger().getInstance();
 const ORDERBY = [
   'id',
   'added_date',
@@ -74,7 +76,7 @@ function setMovieProgress(movie_id, user_id, time, videoDuration) {
                         })
                     }
                 } else {
-                    console.log("Currenttime/set didn't find any results from movie_metadata. THIS SHOULD NEVER HAPPEN")
+                    logger.ERROR("Currenttime/set didn't find any results from movie_metadata. THIS SHOULD NEVER HAPPEN");
                     resolve();
                 }
             });

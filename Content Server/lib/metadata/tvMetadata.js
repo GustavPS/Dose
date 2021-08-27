@@ -20,7 +20,7 @@ class TvMetadata extends Metadata {
     async insertSeasonMetadata(metadata, internalSerieID, seasonNumber) {
         return new Promise(async (resolve, reject) => {
             if (metadata.poster_path == null) {
-                console.log(` > Didn't find a image for this season, using dummyimage.`);
+                logger.INFO(`Didn't find a image for this season, using dummyimage.`);
                 metadata.poster_path = "";
             }
 
@@ -42,7 +42,7 @@ class TvMetadata extends Metadata {
         return new Promise(async (resolve, reject) => {
             let d = new Date();
             if (metadata.still_path == null) {
-                console.log(` > Didn't find a image for this episode, using dummyimage.`);
+                logger.INFO(`Didn't find a image for this episode, using dummyimage.`);
                 metadata.still_path = "";
             }
 

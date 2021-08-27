@@ -1,3 +1,7 @@
+const Logger = require('../logger');
+const logger = new Logger().getInstance();
+
+
 // Abstract class
 class Browser {
     constructor(version, videoCodecs, audioCodecs, type) {
@@ -16,13 +20,13 @@ class Browser {
 
     videoCodecSupported(codec) {
         const supported = this.supportedVideoCodecs.includes(codec);
-        console.log(`DEBUG: Video codec ${codec} for browser ${this.type} V${this.version} gave supported: ${supported}`);
+        logger.DEBUG(`DEBUG: Video codec ${codec} for browser ${this.type} V${this.version} gave supported: ${supported}`);
         return supported;
     }
     
     audioCodecSupported(codec) {
         const supported = this.supportedAudioCodecs.includes(codec);
-        console.log(`DEBUG: Audio codec ${codec} for browser ${this.type} V${this.version} gave supported: ${supported}`)
+        logger.DEBUG(`DEBUG: Audio codec ${codec} for browser ${this.type} V${this.version} gave supported: ${supported}`)
         return supported;
     }
 

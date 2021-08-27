@@ -79,7 +79,6 @@ class MovieMetadata extends Metadata {
                                     images.backdrops = this.setPrefferedImage('en', images.backdrops);
                                     images.posters   = this.setPrefferedImage('en', images.posters);
                                     images.logos     = this.setPrefferedImage('en', images.logos, true);
-                                    console.log(images.logos);
         
                                     this.getTrailer(json.results[0].id).then(trailer => {
                                         let result = {
@@ -120,8 +119,8 @@ class MovieMetadata extends Metadata {
                     break;
                 } catch (error) {
                     if (error != "Not found") {
-                        console.log("ERROR: in getMetadata, look at next line for full error message");
-                        console.log(error);
+                        logger.ERROR("Error while getting metadata, look at next line for full error message");
+                        logger.ERROR(error);
                     }
                 }
             }
