@@ -3,6 +3,8 @@ import { Stream } from 'stream';
 const db = require('../../../../lib/db');
 const validateUser = require('../../../../lib/validateUser');
 const getBrowser = require('../../../../lib/browsers/util');
+const Logger = require('../../../../lib/logger');
+const logger = new Logger().getInstance();
 import { useUserAgent } from 'next-useragent'
 
 
@@ -53,7 +55,7 @@ export default async (req, res) => {
         filename = await getEpisodePath(req.query.id); 
       }
     } catch(error) {
-      console.log(` > User tried to access movie/episode with id ${req.query.id} which does not exist`);
+      logger.DEBUG(`User tried to access movie/episode with id ${req.query.id} which does not exist`);
       res.status(404).end();
       return;
     }
@@ -67,7 +69,7 @@ export default async (req, res) => {
         audioCodecs = await getEpisodeCodecs(req.query.id);
       }
     } catch(error) {
-      console.log(error);
+      logger.ERROR(`Error getting movie/episode codecs: ${error}`);
       // Shouldn't be 404
       res.status(404).end();
       return;
@@ -114,7 +116,7 @@ function getMovieCodecs(movieID) {
     db.many("SELECT language, codec, stream_index FROM movie_language WHERE movie_id = $1 ORDER BY stream_index", [movieID]).then(result => {
       resolve(result);
     }).catch(error => {
-      console.log(error);
+      logger.ERROR(`Error getting movie codecs: ${error}`);
       reject();
     });
   });
@@ -126,7 +128,7 @@ function getEpisodeCodecs(episodeID) {
     db.many("SELECT language, codec, stream_index FROM serie_episode_language WHERE serie_episode_id = $1 ORDER BY stream_index", [episodeID]).then(result => {
       resolve(result);
     }).catch(error => {
-      console.log(error);
+      logger.ERROR(`Error getting episode codecs: ${error}`);
       reject();
     });
   });
@@ -173,7 +175,7 @@ function killOtherInstances(serverToken) {
       try {
         t.process.kill();
       } catch(e) {
-        console.log("Tried to kill a transcoding but the process was already killed.");
+        logger.DEBUG(`Tried to kill a transcoding but the process was already killed.`);
       }
     }
     count++;
@@ -194,7 +196,7 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
 
   let quality = req.query.quality.toUpperCase();
   if (!ALLOWED_QUALITIES.includes(quality)) {
-    console.log(`${quality} is not a valid quality selector`);
+    logger.DEBUG(`${quality} is not a valid quality selector`);
     res.status(404).end();
     return;
   }
@@ -239,7 +241,7 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
         .outputOptions(audioSettings)
 
         .on('start', function(commandLine) {
-          console.log(commandLine)
+          logger.DEBUG(`FFMPEG transcoding cmd: ${commandLine}`);
         })
           // setup event handlers
         .on('end', function() {
@@ -258,17 +260,17 @@ function startFFMPEG(filename, offset, language, audioCodecs, req, res) {
           //console.log(stderr);
           if (err.message != 'Output stream closed' && err.message != 'ffmpeg was killed with signal SIGKILL') {
             if (stdout != undefined) {
-              console.log(stdout);
+              logger.ERROR(`FFMPEG error: ${stdout}`);
             }
             if (stderr != undefined) {
-              console.log(stderr);
+              logger.ERROR(`FFMPEG error: ${stderr}`);
             }
             try {
               this.kill();
             } catch(e) {
               
             }
-            console.log('an error happened: ' + err.message);
+            logger.ERROR('an error happened: ' + err.message);
           }
         })
         .on('exit', function() {

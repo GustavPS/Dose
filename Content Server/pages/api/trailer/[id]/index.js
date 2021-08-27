@@ -2,6 +2,8 @@ const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
 const fs = require('fs');
+const Logger = require('../../../../lib/logger');
+const logger = new Logger().getInstance();
 
 export default (req, res) => {
     return new Promise(async (resolve, reject) => {
@@ -21,7 +23,7 @@ export default (req, res) => {
       if (type === 'MOVIE') {
         file = await getMovieTrailerPath(id);
       } else {
-        console.log("Only movies supported");
+        logger.DEBUG("Trailer: trailers for shows is unsupported");
         res.status(404).end();
       }
       if (file == false) {
@@ -31,7 +33,7 @@ export default (req, res) => {
 
       fs.access(file, fs.F_OL, (err) => {
         if (err) {
-          console.log(err);
+          logger.ERROR(`Trailer: Couldn't access trailer ${err}`);
           res.status(404).end();
           return;
         }

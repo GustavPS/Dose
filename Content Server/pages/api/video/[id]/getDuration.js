@@ -1,6 +1,8 @@
 const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
+const Logger = require('../../../../lib/logger');
+const logger = new Logger().getInstance();
 const ORDERBY = [
   'id',
   'added_date',
@@ -39,7 +41,7 @@ export default (req, res) => {
       filename = await getShowPath(req.query.id);
     }
   } catch(error) {
-    console.log(` > User tried to get the duration of movie/episode with id ${req.query.id} which does not exist`);
+    logger.DEBUG(`User tried to get the duration of movie/episode with id ${req.query.id} which does not exist`);
     res.status(404).end();
     resolve();
     return;
@@ -47,7 +49,7 @@ export default (req, res) => {
 
   ffmpeg.ffprobe(filename, function(err, metadata) {
     if (err) {
-      console.log(err);
+      logger.ERROR(`Get video duration error ffprobe error: ${err}`);
     }
       res.status(200).json({duration: metadata.format.duration});
       resolve();

@@ -1,6 +1,8 @@
 const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
+const Logger = require('../../../../lib/logger');
+const logger = new Logger().getInstance();
 
 const ORDERBY = [
   'id',
@@ -73,8 +75,8 @@ export default (req, res) => {
             });
 
         }).catch(error => {
-            console.log(error);
-            console.log(` > User tried to get the information for movie with id ${req.query.movie} which does not exist`);
+            logger.DEBUG(`User tried to get the information for movie with id ${req.query.movie} which does not exist`);
+            logger.DEBUG(error);
             res.status(404).end();
             resolve();
             return;

@@ -22,7 +22,6 @@ export default (req, res) => {
         resolve();
         return;
     }
-    //console.log(offset);
 
     if (!ORDERBY.includes(orderBy)) {
         res.status(400).end();
