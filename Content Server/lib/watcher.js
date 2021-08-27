@@ -4,8 +4,10 @@ const path = require('path');
 const pathExists = require('path-exists');
 const MovieLibrary = require('./library/movieLibrary');
 const TvLibrary = require('./library/tvLibrary');
+const readline = require('readline');
 const Logger = require('./logger');
 const logger = new Logger().getInstance();
+
 
 class Watcher {
     /**
@@ -49,8 +51,7 @@ class Watcher {
         const libLenght = libraries.length;
         let index = 1;
         for (const library of libraries) {
-            process.stdout.clearLine();
-            process.stdout.cursorTo(0);
+            readline.cursorTo(0);
             process.stdout.write(`\x1b[36m > Checking Library ${index}/${libLenght}`);
             let exist = await pathExists(library.path);
             if (!exist) {
@@ -66,8 +67,7 @@ class Watcher {
         const movieLenght = movies.length;
         index = 1;
         for (const movie of movies) {
-            process.stdout.clearLine();
-            process.stdout.cursorTo(0);
+            readline.cursorTo(process.stdout, 0);
             process.stdout.write(`\x1b[36m > Checking Movie ${index}/${movieLenght}\x1b[0m`);
             if (movie.movie_name === null) {
                 movie.movie_name = "";
@@ -86,8 +86,7 @@ class Watcher {
         const showLength = shows.length;
         index = 1;
         for (const show of shows) {
-            process.stdout.clearLine();
-            process.stdout.cursorTo(0);
+            readline.cursorTo(process.stdout, 0);
             process.stdout.write(`\x1b[36m > Checking Show ${index}/${showLength}\x1b[0m`);
             if (show.serie_name === null) {
                 show.serie_name = "";
@@ -108,8 +107,7 @@ class Watcher {
         const subLength = subtitles.length;
         index = 1;
         for (const subtitle of subtitles) {
-            process.stdout.clearLine();
-            process.stdout.cursorTo(0);
+            readline.cursorTo(process.stdout, 0);
             process.stdout.write(`\x1b[36m > Checking Subtitle ${index}/${subLength}\x1b[0m`);
             let exist = await pathExists(subtitle.library_path + subtitle.subtitle_path);
             if (!exist) {
