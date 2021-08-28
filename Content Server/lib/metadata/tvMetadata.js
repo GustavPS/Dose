@@ -1,6 +1,8 @@
 const Metadata = require('./metadata');
 const fetch = require('node-fetch');
 const db = require('../db');
+const Logger = require('../logger');
+const logger = new Logger().getInstance();
 
 class TvMetadata extends Metadata {
     constructor() {
