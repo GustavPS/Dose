@@ -159,7 +159,6 @@ class MovieLibrary extends Library {
     }
 
     addSubtitleIfNotSaved(movieName, path, parentFolder) {
-        logger.INFO(`${movieName} ${path} ${parentFolder}`)
         return new Promise(async (resolve, reject) => {
             let fileName = pathLib.basename(path);
             let subtitleInfo = this.getSubtitleInfo(fileName);
