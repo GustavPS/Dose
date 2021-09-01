@@ -29,6 +29,41 @@ class TvLibrary extends Library {
         super(name, path, id, new SerieMetadata());
     }
 
+    addToAwaitingSubtitles(showName, path, showPath, seasonNumber, episodeNumber) {
+        this.awaitingSubtitles.push({
+            showName: showName,
+            path: path,
+            showPath: showPath,
+            seasonNumber: seasonNumber,
+            episodeNumber: episodeNumber
+        });
+    }
+
+    getAwaitingSubtitles(showName, showPath, seasonNumber, episodeNumber) {
+        let result = [];
+        for (let sub of this.awaitingSubtitles) {
+            if (sub.showName === showName && sub.showPath === showPath &&
+                sub.seasonNumber === seasonNumber && sub.episodeNumber === episodeNumber) {
+                    result.push(sub);
+                }
+
+        }
+        return result;
+    }
+
+    
+    removeFromAwaitingSubtitles(showName, showPath, seasonNumber, episodeNumber) {
+        for (let i = this.awaitingSubtitles.length-1; i >= 0; i--) {
+            let sub = this.awaitingSubtitles[i];
+            if (sub.showName === showName && sub.showPath === showPath &&
+                sub.seasonNumber === seasonNumber && sub.episodeNumber === episodeNumber) {
+                this.awaitingSubtitles.splice(this.awaitingSubtitles[i], 1);
+            }
+        }
+    }
+    
+
+
     getType() {
         return 'SERIES';
     }
@@ -125,8 +160,8 @@ class TvLibrary extends Library {
                 });
             })
             .catch(err => {
-                logger.INFO(`Couldn't find any matching shows for subtitle ${path}`);
-                logger.ERROR(err);
+                logger.DEBUG(`Couldn't find any matching episode for subtitle (${showName} S${seasonNumber}E${episodeNumber}). Subtitle will be saved if/when the episode is found`);
+                this.addToAwaitingSubtitles(showName, path, showPath, seasonNumber, episodeNumber);
                 resolve();
             });
         });
@@ -240,7 +275,7 @@ class TvLibrary extends Library {
                             
                             sockets.emit("newEpisode", {"serie_id": internalSerieID, "internalepisodeid": episode_id, "season": seasonNumber, "episode": episodeNumber, "poster": poster.poster_path} )
                       });
-                            resolve();
+                            resolve(true);
                         });
                     }).catch(async (error) => {
                         // TODO: Add support for dummy metadata
@@ -249,7 +284,7 @@ class TvLibrary extends Library {
                         reject();
                     });
                 } else {
-                    resolve();
+                    resolve(false);
                 }
             }).catch(err => {
                 logger.ERROR(`Error while adding episode: ${err}`);
@@ -361,7 +396,15 @@ class TvLibrary extends Library {
                             // TODO: There must be a better way to write this?
                             t.addSerieIfNotSaved(showName, showPath).then((serieId) => {
                                 t.addSeasonIfNotSaved(showName, seasonPath, showPath, seasonNumber).then(() => {
-                                    t.addEpisodeIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber).then(() => {
+                                    t.addEpisodeIfNotSaved(showName, path, showPath, seasonNumber, episodeNumber).then(async (added) => {
+                                        if (added) {
+                                            let subtitles = t.getAwaitingSubtitles(showName, showPath, seasonNumber, episodeNumber);
+                                            for (let sub of subtitles) {
+                                                t.addSubtitleIfNotSaved(sub.showName, sub.path, sub.showPath, sub.seasonNumber, sub.episodeNumber);
+                                            }
+                                            t.removeFromAwaitingSubtitles(showName, showPath, seasonNumber, episodeNumber);
+                                        }
+
                                         lock.leave(token);
 
                                     // If we failed to add the episode

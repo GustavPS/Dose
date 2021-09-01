@@ -7,6 +7,7 @@ var AsyncLock = require('async-lock');
 const lock = require('../globalLock');
 const sockets = require('../../sockets');
 const Logger = require('../logger');
+const result = require('node-async-locks/lib/async-wrapper');
 const logger = new Logger().getInstance();
 
 class MovieLibrary extends Library {
@@ -24,6 +25,33 @@ class MovieLibrary extends Library {
 
     getType() {
         return 'MOVIES';
+    }
+
+    addToAwaitingSubtitles(movieName, path, parentFolder) {
+        this.awaitingSubtitles.push({
+            movieName: movieName,
+            path: path,
+            parentFolder: parentFolder
+        });
+    }
+
+    getAwaitingSubtitles(movieName) {
+        let result = [];
+        for (let sub of this.awaitingSubtitles) {
+            if (sub.movieName === movieName) {
+                result.push(sub);
+            }
+        }
+        return result;
+    }
+
+    removeFromAwaitingSubtitles(movieName) {
+        for (let i = this.awaitingSubtitles.length-1; i >= 0; i--) {
+            let sub = this.awaitingSubtitles[i];
+            if (sub.movieName === movieName) {
+                this.awaitingSubtitles.splice(this.awaitingSubtitles[i], 1);
+            }
+        }
     }
 
     async addMovieIfNotSaved(movieName, path, possibleReleaseYear) {
@@ -105,7 +133,7 @@ class MovieLibrary extends Library {
                                     }
                                     sockets.emit("newMovie", {"id": internalMovieID, "title": result.metadata.title, "overview": result.metadata.overview, "backdrop_path": back} )
                                     
-                                resolve();
+                                resolve(true);
                             });
                         });
 
@@ -120,17 +148,18 @@ class MovieLibrary extends Library {
                         let metadata = this.metadata.getDummyMetadata(movieName);
                         let trailer = "";
                         this.metadata.insertMetadata(metadata, images, [], [], trailer, internalMovieID).then(() => {
-                            resolve();
+                            resolve(true);
                         });
                     });
                 } else {
-                    resolve();
+                    resolve(false);
                 }
             });
         });
     }
 
     addSubtitleIfNotSaved(movieName, path, parentFolder) {
+        logger.INFO(`${movieName} ${path} ${parentFolder}`)
         return new Promise(async (resolve, reject) => {
             let fileName = pathLib.basename(path);
             let subtitleInfo = this.getSubtitleInfo(fileName);
@@ -138,11 +167,16 @@ class MovieLibrary extends Library {
             // TODO: There is a bug here, if multiple movies is in the same folder we will add the subtitle for all movies
             // However, having multiple movies in the same folder is not supported, but if that is changed
             // this have to be fixed
+            // TODO: This can also be done more efficient, by directly searching for the movie in the DB
+            // instead of grabbing all of them in the library
             db.any("SELECT * FROM movie WHERE library = $1", [parseInt(this.id)]).then(async (movies) => {
+                let subtitleInserted = false;
+                let alreadyAdded = false;
                 for (let movie of movies) {
                     let movieFolder =  pathLib.dirname(movie.path);
                     if (movieFolder === parentFolder) {
                         let result = await db.any('SELECT * FROM subtitle WHERE movie_id = $1 AND path = $2 AND library_id = $3', [movie.id, path, movie.library]);
+                        alreadyAdded = result.length !== 0;
                         if (result.length === 0) {
                             logger.INFO(`Saving subtitle for ${movieName} in library ${movie.library}. Language: ${subtitleInfo.language}`);
                             await db.none('INSERT INTO subtitle (path, movie_id, library_id, language, synced, extracted) VALUES ($1, $2, $3, $4, $5, $6)',[path,
@@ -151,13 +185,14 @@ class MovieLibrary extends Library {
                                 subtitleInfo.language,
                                 subtitleInfo.synced,
                                 subtitleInfo.extracted]);
+                            subtitleInserted = true;
                         }
                     }
-    
                 }
                 // If we didn't find a matching movie by the subtitle name, try with the folderName
-                if (movies.length === 0) {
-                        logger.WARNING(`Couldn't find any matching movies for subtitle ${path}`);
+                if (!subtitleInserted && !alreadyAdded) {
+                        logger.DEBUG(`Couldn't find any matching movies for subtitle ${path}. Subtitle will be saved if/when a movie is found`);
+                        this.addToAwaitingSubtitles(movieName, path, parentFolder);
                         reject();
                 } else {
                     resolve();
@@ -198,7 +233,14 @@ class MovieLibrary extends Library {
         let t = this;
 	    lock.enter(async function (token) {
             if (type === 'MOVIE') {
-                t.addMovieIfNotSaved(movieName, path, possibleReleaseYear).then(() => {
+                t.addMovieIfNotSaved(movieName, path, possibleReleaseYear).then(async (added) => {
+                    if (added) {
+                        let awaitingSubtitles = t.getAwaitingSubtitles(movieName);
+                        for (let sub of awaitingSubtitles) {
+                            await t.addSubtitleIfNotSaved(sub.movieName, sub.path, sub.parentFolder);
+                        }
+                        t.removeFromAwaitingSubtitles(movieName);
+                    }
                     lock.leave(token);
                 });
             } else if (type === 'SUBTITLE') {

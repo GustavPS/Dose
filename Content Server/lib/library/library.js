@@ -29,6 +29,7 @@ class Library {
         this.id = id;
         this.metadata = metadata;
         this.lock = new AsyncLock();
+        this.awaitingSubtitles = [];
     }
 
     async findAudioStreams(streams) {
