@@ -217,12 +217,13 @@ class TvLibrary extends Library {
         return new Promise(async (resolve, reject) => {
             let alreadyAdded = false;
             let internalSerieID;
+            let internal_episode_id;
             let serieTmdbId;
             await db.tx(async t => {
                 let result = await t.any('SELECT * FROM serie_episode WHERE season_number = $1 AND episode = $2 AND serie_id IN (SELECT id FROM serie WHERE name = $3 AND path = $4)', [seasonNumber, episodeNumber, serieName, showPath]);
                 if (result.length === 0) {
                     logger.INFO(`Found ${serieName} season ${seasonNumber} episode ${episodeNumber} in library ${this.name}`);
-                    let internal_episode_id = await t.one('INSERT INTO serie_episode (season_number, serie_id, episode, path) VALUES ($1, (SELECT id FROM serie WHERE name = $2 AND path = $3), $4, $5) RETURNING id', [seasonNumber, serieName, showPath, episodeNumber, episodePath]);
+                    internal_episode_id = await t.one('INSERT INTO serie_episode (season_number, serie_id, episode, path) VALUES ($1, (SELECT id FROM serie WHERE name = $2 AND path = $3), $4, $5) RETURNING id', [seasonNumber, serieName, showPath, episodeNumber, episodePath]);
                     internal_episode_id = internal_episode_id.id;
                     
                     const fileStreams = await this.getFileStreams(episodePath);
@@ -270,10 +271,8 @@ class TvLibrary extends Library {
                         this.metadata.insertEpisodeMetadata(metadata, internalSerieID, seasonNumber, episodeNumber).then(() => {
                             db.tx(async t => {
                             let poster = await t.one('SELECT poster_path FROM serie_season_metadata WHERE serie_id = $1 AND season_id = $2;', [internalSerieID, seasonNumber]);
-                            //let poster = await t.one('SELECT path FROM image WHERE id = $1', [imgId.image_id]);
-                            let episode_id = await t.one('SELECT id FROM serie_episode WHERE serie_id = $1 AND season_number = $2 AND episode = $3', [internalSerieID, seasonNumber, episodeNumber]);
                             
-                            sockets.emit("newEpisode", {"serie_id": internalSerieID, "internalepisodeid": episode_id, "season": seasonNumber, "episode": episodeNumber, "poster": poster.poster_path} )
+                            sockets.emit("newEpisode", {"serie_id": internalSerieID, "internalepisodeid": internal_episode_id, "season": seasonNumber, "episode": episodeNumber, "poster": poster.poster_path} )
                       });
                             resolve(true);
                         });
