@@ -255,7 +255,7 @@ class Library {
 
             if (shouldDownload) {
                 let path = pathLib.join(fullPath, `${name}_downloaded_trailer_not_cropted.mp4`);
-                const info = await ytdl.getInfo(trailer);
+                //const info = await ytdl.getInfo(trailer);
                 const maxAttempts = 20;
                 let ignoreThrottling = false;
                 let currentAttempts = 1;
@@ -284,7 +284,7 @@ class Library {
                         }
                     });
                     download.on('error', err => {
-                        logger.ERR(`Error downloading trailer: ${err}`);
+                        logger.ERROR(`Error downloading trailer: ${err}`);
                         download.destroy();
                         resolve(false);
                         return;

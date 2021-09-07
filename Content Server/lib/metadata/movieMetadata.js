@@ -1,13 +1,171 @@
 const Metadata = require('./metadata');
 const fetch = require('node-fetch');
 const db = require('../db');
-
+const Logger = require('../logger');
+const logger = new Logger().getInstance();
 
 
 class MovieMetadata extends Metadata {
     constructor() {
         super();
     }
+
+    getBadImages() {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                t.any("SELECT title, movie_id, tmdb_id, found_good_poster, found_good_backdrop, found_good_logo FROM movie_metadata WHERE found_good_poster = FALSE OR found_good_backdrop = FALSE OR found_good_logo = FALSE")
+                .then(movies => {
+                    resolve(movies);
+                });
+            });
+        });
+    }
+
+    /**
+     * Fetches new images for a movie and updates the DB if needed
+     * 
+     * @param {string} title The movie title
+     * @param {int} movieId The internal movie ID
+     * @param {int} tmdbId The TMDB movie ID
+     * @param {boolean} needPoster True if this movie need a new poster
+     * @param {boolean} needBackdrop True if this movie need a new backdrop
+     * @param {boolean} needLogo True if this movie need a new logo
+     */
+    updateImages(title, movieId, tmdbId, needPoster, needBackdrop, needLogo) {
+        return new Promise(resolve => {
+            this.getImages(tmdbId)
+            .then(async (images) => {
+                // Backdrops
+                let processedImages = this.setPrefferedImage('en', images.backdrops);
+                images.backdrops.list = processedImages.images;
+                images.backdrops.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
+
+                // Posters
+                processedImages = this.setPrefferedImage('en', images.posters);
+                images.posters.list = processedImages.images;
+                images.posters.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
+
+                // Logos
+                processedImages = this.setPrefferedImage('en', images.logos, true);
+                images.logos.list = processedImages.images;
+                images.logos.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
+
+                const haveLogo     = await this.movieHasAnyLogoSaved(movieId);
+                const havePoster   = await this.movieHasAnyPosterSaved(movieId);
+                const haveBackdrop = await this.movieHasAnyBackdropSaved(movieId);
+                
+                await db.tx(async t => {
+                    const anythingUpdated = false;
+                    // If we don't have any logos saved but found some now, save them no matter if we found preffered logo or not
+                    if (!haveLogo && images.logos.list.length > 0) {
+                        logger.INFO(`No earlier logos saved for movie ${title}. Saving now`);
+                        for (let logo of images.logos.list) {
+                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
+                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'LOGO')", [movieId, imageId, logo.active]);
+                        }
+                        anythingUpdated = true;
+                    }
+
+                    // If we don't have any posters saved but found some now, save them no matter if we found preffered logo or not
+                    if (!havePoster && images.posters.list.length > 0) {
+                        logger.INFO(`No earlier posters saved for movie ${title}. Saving now`);
+                        for (let poster of images.posters.list) {
+                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [poster.file_path], c => +c.id);
+                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'POSTER')", [movieId, imageId, poster.active]);
+                        }
+                        anythingUpdated = true;
+                    }
+
+                    // If we don't have any backdrops saved but found some now, save them no matter if we found preffered logo or not
+                    if (!haveBackdrop && images.backdrops.list.length > 0) {
+                        logger.INFO(`No earlier backdrops saved for movie ${title}. Saving now`);
+                        for (let backdrop of images.backdrops.list) {
+                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [backdrop.file_path], c => +c.id);
+                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'BACKDROP')", [movieId, imageId, backdrop.active]);
+                        }
+                        anythingUpdated = true;
+                    }
+
+                    // If we have saved bad logos and found a good logo now, remove the old ones and insert the new ones
+                    if (haveLogo && needLogo && images.logos.foundPrefferedLanguage) {
+                        logger.INFO(`Found better logo for movie ${title}. Saving now`);
+                        await t.none("DELETE FROM image WHERE id IN (SELECT image_id FROM movie_image WHERE movie_id = $1 AND type = 'LOGO')", movieId);
+
+                        for (let logo of images.logos.list) {
+                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
+                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'LOGO')", [movieId, imageId, logo.active]);
+                        }
+                        anythingUpdated = true;
+                    }
+
+                    // If we have saved bad posters and found a good poster now, remove the old ones and insert the new ones
+                    if (havePoster && needPoster && images.posters.foundPrefferedLanguage) {
+                        logger.INFO(`Found better poster for movie ${title}. Saving now`);
+                        await t.none("DELETE FROM image WHERE id IN (SELECT image_id FROM movie_image WHERE movie_id = $1 AND type = 'POSTER')", movieId);
+
+                        for (let logo of images.posters.list) {
+                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
+                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'POSTER')", [movieId, imageId, logo.active]);
+                        }
+                        anythingUpdated = true;
+                    }
+
+                    // If we have saved bad backdrops and found a good backdrops now, remove the old ones and insert the new ones
+                    if (haveBackdrop && needBackdrop && images.backdrops.foundPrefferedLanguage) {
+                        logger.INFO(`Found better backdrop for movie ${title}. Saving now`);
+                        await t.none("DELETE FROM image WHERE id IN (SELECT image_id FROM movie_image WHERE movie_id = $1 AND type = 'BACKDROP')", movieId);
+
+                        for (let logo of images.backdrops.list) {
+                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
+                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'BACKDROP')", [movieId, imageId, logo.active]);
+                        }
+                        anythingUpdated = true;
+                    }
+
+                    t.none("UPDATE movie_metadata SET found_good_poster = $1, found_good_backdrop = $2, found_good_logo = $3 WHERE movie_id = $4",
+                            [images.posters.foundPrefferedLanguage, images.backdrops.foundPrefferedLanguage, images.logos.foundPrefferedLanguage, movieId]);
+
+                    if (!anythingUpdated) {
+                        logger.INFO(`Didn't find any better images for movie ${title}. Still need: ${needBackdrop ? 'Backdrop ' : ''}${needPoster ? 'Poster ' : ''}${needLogo ? 'Logo ' : ''}`);
+                    }
+                    return;
+                })
+                .catch(error => {
+                    logger.ERROR(`Error while updating images for movie ${title}. Error: ${error}`);
+                    resolve();
+                });
+                resolve();
+            });
+        });
+    }
+
+    movieHasAnyPosterSaved(movieId) {
+        return new Promise(resolve => {
+            db.one("SELECT count(*) FROM movie_image WHERE movie_id = $1 AND type = 'POSTER'", movieId)
+            .then(result => {
+                resolve(result.count > 0);
+            });
+        });
+    }
+
+    movieHasAnyBackdropSaved(movieId) {
+        return new Promise(resolve => {
+            db.one("SELECT count(*) FROM movie_image WHERE movie_id = $1 AND type = 'BACKDROP'", movieId)
+            .then(result => {
+                resolve(result.count > 0);
+            });
+        });
+    }
+
+    movieHasAnyLogoSaved(movieId) {
+        return new Promise(resolve => {
+            db.one("SELECT count(*) FROM movie_image WHERE movie_id = $1 AND type = 'LOGO'", movieId)
+            .then(result => {
+                resolve(result.count > 0);
+            });
+        });
+    }
+
 
     setPrefferedImage(language, images, useLowestAspectRatio=false) {
         let active = true;
@@ -54,7 +212,10 @@ class MovieMetadata extends Metadata {
             images[0].active = false;
         }
 
-        return images;
+        return {
+            images: images,
+            foundPrefferedLanguage: foundPrefferedLanguage
+        }
     }
 
 
@@ -76,9 +237,20 @@ class MovieMetadata extends Metadata {
                             .then(recommendations => {
                                 this.getImages(json.results[0].id)
                                 .then(images => {
-                                    images.backdrops = this.setPrefferedImage('en', images.backdrops);
-                                    images.posters   = this.setPrefferedImage('en', images.posters);
-                                    images.logos     = this.setPrefferedImage('en', images.logos, true);
+                                    // Backdrops
+                                    let processedImages = this.setPrefferedImage('en', images.backdrops);
+                                    images.backdrops.list = processedImages.images;
+                                    images.backdrops.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
+
+                                    // Posters
+                                    processedImages = this.setPrefferedImage('en', images.posters);
+                                    images.posters.list = processedImages.images;
+                                    images.posters.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
+
+                                    // Logos
+                                    processedImages = this.setPrefferedImage('en', images.logos, true);
+                                    images.logos.list = processedImages.images;
+                                    images.logos.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
         
                                     this.getTrailer(json.results[0].id).then(trailer => {
                                         let result = {
@@ -137,7 +309,12 @@ class MovieMetadata extends Metadata {
         });
     }
 
-
+    /**
+     * Get a list of posters, backdrops and logos for a movie
+     * 
+     * @param {int} movieID TMDB id for the movie
+     * @returns 
+     */
     getImages(movieID) {
         return new Promise((resolve, reject) => {
             fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/images?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`))
@@ -316,7 +493,7 @@ class MovieMetadata extends Metadata {
 
             }
             // SAVE METADATA
-            await db.none("INSERT INTO movie_metadata (movie_id, title, overview, poster, release_date, runtime, popularity, backdrop, added_date, trailer, run_time, tmdb_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", [
+            await db.none("INSERT INTO movie_metadata (movie_id, title, overview, poster, release_date, runtime, popularity, backdrop, added_date, trailer, run_time, tmdb_id, found_good_poster, found_good_backdrop, found_good_logo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)", [
                 internalMovieID,
                 metadata.title,
                 metadata.overview,
@@ -328,7 +505,10 @@ class MovieMetadata extends Metadata {
                 `${Date.now()}`,
                 trailer,
                 metadata.runtime === -1 ? -1 : metadata.runtime * 60, // insert -1 if runtime is -1 (when we use dummy metadata)
-                metadata.id
+                metadata.id,
+                images.posters.foundPrefferedLanguage,
+                images.backdrops.foundPrefferedLanguage,
+                images.logos.foundPrefferedLanguage
             ]);
 
 
@@ -375,39 +555,39 @@ class MovieMetadata extends Metadata {
 
             // SAVE IMAGES
             // If the movie don't have a image, push one. All the movies need to have a image.
-            if (images.backdrops.length === 0) {
-                images.backdrops.push({
+            if (images.backdrops.list.length === 0) {
+                images.backdrops.list.push({
                     file_path: 'no_image',
                     active: true
                 });
             }
-            if (images.posters.length === 0) {
-                images.posters.push({
+            if (images.posters.list.length === 0) {
+                images.posters.list.push({
                     file_path: 'no_image',
                     active: true
                 })
             }
-            if (images.logos.length === 0) {
-                images.logos.push({
+            if (images.logos.list.length === 0) {
+                images.logos.list.push({
                     file_path: 'no_image',
                     active: true
                 })
             }
             await db.tx(async t => {
                 // TODO: This will push "no_name" to image even if it already exist. That is not needed
-                for (let backdrop of images.backdrops) {
+                for (let backdrop of images.backdrops.list) {
                     const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [backdrop.file_path], c => +c.id);
                     t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'BACKDROP')", [internalMovieID, imageId, backdrop.active]);
                 }
 
                 // TODO: This will push "no_name" to image even if it already exist. That is not needed.
-                for (let poster of images.posters) {
+                for (let poster of images.posters.list) {
                     const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [poster.file_path], c => +c.id);
                     t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'POSTER')", [internalMovieID, imageId, poster.active]);
                 }
 
                 // TODO: This will push "no_name" to image even if it already exist. That is not needed.
-                for (let logo of images.logos) {
+                for (let logo of images.logos.list) {
                     const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
                     t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'LOGO')", [internalMovieID, imageId, logo.active]);
                 }

@@ -43,18 +43,32 @@ function startWebServer() {
     server.listen(port, () => {
       logger.INFO(`Ready on port ${port}`);
 
-      updatePopularMovies();
-      setInterval(updatePopularMovies, 43200000); // 12 hours
+      updateMovies();
+      setInterval(updateMovies, 43200000); // 12 hours
     });
   });
 }
 
 // Setup timer for getting popular movies
-const updatePopularMovies = () => {
-  logger.INFO(`Updating popular movies`);
+const updateMovies = () => {
   const metadataObj = new MovieMetadata();
+  metadataObj.getBadImages()
+  .then(async (movies) => {
+    logger.INFO(`Updating movie images`);
+    for (let movie of movies) {
+      await metadataObj.updateImages(
+              movie.title,
+              movie.movie_id,
+              movie.tmdb_id,
+              !movie.found_good_poster,
+              !movie.found_good_backdrop,
+              !movie.found_food_logo);
+    }
+  });
+
   metadataObj.getPopularMovies()
   .then(movies => {
+    logger.INFO(`Updating popular movies`);
     logger.INFO(`Found ${movies.length} popular movie(s)`);
     metadataObj.updatePopularMovies(movies);
   });

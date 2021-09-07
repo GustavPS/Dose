@@ -13,6 +13,14 @@ class Metadata {
         return this.API_KEY;
     }
 
+    getBadImages() {
+        throw('getBadImages must be implemented');
+    }
+
+    updateImages(content) {
+        throw('updateImages must be implemented');
+    }
+
     getMetadata(name) {
         throw('getMetadata must be implemented');
     }
