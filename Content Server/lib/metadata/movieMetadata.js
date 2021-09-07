@@ -55,7 +55,7 @@ class MovieMetadata extends Metadata {
                 const haveBackdrop = await this.movieHasAnyBackdropSaved(movieId);
                 
                 await db.tx(async t => {
-                    const anythingUpdated = false;
+                    let anythingUpdated = false;
                     // If we don't have any logos saved but found some now, save them no matter if we found preffered logo or not
                     if (!haveLogo && images.logos.list.length > 0) {
                         logger.INFO(`No earlier logos saved for movie ${title}. Saving now`);
