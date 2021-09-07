@@ -221,6 +221,14 @@ class Library {
         throw('removeEntry must be implemented.');
     }
 
+    /**
+     * Download and save the trailer for a movie/show. NOTE: Only tested for movies
+     * 
+     * @param {string} trailer  Youtube link to trailer
+     * @param {string} name Name of movie/show
+     * @param {string} savePath Path to movie/show
+     * @returns 
+     */
     downloadTrailer(trailer, name, savePath) {
         let folderPath = pathLib.dirname(savePath);
         let fullPath = pathLib.join(this.path, folderPath);
@@ -282,7 +290,15 @@ class Library {
                         return;
                     });
 
+                    download.on('retry', (number, error) => {
+                        logger.ERR(`Error downloading trailer! Retry: ${number}, Error: ${error}`);
+                        download.destroy();
+                        resolve(false);
+                        return;
+                    });
+
                     download.on('end', () => {
+                        // TODO: Movie this to own function
                         let proc = ffmpeg(path).inputOptions([
                             '-ss 10'
                         ]).outputOptions([
