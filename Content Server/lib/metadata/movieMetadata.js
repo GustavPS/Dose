@@ -13,7 +13,7 @@ class MovieMetadata extends Metadata {
     getBadImages() {
         return new Promise(resolve => {
             db.tx(async t => {
-                t.any("SELECT title, movie_id, tmdb_id, found_good_poster, found_good_backdrop, found_good_logo FROM movie_metadata WHERE found_good_poster = FALSE OR found_good_backdrop = FALSE OR found_good_logo = FALSE")
+                t.any("SELECT title, movie_id, tmdb_id, found_good_poster, found_good_backdrop, found_good_logo FROM movie_metadata WHERE (found_good_poster = FALSE OR found_good_backdrop = FALSE OR found_good_logo = FALSE) AND tmdb_id != -1")
                 .then(movies => {
                     resolve(movies);
                 });

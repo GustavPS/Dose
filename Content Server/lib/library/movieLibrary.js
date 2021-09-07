@@ -141,9 +141,18 @@ class MovieLibrary extends Library {
                     }).catch(async (error) => {
                         logger.INFO(`Couldn't find any metadata for movie '${movieName}'`);
                         let images = {
-                            backdrops: [],
-                            posters: [],
-                            logos: []
+                            backdrops: {
+                                foundPrefferedLanguage: false,
+                                list: []
+                            },
+                            posters: {
+                                foundPrefferedLanguage: false,
+                                list: []
+                            },
+                            logos: {
+                                foundPrefferedLanguage: false,
+                                list: []
+                            }
                         }
                         let metadata = this.metadata.getDummyMetadata(movieName);
                         let trailer = "";
