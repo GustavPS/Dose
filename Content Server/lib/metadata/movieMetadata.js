@@ -50,7 +50,11 @@ class MovieMetadata extends Metadata {
 
     /** PUBLIC FUNCTIONS **/
 
-
+    /**
+     * Get a list of movies with bad images
+     * 
+     * @returns Promise
+     */
     getBadImages() {
         return new Promise(resolve => {
             db.tx(async t => {
