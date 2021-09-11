@@ -1,6 +1,7 @@
 const Metadata = require('./metadata');
 const fetch = require('node-fetch');
 const db = require('../db');
+const Movie = require('../media/Movie');
 const Logger = require('../logger');
 const logger = new Logger().getInstance();
 
@@ -10,17 +11,55 @@ class MovieMetadata extends Metadata {
         super();
     }
 
-    getBadImages() {
-        return new Promise(resolve => {
-            db.tx(async t => {
-                t.any("SELECT title, movie_id, tmdb_id, found_good_poster, found_good_backdrop, found_good_logo FROM movie_metadata WHERE (found_good_poster = FALSE OR found_good_backdrop = FALSE OR found_good_logo = FALSE) AND tmdb_id != -1")
-                .then(movies => {
-                    resolve(movies);
-                });
+    /** PRIVATE FUNCTIONS **/
+
+    /**
+     * Search for the tmdb ID for a movie
+     * 
+     * @param {string} movieName The movie name
+     * @param {int} year The release year for the movie (OPTIONAL)
+     * @returns Promise
+     */
+     #searchForMovie(movieName, year=null) {
+        return new Promise((resolve, reject) => {
+            fetch(encodeURI(`${this.getAPIUrl()}/search/movie?api_key=${this.getAPIKey()}&language=en-US&query=${movieName}&year=${year}&page=1&include_adult=true`))
+            .then(res => res.json())
+            .then(json => {
+                if (json.total_results == 0) {
+                    reject("Not found");
+                } else {
+                    resolve(json.results[0].id);
+                }
             });
         });
     }
 
+    /**
+     * Returns the metadata for a movie
+     * 
+     * @param {int} id The tmdb ID for a movie
+     * @returns 
+     */
+    #searchForMetadata(id) {
+        return new Promise(resolve => {
+            fetch(encodeURI(`${this.getAPIUrl()}/movie/${id}?api_key=${this.getAPIKey()}&language=en-US`))
+            .then(res => res.json())
+            .then(res => resolve(res));
+        });
+    }
+
+    /** PUBLIC FUNCTIONS **/
+
+
+    getBadImages() {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                t.any("SELECT title, movie_id, tmdb_id, found_good_poster, found_good_backdrop, found_good_logo FROM movie_metadata WHERE (found_good_poster = FALSE OR found_good_backdrop = FALSE OR found_good_logo = FALSE) AND tmdb_id != -1")
+                .then(movies => resolve(movies));
+            });
+        });
+    }
+    
     /**
      * Fetches new images for a movie and updates the DB if needed
      * 
@@ -34,7 +73,9 @@ class MovieMetadata extends Metadata {
     updateImages(title, movieId, tmdbId, needPoster, needBackdrop, needLogo) {
         return new Promise(resolve => {
             this.getImages(tmdbId)
-            .then(async (images) => {
+            .then(images => {
+                const movie = new Movie(movieId);
+
                 // Backdrops
                 let processedImages = this.setPrefferedImage('en', images.backdrops);
                 images.backdrops.list = processedImages.images;
@@ -50,123 +91,74 @@ class MovieMetadata extends Metadata {
                 images.logos.list = processedImages.images;
                 images.logos.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
 
-                const haveLogo     = await this.movieHasAnyLogoSaved(movieId);
-                const havePoster   = await this.movieHasAnyPosterSaved(movieId);
-                const haveBackdrop = await this.movieHasAnyBackdropSaved(movieId);
+                const haveLogoP     = movie.haveLogoSaved();
+                const havePosterP   = movie.havePosterSaved();
+                const haveBackdropP = movie.haveBackdropSaved();
                 
-                await db.tx(async t => {
+                Promise.all([haveLogoP, havePosterP, haveBackdropP])
+                .then(([haveLogo, havePoster, haveBackdrop]) => {
                     let anythingUpdated = false;
-                    // If we don't have any logos saved but found some now, save them no matter if we found preffered logo or not
+                    
                     if (!haveLogo && images.logos.list.length > 0) {
                         logger.INFO(`No earlier logos saved for movie ${title}. Saving now`);
-                        for (let logo of images.logos.list) {
-                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
-                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'LOGO')", [movieId, imageId, logo.active]);
-                        }
+                        movie.insertImages(images.logos.list, 'LOGO');
                         anythingUpdated = true;
                     }
-
-                    // If we don't have any posters saved but found some now, save them no matter if we found preffered logo or not
                     if (!havePoster && images.posters.list.length > 0) {
                         logger.INFO(`No earlier posters saved for movie ${title}. Saving now`);
-                        for (let poster of images.posters.list) {
-                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [poster.file_path], c => +c.id);
-                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'POSTER')", [movieId, imageId, poster.active]);
-                        }
+                        movie.insertImages(images.posters.list, 'POSTER');
                         anythingUpdated = true;
                     }
-
-                    // If we don't have any backdrops saved but found some now, save them no matter if we found preffered logo or not
                     if (!haveBackdrop && images.backdrops.list.length > 0) {
                         logger.INFO(`No earlier backdrops saved for movie ${title}. Saving now`);
-                        for (let backdrop of images.backdrops.list) {
-                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [backdrop.file_path], c => +c.id);
-                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'BACKDROP')", [movieId, imageId, backdrop.active]);
-                        }
+                        movie.insertImages(images.posters.list, 'BACKDROP');
                         anythingUpdated = true;
                     }
-
-                    // If we have saved bad logos and found a good logo now, remove the old ones and insert the new ones
+    
                     if (haveLogo && needLogo && images.logos.foundPrefferedLanguage) {
                         logger.INFO(`Found better logo for movie ${title}. Saving now`);
-                        await t.none("DELETE FROM image WHERE id IN (SELECT image_id FROM movie_image WHERE movie_id = $1 AND type = 'LOGO')", movieId);
-
-                        for (let logo of images.logos.list) {
-                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
-                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'LOGO')", [movieId, imageId, logo.active]);
-                        }
+                        movie.deleteImages('LOGO')
+                        .then(() => movie.insertImages(images.logos.list, 'LOGO'));
                         anythingUpdated = true;
                     }
-
-                    // If we have saved bad posters and found a good poster now, remove the old ones and insert the new ones
                     if (havePoster && needPoster && images.posters.foundPrefferedLanguage) {
                         logger.INFO(`Found better poster for movie ${title}. Saving now`);
-                        await t.none("DELETE FROM image WHERE id IN (SELECT image_id FROM movie_image WHERE movie_id = $1 AND type = 'POSTER')", movieId);
-
-                        for (let logo of images.posters.list) {
-                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
-                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'POSTER')", [movieId, imageId, logo.active]);
-                        }
+                        movie.deleteImages('POSTER')
+                        .then(() => movie.insertImages(images.posters.list, 'POSTER'));
                         anythingUpdated = true;
                     }
-
-                    // If we have saved bad backdrops and found a good backdrops now, remove the old ones and insert the new ones
                     if (haveBackdrop && needBackdrop && images.backdrops.foundPrefferedLanguage) {
                         logger.INFO(`Found better backdrop for movie ${title}. Saving now`);
-                        await t.none("DELETE FROM image WHERE id IN (SELECT image_id FROM movie_image WHERE movie_id = $1 AND type = 'BACKDROP')", movieId);
-
-                        for (let logo of images.backdrops.list) {
-                            const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
-                            t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'BACKDROP')", [movieId, imageId, logo.active]);
-                        }
+                        movie.deleteImages('BACKDROP')
+                        .then(() => movie.insertImages(images.backdrops.list, 'BACKDROP'));
                         anythingUpdated = true;
                     }
-
-                    t.none("UPDATE movie_metadata SET found_good_poster = $1, found_good_backdrop = $2, found_good_logo = $3 WHERE movie_id = $4",
-                            [images.posters.foundPrefferedLanguage, images.backdrops.foundPrefferedLanguage, images.logos.foundPrefferedLanguage, movieId]);
-
+                    movie.updateImageStatus(
+                        images.posters.foundPrefferedLanguage,
+                        images.backdrops.foundPrefferedLanguage,
+                        images.logos.foundPrefferedLanguage);
+    
+    
                     if (!anythingUpdated) {
                         logger.INFO(`Didn't find any better images for movie ${title}. Still need: ${needBackdrop ? 'Backdrop ' : ''}${needPoster ? 'Poster ' : ''}${needLogo ? 'Logo ' : ''}`);
                     }
-                    return;
-                })
-                .catch(error => {
-                    logger.ERROR(`Error while updating images for movie ${title}. Error: ${error}`);
-                    resolve();
                 });
+
+                // DB updates might not be done yet, but the promise is only to
+                // make sure that we don't flood the API with requests
                 resolve();
             });
         });
     }
 
-    movieHasAnyPosterSaved(movieId) {
-        return new Promise(resolve => {
-            db.one("SELECT count(*) FROM movie_image WHERE movie_id = $1 AND type = 'POSTER'", movieId)
-            .then(result => {
-                resolve(result.count > 0);
-            });
-        });
-    }
-
-    movieHasAnyBackdropSaved(movieId) {
-        return new Promise(resolve => {
-            db.one("SELECT count(*) FROM movie_image WHERE movie_id = $1 AND type = 'BACKDROP'", movieId)
-            .then(result => {
-                resolve(result.count > 0);
-            });
-        });
-    }
-
-    movieHasAnyLogoSaved(movieId) {
-        return new Promise(resolve => {
-            db.one("SELECT count(*) FROM movie_image WHERE movie_id = $1 AND type = 'LOGO'", movieId)
-            .then(result => {
-                resolve(result.count > 0);
-            });
-        });
-    }
-
-
+    /**
+     * Find and set the preferred image
+     * 
+     * @param {string} language 
+     * @param {Array} images 
+     * @param {boolean} useLowestAspectRatio 
+     * @returns Array
+     */
     setPrefferedImage(language, images, useLowestAspectRatio=false) {
         let active = true;
         let foundPrefferedLanguage = false;
@@ -218,58 +210,53 @@ class MovieMetadata extends Metadata {
         }
     }
 
-
-
+    /**
+     * Returns the complete metadata for a movie including:
+     * metadata, images, actors, recommendations, trailer and year
+     * 
+     * @param {string} movieName 
+     * @param {int} year 
+     * @returns Promise
+     */
     getMetadataByYear(movieName, year=null) {
         return new Promise((resolve, reject) => {
-            fetch(encodeURI(`${this.getAPIUrl()}/search/movie?api_key=${this.getAPIKey()}&language=en-US&query=${movieName}&year=${year}&page=1&include_adult=true`))
-            .then(res => res.json())
-            .then(json => {
-                if (json.total_results == 0) {
-                    reject("Not found");
-                } else {
-                    fetch(encodeURI(`${this.getAPIUrl()}/movie/${json.results[0].id}?api_key=${this.getAPIKey()}&language=en-US`))
-                    .then(res => res.json())
-                    .then(metadata => {
-                        this.getActors(json.results[0].id)
-                        .then(actors => {
-                            this.getRecommended(json.results[0].id)
-                            .then(recommendations => {
-                                this.getImages(json.results[0].id)
-                                .then(images => {
-                                    // Backdrops
-                                    let processedImages = this.setPrefferedImage('en', images.backdrops);
-                                    images.backdrops.list = processedImages.images;
-                                    images.backdrops.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
+            this.#searchForMovie(movieName, year)
+            .then(id => {
+                const metadataPromise = this.#searchForMetadata(id);
+                const actorsPromise = this.getActors(id);
+                const recommendationsPromise = this.getRecommended(id);
+                const imagesPromise = this.getImages(id);
+                const trailerPromise = this.getTrailer(id);
+                Promise.all([metadataPromise, actorsPromise, recommendationsPromise, imagesPromise, trailerPromise])
+                .then(([metadata, actors, recommendations, images, trailer]) => {
+                    // Backdrops
+                    let processedImages = this.setPrefferedImage('en', images.backdrops);
+                    images.backdrops.list = processedImages.images;
+                    images.backdrops.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
 
-                                    // Posters
-                                    processedImages = this.setPrefferedImage('en', images.posters);
-                                    images.posters.list = processedImages.images;
-                                    images.posters.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
+                    // Posters
+                    processedImages = this.setPrefferedImage('en', images.posters);
+                    images.posters.list = processedImages.images;
+                    images.posters.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
 
-                                    // Logos
-                                    processedImages = this.setPrefferedImage('en', images.logos, true);
-                                    images.logos.list = processedImages.images;
-                                    images.logos.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
-        
-                                    this.getTrailer(json.results[0].id).then(trailer => {
-                                        let result = {
-                                            metadata: metadata,
-                                            images: images,
-                                            actors: actors,
-                                            recommendations: recommendations,
-                                            trailer: trailer,
-                                            year: year
-                                        }
-                                        resolve(result);
-                                    });
-                                });
-                            });
+                    // Logos
+                    processedImages = this.setPrefferedImage('en', images.logos, true);
+                    images.logos.list = processedImages.images;
+                    images.logos.foundPrefferedLanguage = processedImages.foundPrefferedLanguage;
 
-                        });
-
-                    });
-                }
+                    const result = {
+                        metadata: metadata,
+                        images: images,
+                        actors: actors,
+                        recommendations: recommendations,
+                        trailer: trailer,
+                        year: year
+                    }
+                    resolve(result);
+                });
+            })
+            .catch(err => {
+                reject(err);
             });
         });
     }
@@ -312,22 +299,28 @@ class MovieMetadata extends Metadata {
     /**
      * Get a list of posters, backdrops and logos for a movie
      * 
-     * @param {int} movieID TMDB id for the movie
+     * @param {int} tmdbID TMDB id for the movie
      * @returns 
      */
-    getImages(movieID) {
-        return new Promise((resolve, reject) => {
-            fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/images?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`))
+    getImages(tmdbID) {
+        return new Promise(resolve => {
+            fetch(encodeURI(`${this.getAPIUrl()}/movie/${tmdbID}/images?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`))
             .then(res => res.json())
             .then(images => {
                 resolve(images);
             })
         });
     }
-
-    getActors(movieID) {
-        return new Promise((resolve, reject) => {
-            fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/credits?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`))
+    
+    /**
+     * Get a list of actors for a movie
+     * 
+     * @param {string} tmdbId  TMDB id for the movie
+     * @returns 
+     */
+    getActors(tmdbId) {
+        return new Promise(resolve => {
+            fetch(encodeURI(`${this.getAPIUrl()}/movie/${tmdbId}/credits?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`))
             .then(res => res.json())
             .then(credits => credits.cast)
             .then(credits => {
@@ -344,11 +337,17 @@ class MovieMetadata extends Metadata {
         });
     }
 
-    getRecommended(movieID) {
+    /**
+     * Get the recommended movies for a movie
+     * 
+     * @param {string} tmdbID 
+     * @returns 
+     */
+    getRecommended(tmdbID) {
         return new Promise(async (resolve, reject) => {
             const request = (page, list=[], count=0) => {
                 return new Promise((resolve) => {
-                    fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/recommendations?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null&page=${page}`))
+                    fetch(encodeURI(`${this.getAPIUrl()}/movie/${tmdbID}/recommendations?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null&page=${page}`))
                     .then(res => res.json())
                     .then(result => {
                         const pages = result.total_pages;
@@ -399,6 +398,12 @@ class MovieMetadata extends Metadata {
     }
 
 
+    /**
+     * Get a list of internalMovieIds by a list of tmdbIds
+     * 
+     * @param {Array} IDs The list of TMDB IDs
+     * @returns Array
+     */
     getMoviesByTmdbIds(IDs) {
         return new Promise(async (resolve) => {
             const result = await db.any("SELECT movie_id, tmdb_id FROM movie_metadata WHERE tmdb_id = ANY ($1)", [IDs]);
@@ -406,6 +411,11 @@ class MovieMetadata extends Metadata {
         });
     }
 
+    /**
+     * Get a list of popular movies (Max 60)
+     * 
+     * @returns Promise
+     */
     getPopularMovies() {
         return new Promise(async (resolve) => {
             const request = (page=0, list=[]) => {
@@ -436,6 +446,12 @@ class MovieMetadata extends Metadata {
         });
     }
 
+    /**
+     * Update the popular movies
+     * 
+     * @param {Array} movies The list of movies
+     * @returns Promise
+     */
     updatePopularMovies(movies) {
         return new Promise(async (resolve) => {
             db.tx(async t => {
@@ -450,9 +466,15 @@ class MovieMetadata extends Metadata {
         });
     }
 
-    getTrailer(movieID) {
+    /**
+     * Get the trailer path for a movie
+     * 
+     * @param {int} tmdbID The TMDB ID for a moive
+     * @returns Promise
+     */
+    getTrailer(tmdbID) {
         return new Promise((resolve, reject) => {
-            fetch(encodeURI(`${this.getAPIUrl()}/movie/${movieID}/videos?api_key=${this.getAPIKey()}`))
+            fetch(encodeURI(`${this.getAPIUrl()}/movie/${tmdbID}/videos?api_key=${this.getAPIKey()}`))
             .then(res => res.json())
             .then(videos => {
                 for (let video of videos.results) {
@@ -467,134 +489,50 @@ class MovieMetadata extends Metadata {
     }
 
     /**
-     * Insert metadata in the database about a movie
+     * Insert all metadata for a movie
      * 
-     * @param {Object} metadata 
-     * @param {Integer} internalMovieID 
+     * @param {json} metadata The metadata object
+     * @param {json} images JSON object containing all images
+     * @param {array} actors The list of actors
+     * @param {array} recommendations The list of recommendations
+     * @param {string} trailer The trailer path
+     * @param {int} internalMovieID The internal movie ID
+     * @returns Promise
      */
-    async insertMetadata(metadata, images, actors, recommendations, trailer, internalMovieID) {
-        return new Promise(async (resolve, reject) => {
-            // If the metadata doesn't have any genre, add one (All movies need to have a genre)
-            if (metadata.genres.length === 0) {
-                metadata.genres.push({
-                    id: -1,
-                    name: 'other'
-                });
-            }
-            for (let category of metadata.genres) {
-                // Check if we already have saved the category from imdb
-                let categoryInDb = await db.any('SELECT * FROM category WHERE imdb_category_id = $1 ', [category.id]);
-                // If we haven't saved the category from IMDB, save it.
-                if (categoryInDb.length === 0) {
-                    await db.none('INSERT INTO category (imdb_category_id, name) VALUES ($1, $2)', [category.id, category.name.toLowerCase()])
-                }
-                // Save the movie category
-                await db.none("INSERT INTO movie_category (movie_id, category_id) VALUES ($1, $2)", [internalMovieID, category.id]);
+    insertMetadata(metadata, images, actors, recommendations, trailer, internalMovieID) {
+        return new Promise((resolve, reject) => {
+            const movie = new Movie(internalMovieID);
+            
+            if (metadata.genres.length === 0)
+                metadata.genres.push(this.getDummyGenre());
+            if (actors.length === 0)
+                actors.push(this.getDummyActor());
+            if (images.backdrops.list.length === 0)
+                images.backdrops.list.push(this.getDummyImage());
+            if (images.posters.list.length === 0)
+                images.posters.list.push(this.getDummyImage())
+            if (images.logos.list.length === 0)
+                images.logos.list.push(this.getDummyImage())
 
-            }
-            // SAVE METADATA
-            await db.none("INSERT INTO movie_metadata (movie_id, title, overview, poster, release_date, runtime, popularity, backdrop, added_date, trailer, run_time, tmdb_id, found_good_poster, found_good_backdrop, found_good_logo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)", [
-                internalMovieID,
-                metadata.title,
-                metadata.overview,
-                metadata.poster_path,
-                metadata.release_date,
-                metadata.runtime,
-                metadata.popularity,
-                metadata.backdrop_path,
-                `${Date.now()}`,
-                trailer,
-                metadata.runtime === -1 ? -1 : metadata.runtime * 60, // insert -1 if runtime is -1 (when we use dummy metadata)
-                metadata.id,
-                images.posters.foundPrefferedLanguage,
-                images.backdrops.foundPrefferedLanguage,
-                images.logos.foundPrefferedLanguage
-            ]);
-
-
-            // SAVE ACTORS
-            // If we couldn't find any actors, save one anyways. All movies need to have atleast one Actor
-            if (actors.length === 0) {
-                actors.push({
-                    id: -1,
-                    name: 'Unknown',
-                    character: 'Unknown',
-                    profile_path: 'no_image',
-                    order: 0
-                });
-            }
-
-            await db.tx(async t => {
-                let addedActors = [];
-                for (const actor of actors) {
-                    if(addedActors.includes(actor.id)) {
-                        continue;
-                    }
-                    // Check if we have already saved this actor
-                    let actorInDb = await t.any('SELECT * FROM actor WHERE id = $1', [actor.id]);
-                    // If we haven't saved the actor, save it
-                    if (actorInDb.length === 0) {
-                        await t.none('INSERT INTO actor (id, name, image) VALUES ($1, $2, $3)', [actor.id, actor.name, actor.profile_path]);
-                    }
-                    // Save the actor to the movie
-                    await t.none("INSERT INTO movie_actor (actor_id, movie_id, character_name, order_in_credit) VALUES ($1, $2, $3, $4)", [actor.id, internalMovieID, actor.character, actor.order]);
-                    addedActors.push(actor.id);
-                }
-                return;
+            db.tx(t => {
+                let queries = [];
+                queries.push(movie.addMovieGenres(metadata.genres, t));
+                queries.push(movie.insertMetadata(metadata.title, metadata.overview, metadata.poster_path, metadata.release_date,
+                    metadata.runtime, metadata.popularity, metadata.backdrop_path, trailer, metadata.id,
+                    images.posters.foundPrefferedLanguage, images.backdrops.foundPrefferedLanguage, images.logos.foundPrefferedLanguage, t));
+                queries.push(movie.addMovieActors(actors, t));
+                queries.push(movie.addRecommendations(recommendations, t));
+                queries.push(movie.insertImages(images.backdrops.list, 'BACKDROP', t));
+                queries.push(movie.insertImages(images.posters.list, 'POSTER', t));
+                queries.push(movie.insertImages(images.logos.list, 'LOGO', t));
+                return t.batch(queries);
+            })
+            .then(() => resolve())
+            .catch(err => {
+                logger.ERROR('Error inserting metadata. Check next line for full information');
+                logger.ERROR(err);
+                reject();
             });
-
-            // SAVE RECOMMENDATIONS
-            await db.tx(t => {
-                let i = 0;
-                for (const movie of recommendations) {
-                    t.none("INSERT INTO movie_recommended (movie_id_1, movie_id_2, priority) VALUES ($1, $2, $3)", [internalMovieID, movie.movie_id, i]);
-                    i++;
-                }
-                return;
-            });
-
-            // SAVE IMAGES
-            // If the movie don't have a image, push one. All the movies need to have a image.
-            if (images.backdrops.list.length === 0) {
-                images.backdrops.list.push({
-                    file_path: 'no_image',
-                    active: true
-                });
-            }
-            if (images.posters.list.length === 0) {
-                images.posters.list.push({
-                    file_path: 'no_image',
-                    active: true
-                })
-            }
-            if (images.logos.list.length === 0) {
-                images.logos.list.push({
-                    file_path: 'no_image',
-                    active: true
-                })
-            }
-            await db.tx(async t => {
-                // TODO: This will push "no_name" to image even if it already exist. That is not needed
-                for (let backdrop of images.backdrops.list) {
-                    const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [backdrop.file_path], c => +c.id);
-                    t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'BACKDROP')", [internalMovieID, imageId, backdrop.active]);
-                }
-
-                // TODO: This will push "no_name" to image even if it already exist. That is not needed.
-                for (let poster of images.posters.list) {
-                    const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [poster.file_path], c => +c.id);
-                    t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'POSTER')", [internalMovieID, imageId, poster.active]);
-                }
-
-                // TODO: This will push "no_name" to image even if it already exist. That is not needed.
-                for (let logo of images.logos.list) {
-                    const imageId = await t.one("INSERT INTO image (path) VALUES($1) RETURNING id", [logo.file_path], c => +c.id);
-                    t.none("INSERT INTO movie_image (movie_id, image_id, active, type) VALUES ($1, $2, $3, 'LOGO')", [internalMovieID, imageId, logo.active]);
-                }
-                return;
-            });
-
-            resolve();
         });
     }
 }

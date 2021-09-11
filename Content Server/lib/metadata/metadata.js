@@ -6,9 +6,20 @@ class Metadata {
         this.API_KEY = "19065a8218d4c104a51afcc3e2a9b971";
     }
 
+    /**
+     * Returns the API url
+     * 
+     * @returns string
+     */
     getAPIUrl() {
         return this.API_URL;
     }
+
+    /**
+     * Returns the API key
+     * 
+     * @returns string
+     */
     getAPIKey() {
         return this.API_KEY;
     }
@@ -37,6 +48,12 @@ class Metadata {
         throw('getTrailer must be implamented');
     }
 
+    /**
+     * Returns a dummy metadata object
+     * 
+     * @param {string} movieName The movie name
+     * @returns JSON object
+     */
     getDummyMetadata(movieName) {
         return {
             adult: false,
@@ -78,6 +95,45 @@ class Metadata {
             vote_count: -1,
             first_air_date: -1
           }
+    }
+
+    /**
+     * Returns a dummy actor object
+     * 
+     * @returns JSON object
+     */
+    getDummyActor() {
+        return {
+            id: -1,
+            name: 'Unknown',
+            character: 'Unknown',
+            profile_path: 'no_image',
+            order: 0
+        };
+    }
+
+    /**
+     * Returns a dummy genre object
+     * 
+     * @returns JSON object
+     */
+    getDummyGenre() {
+        return {
+            id: -1,
+            name: 'other'
+        }
+    }
+
+    /**
+     * Returns a dummy image object
+     * 
+     * @returns JSON object
+     */
+    getDummyImage() {
+        return {
+            file_path: 'no_image',
+            active: true
+        };
     }
 }
 
