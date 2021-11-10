@@ -137,11 +137,14 @@ class Transcoding {
                 //'-movflags frag_keyframe+empty_moov+faststart',
                 //'-pix_fmt yuv420p',
                 //`-c:a aac`,
+                '-map 0',
+                '-map -v',
+                '-map 0:V',
                 '-g 52',
                 `-crf ${this.CRF_SETTING}`,
                 '-sn',
                 '-deadline realtime',
-                '-preset ultrafast',
+                '-preset:v ultrafast',
                 '-lag-in-frames 0',
                 '-static-thresh 0',
                 '-frame-parallel 1',
@@ -160,6 +163,7 @@ class Transcoding {
 
             let inputOptions = [
                 '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
+                '-threads 8',
                 this.getSeekParameter(),
             ];
 
@@ -179,7 +183,6 @@ class Transcoding {
             .on('end', () => {
                 this.finished = true;
             })
-
             .on('progress', progress => {
                 const seconds = this.addSeekTimeToSeconds(this.timestampToSeconds(progress.timemark));
                 const latestSegment = Math.max(Math.floor(seconds / Transcoding.SEGMENT_DURATION) - 1); // - 1 because the first segment is 0
