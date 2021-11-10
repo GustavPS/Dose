@@ -157,10 +157,12 @@ class Transcoding {
             this.ffmpegProc = ffmpeg(this.filePath)
             .withVideoCodec(this.getVideoCodec(directplay))
             .withAudioCodec("aac")
+            .withVideoBitrate(4000)
 
             .inputOptions([
                 '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
-                this.getSeekParameter()
+                this.getSeekParameter(),
+                '-readrate 3'
             ])
             .outputOptions(outputOptions)
             .on('end', () => {
@@ -168,7 +170,7 @@ class Transcoding {
             })
 
             .on('progress', progress => {
-                const seconds = this.timestampToSeconds(progress.timemark);
+                const seconds = this.addSeekTimeToSeconds(this.timestampToSeconds(progress.timemark));
                 const latestSegment = Math.floor(seconds / Transcoding.SEGMENT_DURATION);
                 this.latestSegment = latestSegment;
             })

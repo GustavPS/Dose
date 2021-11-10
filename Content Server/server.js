@@ -48,7 +48,7 @@ function startWebServer() {
 
       updateMovies();
       setInterval(updateMovies, 43200000); // 12 hours
-      setInterval(stopTranscodings, 15000); // 15 seconds
+      setInterval(stopTranscodings, 2000); // 15 seconds
     });
   });
 }
