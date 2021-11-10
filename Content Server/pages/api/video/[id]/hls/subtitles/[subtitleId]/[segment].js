@@ -27,7 +27,7 @@ export default async (req, res) => {
     });
     const outputOptions = [
         '-f segment',
-        '-segment_time 4', // Probably not needed, we don't want to split it but this doesn't seem to do anything so we'll leave it
+        '-segment_time 14400',
         '-segment_format webvtt',
         '-scodec webvtt'
     ];
