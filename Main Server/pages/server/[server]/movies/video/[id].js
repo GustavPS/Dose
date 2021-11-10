@@ -11,6 +11,7 @@ import Router from 'next/router';
 import cookies from 'next-cookies'
 
 import VideoComponent from '../../../../../components/videoComponent';
+import HlsPlayer from '../../../../../components/hlsPlayer';
 import VideoTrailer from '.././../../../../components/videoTrailer';
 import validateServerAccess from '../../../../../lib/validateServerAccess';
 import Actor from '../../../../../components/actor';
@@ -283,7 +284,7 @@ export default function Home(props) {
     let elements = [];
     for (const actor of actors) {
       elements.push(
-        <Actor name={actor.name} characterName={actor.character} image={actor.image} />
+        <Actor key={actor.order} name={actor.name} characterName={actor.character} image={actor.image} />
       )
     }
     return elements;
@@ -319,13 +320,17 @@ export default function Home(props) {
       window.scrollTo(window.scrollX, window.scrollY - 1);
       window.scrollTo(window.scrollX, window.scrollY + 1);
   }
-  
+
   return (
     <>
-    <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
-                    internalID={id} Movie
-                    >
-    </VideoComponent>
+    <HlsPlayer
+      ref={videoRef}
+      src={`${server.server_ip}/api/video/${id}/hls/master?audioStream=0`}
+      server={server}
+      id={id}
+      type={"movie"}>
+
+    </HlsPlayer>
     <Head>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>

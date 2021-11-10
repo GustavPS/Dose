@@ -237,6 +237,38 @@ class Movie {
                 foundLogo
             ]);
         }
+
+    getFilePath() {
+        return new Promise((resolve, reject) => {
+            db.one(`SELECT movie.path AS subpath, library.path AS basepath FROM library 
+                    INNER JOIN movie
+                    ON movie.library = library.id AND movie.id = $1
+                  `, [this.#movieId]).then((result) => {
+                    resolve(`${result.basepath}${result.subpath}`)
+            }).catch(error => {
+              reject();
+            });
+        });
+    }
+
+    getResolutions() {
+        return new Promise((resolve, reject) => {
+            db.one('SELECT "240p", "360p", "480p", "720p", "1080p", "1440p", "4k", "8k", "codec" FROM movie_resolution WHERE movie_id = $1', [this.#movieId]).then(result => {
+                resolve(result);
+            }).catch(error => {
+              logger.ERROR(`Can't get movie resolution: ${error}`);
+              reject();
+            });
+        });
+    }
+
+    getSubtitles() {
+        return new Promise(resolve => {
+            db.any('SELECT id, language, synced, extracted FROM subtitle WHERE movie_id = $1', [this.#movieId]).then(subtitles => {
+                resolve(subtitles);
+            })
+        });
+    }
 }
 
 module.exports = Movie;

@@ -4,7 +4,10 @@ const next = require('next')
 const Watcher = require('./lib/watcher');
 const MovieLibrary = require('./lib/library/movieLibrary');
 const MovieMetadata = require('./lib/metadata/movieMetadata');
+const Transcoding = require('./lib/hls/transcoding');
+const HlsManager = require('./lib/hls/HlsManager');
 const fs = require("fs");
+const fsExtra = require('fs-extra');
 
 const port = parseInt(process.env.PORT || '3001', 10);
 const dev = process.env.NODE_ENV !== 'production'
@@ -45,6 +48,7 @@ function startWebServer() {
 
       updateMovies();
       setInterval(updateMovies, 43200000); // 12 hours
+      setInterval(stopTranscodings, 15000); // 15 seconds
     });
   });
 }
@@ -75,6 +79,16 @@ const updateMovies = () => {
 };
 
 
+const removeTempFolder = () => {
+  fsExtra.emptyDirSync(Transcoding.TEMP_FOLDER);
+}
+removeTempFolder();
+
+// Setup timer for stopping old transcoding jobs
+const stopTranscodings = () => {
+  const hlsManager = new HlsManager();
+  hlsManager.stopOldTranscodings();
+}
 
 
 const watcher = new Watcher();

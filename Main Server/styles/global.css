@@ -24,13 +24,6 @@ html {
     height: 100%;
 }
 
-.video-js .vjs-big-play-button {
-    display: none;
-}
-
-.vjs-menu-button-popup .vjs-menu {
-    left: -6em !important;
-}
 /*
 .plyr {
     position: absolute;
@@ -61,13 +54,18 @@ p, h1, h2, h3, h4, h5, h6 {
     filter: invert(1);
 }
 
-
-
-
-
-.vjs-picture-in-picture-control {
-    display: none !important;
+/* Customized video-js css */
+.video-js {
+    position: absolute !important;
+    height: 100% !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
 }
+
+
+
+
+
 
 
 
