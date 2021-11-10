@@ -7,7 +7,7 @@ const logger = new Logger().getInstance();
 class Transcoding {
     static TEMP_FOLDER = process.env.TEMP_DIRECTORY;
     static SEGMENT_DURATION = 4;
-    static TIMEOUT_TIME = 15000; // Time in seconds
+    static TIMEOUT_TIME = 10000; // Time in milliseconds
 
     constructor(filePath, contentId, startSegment, hash, groupHash=hash) {
         this.CRF_SETTING = 22;
@@ -135,7 +135,12 @@ class Transcoding {
                 //`-c:a aac`,
                 '-g 52',
                 `-crf ${this.CRF_SETTING}`,
-                '-preset veryfast',
+                '-sn',
+                '-deadline realtime',
+                '-preset ultrafast',
+                '-lag-in-frames 0',
+                '-static-thresh 0',
+                '-frame-parallel 1',
                 '-f hls',
                 '-ac 2', // Set two audio channels. Fixes audio issues
                 `-hls_time ${Transcoding.SEGMENT_DURATION}`,
