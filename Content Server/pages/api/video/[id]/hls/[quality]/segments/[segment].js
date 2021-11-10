@@ -37,7 +37,7 @@ const isSegmentFinished = (requestedSegment, hlsManager, group) => {
         return true;
     }
     return requestedSegment >= hlsManager.getTranscodingStartSegment(group) &&
-        requestedSegment < hlsManager.getVideoTranscodingSegment(group);
+        requestedSegment < hlsManager.getVideoTranscodingSegment(group) + 2;
 };
 
 export default async (req, res) => {
@@ -79,6 +79,14 @@ export default async (req, res) => {
                         logger.DEBUG(`[HLS] Seeking in the past for a segment that doesn't exist (current segment: ${latestSegment}, requested segment: ${segment}). Restarting at ${startSegment}`)
                         restartTranscoding = true;
                     }
+                    else if ((segment + (Transcoding.FAST_START_SEGMENTS / 4)) > latestSegment && !hlsManager.isFastSeekingRunning(group)) {
+                        // If we are seeking inside the fast seeking range and fast seek is not running, restart transcoding
+                        logger.DEBUG(`[HLS] Seeking inside the fast seeking range (current segment: ${latestSegment}, requested segment: ${segment}). Restarting at ${startSegment}`);
+                        restartTranscoding = true;
+                    }
+
+
+                    // segment = 5, latestSegment =  7
     
                     if (restartTranscoding) {
                         hlsManager.stopAllVideoTranscodings(group);
@@ -87,10 +95,12 @@ export default async (req, res) => {
                 }
             }
             //requestedSegment, startSegment, lastSegment, isTranscodingFinished
+            const startedNewTranscoding = promises.length > 0;
             Promise.all(promises)
             .then(() => {
                 path = pathLib.join(hlsManager.getVideoTranscodingOutputPath(group), segmentText);
-                waitUntilFileExists(path, segment, hlsManager, group)
+                const waitForSegment = startedNewTranscoding ? segment + 2 : segment;
+                waitUntilFileExists(path, waitForSegment, hlsManager, group)
                 .then(() => {
                     res.setHeader('Access-Control-Allow-Origin', "*");
                     res.setHeader('Access-Control-Allow-Headers', "*");

@@ -33,12 +33,21 @@ class HlsManager {
             movie.getFilePath()
             .then(filePath => {
                 const hash = this.getUniqueTranscodingHash();
-                const transcoding = new Transcoding(filePath, movie.movieId, startSegment, hash, groupHash);
-                global.transcodings.push(transcoding);
-                transcoding.start(quality)
+                const output = Transcoding.createTempDir();
+                const fastTranscoding = new Transcoding(filePath, movie.movieId, startSegment, hash, groupHash, true);
+                const slowTranscoding = new Transcoding(filePath, movie.movieId, startSegment + (Transcoding.FAST_START_TIME / Transcoding.SEGMENT_DURATION), hash, groupHash, false);
+                global.transcodings.push(fastTranscoding);
+                global.transcodings.push(slowTranscoding);
+                const promises = [fastTranscoding.start(quality, output), slowTranscoding.start(quality, output)];
+                Promise.all(promises).then(() => {
+                    resolve();
+                });
+                /*
+                fastTranscoding.start(quality)
                 .then(() => {
                     resolve();
                 });
+                */
             })
         });
     }
@@ -89,7 +98,7 @@ class HlsManager {
     }
 
     getVideoTranscodingSegment(hash) {
-        const transcoding = global.transcodings.find(transcoding => transcoding.groupHash === hash);
+        const transcoding = global.transcodings.find(transcoding => transcoding.groupHash === hash && !transcoding.fastStart);
         return transcoding.latestSegment;
     }
 
@@ -111,6 +120,10 @@ class HlsManager {
 
     isAnyVideoTranscodingActive(hash) {
         return global.transcodings.some(transcoding => transcoding.groupHash === hash);
+    }
+
+    isFastSeekingRunning(hash) {
+        return global.transcodings.some(transcoding => transcoding.groupHash === hash && transcoding.fastStart && !transcoding.finished);
     }
 }
 

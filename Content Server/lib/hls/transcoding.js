@@ -8,8 +8,10 @@ class Transcoding {
     static TEMP_FOLDER = process.env.TEMP_DIRECTORY;
     static SEGMENT_DURATION = 4;
     static TIMEOUT_TIME = 10000; // Time in milliseconds
+    static FAST_START_SEGMENTS = 50;
+    static FAST_START_TIME = Transcoding.SEGMENT_DURATION * Transcoding.FAST_START_SEGMENTS;
 
-    constructor(filePath, contentId, startSegment, hash, groupHash=hash) {
+    constructor(filePath, contentId, startSegment, hash, groupHash=hash, fastStart=false) {
         this.CRF_SETTING = 22;
         this.filePath = filePath;
         this.startSegment = startSegment;
@@ -18,6 +20,7 @@ class Transcoding {
         this.ffmpegProc;
         this.type;
         
+        this.fastStart = fastStart;
         this.contentId = contentId;
         this.hash = hash;
         this.groupHash = groupHash;
@@ -109,21 +112,22 @@ class Transcoding {
         return Math.floor(seconds / Transcoding.SEGMENT_DURATION);
     }
 
-    createTempDir() {
+    static createTempDir() {
         let dirExists = true;
         let dir;
         while (dirExists) {
-            dir = path.join(Transcoding.TEMP_FOLDER, this.generateHash());
+            const hash = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + '/';
+            dir = path.join(Transcoding.TEMP_FOLDER, hash);
             dirExists = fs.existsSync(this.output);
         }
         fs.mkdirSync(dir);
         return dir;
     }
 
-    start(quality) {
+    start(quality, output) {
         this.quality = quality;
         return new Promise(resolve => {
-            this.output = this.createTempDir();
+            this.output = output;
             const directplay = quality === "DIRECTPLAY";
 
             let outputOptions = [
@@ -154,16 +158,23 @@ class Transcoding {
                 outputOptions.push(this.getQualityParameter(quality));
             }
 
+            let inputOptions = [
+                '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
+                this.getSeekParameter(),
+            ];
+
+            if (this.fastStart) {
+                outputOptions.push(`-to ${(this.startSegment * Transcoding.SEGMENT_DURATION) + Transcoding.FAST_START_TIME}`); // Quickly transcode the first 4 segments
+            } else {
+                //'-readrate 3'
+                inputOptions.push('-re'); // Process the file slowly to save CPU
+            }
+
             this.ffmpegProc = ffmpeg(this.filePath)
             .withVideoCodec(this.getVideoCodec(directplay))
             .withAudioCodec("aac")
             .withVideoBitrate(4000)
-
-            .inputOptions([
-                '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
-                this.getSeekParameter(),
-                '-readrate 3'
-            ])
+            .inputOptions(inputOptions)
             .outputOptions(outputOptions)
             .on('end', () => {
                 this.finished = true;
@@ -171,7 +182,7 @@ class Transcoding {
 
             .on('progress', progress => {
                 const seconds = this.addSeekTimeToSeconds(this.timestampToSeconds(progress.timemark));
-                const latestSegment = Math.floor(seconds / Transcoding.SEGMENT_DURATION);
+                const latestSegment = Math.max(Math.floor(seconds / Transcoding.SEGMENT_DURATION) - 1); // - 1 because the first segment is 0
                 this.latestSegment = latestSegment;
             })
             .on('start', (commandLine) => {
@@ -192,7 +203,10 @@ class Transcoding {
     stop() {
         logger.DEBUG("[HLS] Stopping transcoding");
         this.ffmpegProc.kill();
-        this.removeTempFolder();
+        // If this process is for fast start, we need to keep the temp folder for the slow transcoding process
+        if (!this.fastStart) {
+            this.removeTempFolder();
+        }
     }
 
     removeTempFolder() {
