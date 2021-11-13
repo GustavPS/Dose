@@ -134,6 +134,10 @@ export default class ChromecastHandler {
         );
     }
 
+    setResolution() {
+        // TODO: Implement
+    }
+
     /**
      * Called when the requestSession() promise resolves.
      */

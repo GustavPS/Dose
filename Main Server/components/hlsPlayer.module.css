@@ -169,6 +169,18 @@
     padding: 20px;
 }
 
+.resolutionImage {
+    background-image: url('../public/images/gear.svg');
+    filter: invert(1);
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    cursor: pointer;
+    padding: 20px;
+}
+
 .soundImage {
     background-image: url('../public/images/high-volume.svg');
     filter: invert(1);
@@ -208,12 +220,34 @@
     padding: 28px;
 }
 
+
 .subtitleContainer {
     position: relative;
 }
 
 .subtitleContainer:hover > .subtitlesList {
     display: block;
+}
+
+.resolutionContainer {
+    position: relative;
+}
+
+.resolutionContainer:hover > .resolutionList {
+    display: block;
+}
+
+.resolutionList {
+    display: none;
+    position: absolute;
+    bottom: 50px;
+    padding: 25px;
+    background-color: #ffeaeab5;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: rgb(100 100 111 / 20%) 0px 7px 29px 0px;
 }
 
 .subtitlesList {
@@ -235,6 +269,12 @@
     margin: 0;
 }
 
+.resolutionList ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
 .subtitlesList ul li {
     padding: 5px;
     cursor: pointer;
@@ -243,7 +283,15 @@
     text-shadow: 2px 3px 5px rgba(255, 255, 255, 0.5);
 }
 
-.activeSubtitle {
+.resolutionList ul li {
+    padding: 5px;
+    cursor: pointer;
+    margin-bottom: 5px;
+    font-size: 17px;
+    text-shadow: 2px 3px 5px rgba(255, 255, 255, 0.5);
+}
+
+.activeSubtitle, .activeResolution {
     font-weight: bold;
 }
 
@@ -289,7 +337,7 @@
         margin-top: -3px;
     }
 
-    .soundbarContainer, .subtitlesList {
-        bottom: 29px;
+    .soundbarContainer, .subtitlesList, .resolutionList {
+        bottom: 25px;
     }
 }

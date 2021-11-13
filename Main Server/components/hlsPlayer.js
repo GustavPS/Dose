@@ -4,6 +4,7 @@ import Router from 'next/router';
 import validateServerAccess from '../lib/validateServerAccess';
 import Hls from "hls.js";
 import cheomecastHandler from '../lib/chromecastHandler';
+import Resolution from '../lib/resolution';
 import { castArray } from 'lodash';
 
 
@@ -20,6 +21,8 @@ export default class HlsPlayer extends React.Component {
             videoPaused: false,
             title: this.props.title,
             subtitles: [],
+            resolutions: [],
+            activeResolutionLevel: 0, // The index of the active resolution, 0 == higheest, i.e state.resolutions[0]
             activeSubtitleId: -1 // -1 = no subtitle selected
         }
 
@@ -80,7 +83,16 @@ export default class HlsPlayer extends React.Component {
      * @param {*} data 
      */
     onManifestParsed(event, data) {
-        console.log(data);
+        let resolutions = [];
+        // Reversed because hls.levels have reversed order in terms of quality. We want highest quality at top
+        for (let i = this.hls.levels.length - 1; i >= 0; i--) {
+            resolutions.push(new Resolution(i, data.levels[i].name));
+            console.log(resolutions);
+        }
+        this.setState({
+            resolutions: resolutions,
+            activeResolutionLevel: this.hls.levels.length-1
+        })
     }
 
     /**
@@ -89,8 +101,9 @@ export default class HlsPlayer extends React.Component {
      * @param {*} data 
      */
     onManifestLoaded(event, data) {
-        console.log(data);
-        this.setState({subtitles: data.subtitles});
+        this.setState({
+            subtitles: data.subtitles
+        });
     }
 
     /**
@@ -345,6 +358,22 @@ export default class HlsPlayer extends React.Component {
     }
 
     /**
+     * Change resolution
+     * 
+     * @param {Resolution} resolution - The selected resolution
+     */
+    setResolution(resolution) {
+        console.log(`[HLS] Change resolution to ${resolution.name} (level: ${resolution.level})`);
+        if (this.chromecastHandler.isCasting()) {
+            this.chromecastHandler.setResolution(resolution);
+        } else {
+            console.log("hej")
+            this.hls.nextLevel = resolution.level;
+        }
+        this.setState({activeResolutionLevel: resolution.level});
+    }
+
+    /**
      * Called when the chromecast disconnects
      */
     chromecastDisconnect() {
@@ -406,6 +435,20 @@ export default class HlsPlayer extends React.Component {
                                             {this.state.subtitles.map((subtitle, index) => {
                                                 return (
                                                     <li key={index} className={subtitle.id == this.state.activeSubtitleId ? `${Styles.activeSubtitle}` : ''} onClick={() => this.setSubtitle(subtitle)}>{subtitle.name}</li>
+                                                )
+                                            })}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div className={Styles.resolutionContainer}>
+                                    <div className={`${Styles.resolutionImage} ${Styles.button}`}></div>
+
+                                    <div className={Styles.resolutionList}>
+                                        <ul>
+                                            {this.state.resolutions.map((resolution, index) => {
+                                                return (
+                                                    <li key={index} className={resolution.level == this.state.activeResolutionLevel ? `${Styles.activeResolution}` : ''} onClick={() => this.setResolution(resolution)}>{resolution.name}</li>
                                                 )
                                             })}
                                         </ul>
