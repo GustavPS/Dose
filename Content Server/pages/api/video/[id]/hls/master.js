@@ -42,7 +42,7 @@ const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, direc
     let m3u8 = "";
     let bw = 4000;
     if (directplay) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=4000,AVERAGE-BANDWIDTH=4000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=1920x1080,FRAME-RATE=${fps},NAME="Directplay",SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=4500,AVERAGE-BANDWIDTH=4500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",FRAME-RATE=${fps},NAME="Directplay",SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/DIRECTPLAY?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
     if (resolution["8k"]) {
@@ -51,12 +51,12 @@ const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, direc
     }
     bw -= 500;
     if (resolution["4k"]) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=5000,AVERAGE-BANDWIDTH=5000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('4k')},FRAME-RATE=${fps},NAME="4K",SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=5500,AVERAGE-BANDWIDTH=5500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('4k')},FRAME-RATE=${fps},NAME="4K",SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/4K?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
     bw -= 500;
     if (resolution["1440p"]) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=4500,AVERAGE-BANDWIDTH=4500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('1440p')},FRAME-RATE=${fps},NAME="1440P",SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=5000,AVERAGE-BANDWIDTH=5000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('1440p')},FRAME-RATE=${fps},NAME="1440P",SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/1440P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
     bw -= 500;
