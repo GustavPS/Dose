@@ -40,58 +40,59 @@ const getPixels = (quality) => {
 
 const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, directplay) => {
     let m3u8 = "";
-    let bw = 12559492;
+    let bw = 4000;
+    if (directplay) {
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=4000,AVERAGE-BANDWIDTH=4000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=1920x1080,FRAME-RATE=${fps},SUBTITLES="subs"\n`;
+        m3u8 += `/api/video/${id}/hls/DIRECTPLAY?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
+    }
     if (resolution["8k"]) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=${bw},AVERAGE-BANDWIDTH=${bw},VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('8k')},AUDIO="audio",FRAME-RATE=${fps},SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=6000,AVERAGE-BANDWIDTH=6000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('8k')},FRAME-RATE=${fps},SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/8K?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
-    //bw -= 10000;
+    bw -= 500;
     if (resolution["4k"]) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=${bw},AVERAGE-BANDWIDTH=${bw},VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('4k')},AUDIO="audio",FRAME-RATE=${fps},SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=5000,AVERAGE-BANDWIDTH=5000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('4k')},FRAME-RATE=${fps},SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/4K?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
-    //bw -= 10000;
+    bw -= 500;
     if (resolution["1440p"]) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=${bw},AVERAGE-BANDWIDTH=${bw},VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('1440p')},AUDIO="audio",FRAME-RATE=${fps},SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=4500,AVERAGE-BANDWIDTH=4500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('1440p')},FRAME-RATE=${fps},SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/1440P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
-    //bw -= 10000;
+    bw -= 500;
     if (resolution["1080p"]) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=${bw},AVERAGE-BANDWIDTH=${bw},VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('1080p')},AUDIO="audio",FRAME-RATE=${fps},SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=4000,AVERAGE-BANDWIDTH=4000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('1080p')},FRAME-RATE=${fps},SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/1080P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
-    //bw -= 10000;
+    bw -= 500;
     if (resolution["720p"]) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=${bw},AVERAGE-BANDWIDTH=${bw},VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('720p')},AUDIO="audio",FRAME-RATE=${fps},SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=3000,AVERAGE-BANDWIDTH=3000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('720p')},FRAME-RATE=${fps},SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/720P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
-    //bw -= 10000;
+    bw -= 500;
     if (resolution["480p"]) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=${bw},AVERAGE-BANDWIDTH=${bw},VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('480p')},AUDIO="audio",FRAME-RATE=${fps},SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=2000,AVERAGE-BANDWIDTH=2000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('480p')},FRAME-RATE=${fps},SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/480P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
-    //bw -= 10000;
+    bw -= 500;
     if (resolution["360p"]) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=${bw},AVERAGE-BANDWIDTH=${bw},VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('360p')},AUDIO="audio",FRAME-RATE=${fps},SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=1000,AVERAGE-BANDWIDTH=1000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('360p')},FRAME-RATE=${fps},SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/360P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
-    //bw -= 10000;
+    bw -= 500;
     if (resolution["240p"]) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=${bw},AVERAGE-BANDWIDTH=${bw},VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('240p')},AUDIO="audio",FRAME-RATE=${fps},SUBTITLES="subs"\n`;
+        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=500,AVERAGE-BANDWIDTH=500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('240p')},FRAME-RATE=${fps},SUBTITLES="subs"\n`;
         m3u8 += `/api/video/${id}/hls/240P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
-    }
-    //bw-= 10000;
-    if (directplay) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=${bw},AVERAGE-BANDWIDTH=${bw},VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=directplay,AUDIO="audio",FRAME-RATE=${fps},SUBTITLES="subs"\n`;
-        m3u8 += `/api/video/${id}/hls/DIRECTPLAY?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
     }
     return m3u8;
 }
 
 const getSubtitleStreams = (id, subtitles) => {
     let m3u8 = "";
+    let autoselect = "YES";
     for (let subtitle of subtitles) {
-        m3u8 += `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${subtitle.language}",NAME="${subtitle.language}",AUTOSELECT=NO,FORCED=NO,AUTOSELECT=NO,URI="/api/video/${id}/hls/subtitles/${subtitle.id}"\n`;
+        m3u8 += `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${subtitle.language}",NAME="${subtitle.language}",FORCED=NO,AUTOSELECT=${autoselect},DEFAULT=${autoselect},URI="/api/video/${id}/hls/subtitles/${subtitle.id}"\n`;
+        autoselect = "NO";
     }
     return m3u8;
 }
@@ -117,6 +118,7 @@ export default async (req, res) => {
             fps = met.streams[i].r_frame_rate.substring(0, met.streams[i].r_frame_rate.indexOf('/'));
         }
     }
+    fps = 25;
 
     const groupHash = hlsManager.generateHash();
     res.set({
