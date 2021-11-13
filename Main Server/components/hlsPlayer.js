@@ -171,7 +171,6 @@ export default class HlsPlayer extends React.Component {
     show(startTime=0) {
         this.videoContainer.style.display = 'block';
         this.videoNode.currentTime = startTime;
-        this.updateCurrentTimeInterval = setInterval(this.updateVideoProgress, 5000);
         this.togglePlay();
     }
 
@@ -184,7 +183,7 @@ export default class HlsPlayer extends React.Component {
     componentDidMount() {
         this._ismounted = true;
         if (Hls.isSupported()) {
-            this.hls = new Hls();
+            this.hls = new Hls({maxMaxBufferLength: 60});
             this.hls.loadSource(this.src);
             this.hls.attachMedia(this.videoNode);
             this.videoNode.volume = 1;
@@ -237,7 +236,6 @@ export default class HlsPlayer extends React.Component {
 
         this.seekBarLabel.innerHTML = `<span>${time}</span>`;
         this.seekBarLabel.style.left = `calc(${newValue}% + (${newPosition}px))`;
-        console.log(this.seeking);
         if (!this.seeking) {
             this.seekBar.value = percentage;
         }
