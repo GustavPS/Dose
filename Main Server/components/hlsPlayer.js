@@ -188,8 +188,10 @@ export default class HlsPlayer extends React.Component {
             this.hls.loadSource(this.src);
             this.hls.attachMedia(this.videoNode);
             this.videoNode.play();
-            this.videoNode.volume = 0;
+            this.videoNode.volume = 1;
         }
+        this.soundBar.value = 100;
+        this.seekBar.value = 0;
         this.setupListeners();
     }
 
@@ -236,7 +238,7 @@ export default class HlsPlayer extends React.Component {
 
         this.seekBarLabel.innerHTML = `<span>${time}</span>`;
         this.seekBarLabel.style.left = `calc(${newValue}% + (${newPosition}px))`;
-
+        console.log(this.seeking);
         if (!this.seeking) {
             this.seekBar.value = percentage;
         }
@@ -398,7 +400,7 @@ export default class HlsPlayer extends React.Component {
                     <div className={Styles.videoControls}>
                         <div className={Styles.seekWrapper}>
                             <div className={Styles.seekTime} id="seekTime" ref={node => this.seekBarLabel = node}></div>
-                            <input className={Styles.seekbar} value={0} type="range" id="seekbar" name="seekbar" ref={node => this.seekBar = node}
+                            <input className={Styles.seekbar} type="range" id="seekbar" name="seekbar" ref={node => this.seekBar = node}
                             min="0" max="100" step="0.01" className={Styles.seekbar} onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime}/>
                         </div>
 
