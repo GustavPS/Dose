@@ -337,7 +337,6 @@ export default function Home(props) {
 
     <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
     <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
-    <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
     </Head>
     {(!loaded || !recommendedLoaded) &&
