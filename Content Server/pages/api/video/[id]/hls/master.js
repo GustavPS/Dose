@@ -102,12 +102,13 @@ export default async (req, res) => {
     const { id, audioStream } = req.query;
     const movie = new Movie(id);
     const userAgent = useUserAgent(req.headers['user-agent']);
+    const isChromecast = req.headers['user-agent'].indexOf('CrKey') !== -1; // Currently Chromecast is not supported for directplay streaming
     const browser   = getBrowser(userAgent);
 
     const path = await movie.getFilePath()
     const resolutions = await movie.getResolutions();
     const subtitles = await movie.getSubtitles();
-    let directPlay = browser.videoCodecSupported(resolutions["codec"]);
+    let directPlay = browser.videoCodecSupported(resolutions["codec"]) && !isChromecast;
     const hlsManager = new HlsManager();
     const met = await getMetadata(path);
 
