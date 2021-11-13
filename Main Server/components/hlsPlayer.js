@@ -172,7 +172,7 @@ export default class HlsPlayer extends React.Component {
         this.videoContainer.style.display = 'block';
         this.videoNode.currentTime = startTime;
         this.updateCurrentTimeInterval = setInterval(this.updateVideoProgress, 5000);
-        //this.togglePlay();
+        this.togglePlay();
     }
 
     chromecastRequestTitle(source) {
@@ -187,7 +187,6 @@ export default class HlsPlayer extends React.Component {
             this.hls = new Hls();
             this.hls.loadSource(this.src);
             this.hls.attachMedia(this.videoNode);
-            this.videoNode.play();
             this.videoNode.volume = 1;
         }
         this.soundBar.value = 100;
@@ -428,20 +427,22 @@ export default class HlsPlayer extends React.Component {
                                 <div className={`${Styles.chromecast} ${Styles.button}`} onClick={() => this.chromecastHandler.requestChromecastSession(this.videoNode.currentTime)}>
                                     <google-cast-launcher></google-cast-launcher>
                                 </div>
+                                {this.state.subtitles.length > 0 &&
+                                    <div className={Styles.subtitleContainer}>
+                                        <div className={`${Styles.subtitles} ${Styles.button}`}></div>
 
-                                <div className={Styles.subtitleContainer}>
-                                    <div className={`${Styles.subtitles} ${Styles.button}`}></div>
+                                        <div className={Styles.subtitlesList}>
+                                            <ul>
+                                                {this.state.subtitles.map((subtitle, index) => {
+                                                    return (
+                                                        <li key={index} className={subtitle.id == this.state.activeSubtitleId ? `${Styles.activeSubtitle}` : ''} onClick={() => this.setSubtitle(subtitle)}>{subtitle.name}</li>
+                                                    )
+                                                })}
+                                            </ul>
+                                        </div>
+                                    </div>                                
+                                }
 
-                                    <div className={Styles.subtitlesList}>
-                                        <ul>
-                                            {this.state.subtitles.map((subtitle, index) => {
-                                                return (
-                                                    <li key={index} className={subtitle.id == this.state.activeSubtitleId ? `${Styles.activeSubtitle}` : ''} onClick={() => this.setSubtitle(subtitle)}>{subtitle.name}</li>
-                                                )
-                                            })}
-                                        </ul>
-                                    </div>
-                                </div>
 
                                 <div className={Styles.resolutionContainer}>
                                     <div className={`${Styles.resolutionImage} ${Styles.button}`}></div>
