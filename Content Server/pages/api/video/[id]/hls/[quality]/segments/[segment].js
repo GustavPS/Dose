@@ -50,7 +50,7 @@ export default async (req, res) => {
         const segmentsText = req.query.segments; // segments in text format
         const segments = parseInt(segmentsText); // segments in int
         const segment = parseInt(segmentText); //<segment>
-        const startSegment = segment;
+        const startSegment = Math.max(segment - 1, 0);
         const movie = new Movie(id);
         let path;
 

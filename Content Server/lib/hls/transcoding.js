@@ -7,7 +7,7 @@ const logger = new Logger().getInstance();
 class Transcoding {
     static TEMP_FOLDER = process.env.TEMP_DIRECTORY;
     static SEGMENT_DURATION = 4;
-    static TIMEOUT_TIME = 10000; // Time in milliseconds
+    static TIMEOUT_TIME = 20000; // 20 seconds in milliseconds
     static FAST_START_SEGMENTS = 50;
     static FAST_START_TIME = Transcoding.SEGMENT_DURATION * Transcoding.FAST_START_SEGMENTS;
 
@@ -167,10 +167,10 @@ class Transcoding {
                 this.getSeekParameter(),
             ];
 
-            if (this.fastStart) {
+            // If we are using directplay we use fast transcoding for the whole file, since CPU usage is low
+            if (this.fastStart && !directplay) {
                 outputOptions.push(`-to ${(this.startSegment * Transcoding.SEGMENT_DURATION) + Transcoding.FAST_START_TIME}`); // Quickly transcode the first 4 segments
-            } else {
-                //'-readrate 3'
+            } else if (!this.fastStart) {
                 inputOptions.push('-re'); // Process the file slowly to save CPU
             }
 
@@ -206,8 +206,8 @@ class Transcoding {
     stop() {
         logger.DEBUG("[HLS] Stopping transcoding");
         this.ffmpegProc.kill();
-        // If this process is for fast start, we need to keep the temp folder for the slow transcoding process
-        if (!this.fastStart) {
+        // If this process is for a transcoding fast start, we need to keep the temp folder for the slow transcoding process
+        if (!this.fastStart || (!this.fastStart && this.quality == "DIRECTPLAY")) {
             this.removeTempFolder();
         }
     }

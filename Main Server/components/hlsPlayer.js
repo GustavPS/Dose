@@ -16,6 +16,7 @@ export default class HlsPlayer extends React.Component {
         this.type = this.props.type;
         this.src = this.props.src;
         this.hls = undefined;
+        this.group = undefined; // group id from manifest
 
         this.state = {
             videoPaused: false,
@@ -27,6 +28,7 @@ export default class HlsPlayer extends React.Component {
         }
 
         this.updateCurrentTimeInterval = undefined;
+        this.pingInterval = undefined;
 
         /* SEEK */
         this.seeking = false; // Flag for seeking
@@ -47,6 +49,7 @@ export default class HlsPlayer extends React.Component {
         this.startSeek = this.startSeek.bind(this);
         this.onPause = this.onPause.bind(this);
         this.onPlay = this.onPlay.bind(this);
+        this.ping = this.ping.bind(this);
         this.seek = this.seek.bind(this);
         this.togglePlay = this.togglePlay.bind(this);
         this.updateVolume = this.updateVolume.bind(this);
@@ -61,6 +64,20 @@ export default class HlsPlayer extends React.Component {
         }
     }
 
+    getGroupIdFromManifest(data) {
+        if (data.levels.length > 0 && data.levels[0].url.length > 0) {
+            const regex = /group=(.+)&/i;
+            try {
+                return data.levels[0].url[0].match(regex)[1];
+            } catch (e) {
+                console.log("[HLS] No group id found in manifest (regex error comming line after this). This will leed to faster aborts of transcodings");
+                console.log(e);
+            }
+        } else {
+            console.log("[HLS] No group id found in manifest. This will leed to faster aborts of transcodings");
+        }
+    }
+
 
     /**
      * Setup various listeners
@@ -71,7 +88,7 @@ export default class HlsPlayer extends React.Component {
         this.videoNode.onplay = this.onPlay;
         this.soundBar.oninput = this.updateVolume;
 
-
+    
         this.hls.on(Hls.Events.MANIFEST_PARSED, this.onManifestParsed);
         this.hls.on(Hls.Events.MANIFEST_LOADED, this.onManifestLoaded);
     }
@@ -83,6 +100,7 @@ export default class HlsPlayer extends React.Component {
      * @param {*} data 
      */
     onManifestParsed(event, data) {
+        this.group = this.getGroupIdFromManifest(data);
         let resolutions = [];
         // Reversed because hls.levels have reversed order in terms of quality. We want highest quality at top
         for (let i = this.hls.levels.length - 1; i >= 0; i--) {
@@ -190,6 +208,7 @@ export default class HlsPlayer extends React.Component {
         }
         this.soundBar.value = 100;
         this.seekBar.value = 0;
+        this.pingInterval = setInterval(this.ping, 5000);
         this.setupListeners();
     }
 
@@ -198,9 +217,21 @@ export default class HlsPlayer extends React.Component {
         this.videoNode.pause();
         this.hls.destroy();
         clearInterval(this.updateCurrentTimeInterval);
+        clearInterval(this.pingInterval);
         if (this.chromecastHandler.isCasting()) {
             this.chromecastHandler.stopCast();
         }
+    }
+
+    /**
+     * Ping the server that we are still active
+     */
+    ping() {
+        validateServerAccess(this.server, (serverToken) => {
+            if (this.group != undefined) {
+                fetch(`${this.server.server_ip}/api/video/${this.id}/hls/ping?group=${this.group}&serverToken=${serverToken}`);
+            }
+        });
     }
 
     /**

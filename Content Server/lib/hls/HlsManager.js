@@ -32,22 +32,24 @@ class HlsManager {
         return new Promise(resolve => {
             movie.getFilePath()
             .then(filePath => {
+                const isDirectplay = quality == "DIRECTPLAY";
                 const hash = this.getUniqueTranscodingHash();
                 const output = Transcoding.createTempDir();
-                const fastTranscoding = new Transcoding(filePath, movie.movieId, startSegment, hash, groupHash, true);
-                const slowTranscoding = new Transcoding(filePath, movie.movieId, startSegment + (Transcoding.FAST_START_TIME / Transcoding.SEGMENT_DURATION), hash, groupHash, false);
+                let promises = [];
+
+                const fastTranscoding = new Transcoding(filePath, movie.movieId, startSegment, hash, groupHash, true); // Fast transcoding
                 global.transcodings.push(fastTranscoding);
-                global.transcodings.push(slowTranscoding);
-                const promises = [fastTranscoding.start(quality, output), slowTranscoding.start(quality, output)];
+                promises.push(fastTranscoding.start(quality, output));
+                // If we're using directplay, we don't need the slow transcoding
+                if (!isDirectplay) {
+                    const slowTranscodingStartSegment = startSegment + (Transcoding.FAST_START_TIME / Transcoding.SEGMENT_DURATION)
+                    const slowTranscoding = new Transcoding(filePath, movie.movieId, slowTranscodingStartSegment, hash, groupHash, false); // Slow transcoding
+                    global.transcodings.push(slowTranscoding);
+                    promises.push(slowTranscoding.start(quality, output));
+                }
                 Promise.all(promises).then(() => {
                     resolve();
                 });
-                /*
-                fastTranscoding.start(quality)
-                .then(() => {
-                    resolve();
-                });
-                */
             })
         });
     }
@@ -98,7 +100,8 @@ class HlsManager {
     }
 
     getVideoTranscodingSegment(hash) {
-        const transcoding = global.transcodings.find(transcoding => transcoding.groupHash === hash && !transcoding.fastStart);
+        // If we are directplaying, there will only be a fast transcoding and no slow transcoding
+        const transcoding = global.transcodings.find(transcoding => transcoding.groupHash === hash && (!transcoding.fastStart || transcoding.quality == "DIRECTPLAY"));
         return transcoding.latestSegment;
     }
 
