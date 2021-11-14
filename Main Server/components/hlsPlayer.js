@@ -60,14 +60,14 @@ export default class HlsPlayer extends React.Component {
         this.chromecastDisconnect = this.chromecastDisconnect.bind(this);
         this.updateVideoProgress = this.updateVideoProgress.bind(this);
 
+        let runningOnClient = typeof window !== "undefined";
+        if (runningOnClient) {
+            this.chromecastHandler = new cheomecastHandler(this.updateSeekTime, this.chromecastDisconnect);
+        }
 
         this.getLanguages()
         .then(() => {
-            let runningOnClient = typeof window !== "undefined";
-            if (runningOnClient) {
-                this.chromecastHandler = new cheomecastHandler(this.getSrc(), this.updateSeekTime, this.chromecastDisconnect);
-            }
-
+            this.chromecastHandler.setSrc(this.getSrc());
             // If the page got mounted before we got here, we have to setup the player
             if (this._ismounted) {
                 this.setupHls();

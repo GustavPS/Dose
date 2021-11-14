@@ -4,8 +4,8 @@ export default class ChromecastHandler {
      * 
      * @param {function} progressChanged - Called when the progress changes
      */
-    constructor(src, progressChanged, disconnect) {
-        this.src = src;
+    constructor(progressChanged, disconnect) {
+        this.src = "";
         this.remotePlayer;
         this.remotePlayerController;
         this.progressUpdateInterval;
@@ -28,6 +28,10 @@ export default class ChromecastHandler {
         this.updateProgress = this.updateProgress.bind(this);
         this.mediaInfoChanged = this.mediaInfoChanged.bind(this);
         this.isConnectedChanged = this.isConnectedChanged.bind(this);
+    }
+
+    setSrc(src) {
+        this.src = src;
     }
 
     /**
