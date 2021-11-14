@@ -124,11 +124,12 @@ class Transcoding {
         return dir;
     }
 
-    start(quality, output) {
+    start(quality, output, audioStreamIndex, audioSupported) {
         this.quality = quality;
         return new Promise(resolve => {
             this.output = output;
             const directplay = quality === "DIRECTPLAY";
+            const audioCodec = audioSupported ? "copy" : "aac";
 
             let outputOptions = [
                 '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
@@ -140,6 +141,7 @@ class Transcoding {
                 '-map 0',
                 '-map -v',
                 '-map 0:V',
+                `-map 0:${audioStreamIndex}`,
                 '-g 52',
                 `-crf ${this.CRF_SETTING}`,
                 '-sn',
@@ -176,7 +178,7 @@ class Transcoding {
 
             this.ffmpegProc = ffmpeg(this.filePath)
             .withVideoCodec(this.getVideoCodec(directplay))
-            .withAudioCodec("aac")
+            .withAudioCodec(audioCodec)
             .withVideoBitrate(4000)
             .inputOptions(inputOptions)
             .outputOptions(outputOptions)

@@ -2,6 +2,8 @@ import Movie from '../../../../../../../lib/media/Movie';
 import HlsManager from '../../../../../../../lib/hls/HlsManager';
 import Transcoding from '../../../../../../../lib/hls/transcoding'
 const Logger = require('../../../../../../../lib/logger');
+import getBrowser from "../../../../../../../lib/browsers/util";
+import { useUserAgent } from 'next-useragent'
 const logger = new Logger().getInstance();
 const pathLib = require('path');
 const db = require('../../../../../../../lib/db');
@@ -42,27 +44,35 @@ const isSegmentFinished = (requestedSegment, hlsManager, group) => {
 
 export default async (req, res) => {
     const hlsManager = new HlsManager();
-    const { id, quality, group } = req.query;
+    const { id, quality, group, audioStream } = req.query;
     let resolved = false;
     hlsManager.setLastRequestedTime(group);
+
+    const movie = new Movie(id);    
+    const userAgent = useUserAgent(req.headers['user-agent']);
+    const browser   = getBrowser(userAgent);
+
+    const codecInfo = await movie.getAudioCodecByStreamIndex(audioStream);
+
     return new Promise(async (resolve) => {
         const segmentText = req.query.segment; //<segment>.ts
         const segmentsText = req.query.segments; // segments in text format
         const segments = parseInt(segmentsText); // segments in int
         const segment = parseInt(segmentText); //<segment>
         const startSegment = Math.max(segment - 1, 0);
-        const movie = new Movie(id);
         let path;
 
         HlsManager.lock.enter(async function (token) {
             let promises = [];
 
             if (!hlsManager.isAnyVideoTranscodingActive(group)) {
-                promises.push(hlsManager.startMovieTranscoding(movie, quality, startSegment, group));
+                const audioSupported = browser.audioCodecSupported(codecInfo.codec);
+                promises.push(hlsManager.startMovieTranscoding(movie, quality, startSegment, group, audioStream, audioSupported));
             } else {
                 if (hlsManager.stopOtherVideoTranscodings(group, quality)) { // Stop other transcodings (other qualities) if they are running
                     logger.DEBUG(`[HLS] Changing quality to ${quality} for group ${group}`)
-                    promises.push(hlsManager.startMovieTranscoding(movie, quality, startSegment, group));
+                    const audioSupported = browser.audioCodecSupported(codecInfo.codec);
+                    promises.push(hlsManager.startMovieTranscoding(movie, quality, startSegment, group, audioStream, audioSupported));
                 } else {
                     const path = pathLib.join(hlsManager.getVideoTranscodingOutputPath(group), segmentText);
                     const segmentExists = await checkIfFileExists(path);
@@ -90,7 +100,8 @@ export default async (req, res) => {
     
                     if (restartTranscoding) {
                         hlsManager.stopAllVideoTranscodings(group);
-                        promises.push(hlsManager.startMovieTranscoding(movie, quality, startSegment, group));
+                        const audioSupported = browser.audioCodecSupported(codecInfo.codec);
+                        promises.push(hlsManager.startMovieTranscoding(movie, quality, startSegment, group, audioStream, audioSupported));
                     }
                 }
             }

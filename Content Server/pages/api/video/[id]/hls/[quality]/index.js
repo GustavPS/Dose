@@ -5,7 +5,7 @@ const pathToMovie = '/home/gustav/testMovies/Top Gun/Top Gun.mp4';  // The input
 const segmentDur = Transcoding.SEGMENT_DURATION; //  Controls the duration (in seconds) that the file will be chopped into.
 
 export default async (req, res) => {
-  const { id, quality, duration, group } = req.query;
+  const { id, quality, duration, group, audioStream } = req.query;
 
   let out = '#EXTM3U\n' +
       '#EXT-X-VERSION:3\n' +
@@ -16,7 +16,7 @@ export default async (req, res) => {
   let splits = Math.max(duration / segmentDur) - 1;
   for(let i=0; i< splits; i++){
       //out += "#EXT-X-DISCONTINUITY\n"
-      out += `#EXTINF:${segmentDur}, nodesc\n/api/video/${id}/hls/${quality}/segments/${i}.ts?segments=${splits}&group=${group}\n`;
+      out += `#EXTINF:${segmentDur}, nodesc\n/api/video/${id}/hls/${quality}/segments/${i}.ts?segments=${splits}&group=${group}&audioStream=${audioStream}\n`;
   }
   out+='#EXT-X-ENDLIST\n';
 

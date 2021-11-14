@@ -325,7 +325,7 @@ export default function Home(props) {
     <>
     <HlsPlayer
       ref={videoRef}
-      src={`${server.server_ip}/api/video/${id}/hls/master?audioStream=0`}
+      src={`${server.server_ip}/api/video/${id}/hls/master`}
       server={server}
       id={id}
       type={"movie"}>

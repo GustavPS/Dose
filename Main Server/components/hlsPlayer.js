@@ -23,6 +23,8 @@ export default class HlsPlayer extends React.Component {
             title: this.props.title,
             subtitles: [],
             resolutions: [],
+            audioLanguages: [],
+            activeLanguageStreamIndex: null, // -1 = Not selected yet
             activeResolutionLevel: 0, // The index of the active resolution, 0 == higheest, i.e state.resolutions[0]
             activeSubtitleId: -1 // -1 = no subtitle selected
         }
@@ -58,12 +60,76 @@ export default class HlsPlayer extends React.Component {
         this.chromecastDisconnect = this.chromecastDisconnect.bind(this);
         this.updateVideoProgress = this.updateVideoProgress.bind(this);
 
-        let runningOnClient = typeof window !== "undefined";
-        if (runningOnClient) {
-            this.chromecastHandler = new cheomecastHandler(this.src, this.updateSeekTime, this.chromecastDisconnect);
+
+        this.getLanguages()
+        .then(() => {
+            let runningOnClient = typeof window !== "undefined";
+            if (runningOnClient) {
+                this.chromecastHandler = new cheomecastHandler(this.getSrc(), this.updateSeekTime, this.chromecastDisconnect);
+            }
+
+            // If the page got mounted before we got here, we have to setup the player
+            if (this._ismounted) {
+                this.setupHls();
+            }
+        });
+    }
+
+    getSrc() {
+        if (this.state.activeLanguageStreamIndex == null) {
+            console.log(`[HLS] WARNING: Calling getSrc() when activelanguageStreamIndex is null`);
+            return `${this.src}?audioStream=0`;
+        } else {
+            return `${this.src}?audioStream=${this.state.activeLanguageStreamIndex}`;
         }
     }
 
+    /**
+     * Get the video languages from the server
+     */
+    getLanguages() {
+        return new Promise(resolve => {
+            validateServerAccess(this.server, (serverToken) => {
+                fetch(`${this.server.server_ip}/api/video/${this.id}/getLanguages?type=${this.type}&token=${serverToken}`)
+                .then(response => response.json())
+                .then(data => {
+                    const defaultLanguage = this.getDefaultLanguage(data);
+                    this.setState({
+                        audioLanguages: data,
+                        activeLanguageStreamIndex: defaultLanguage != null ? defaultLanguage.stream_index : 0
+                    }, () => {
+                        resolve();
+                    });
+                });
+            });
+        });
+
+    }
+
+    /**
+     * Get the default language from the languages
+     * 
+     * @param {Array} languages - The languages from the server 
+     * @returns 
+     */
+    getDefaultLanguage(languages) {
+        // TODO: Default language should be a user preference
+        for (let i = 0; i < languages.length; i++) {
+            if (languages[i].longName === "English") {
+                return languages[i];
+            }
+        }
+        console.log(`[HLS] Couldn't fins a default language. This will lead to audio issues`);
+        return null;
+    }
+
+
+    /**
+     * Get the group id from the manifest
+     * 
+     * @param {Object} data 
+     * @returns The group id from the manifest
+     */
     getGroupIdFromManifest(data) {
         if (data.levels.length > 0 && data.levels[0].url.length > 0) {
             const regex = /group=(.+)&/i;
@@ -198,18 +264,27 @@ export default class HlsPlayer extends React.Component {
         return this.state.title;
     }
 
+    /**
+     * Setup the video player and listeners
+     */
+    setupHls() {
+        this.hls = new Hls({maxMaxBufferLength: 60});
+        this.hls.loadSource(this.getSrc());
+        this.hls.attachMedia(this.videoNode);
+        this.videoNode.volume = 1;
+
+        this.setupListeners();
+    }
+
     componentDidMount() {
         this._ismounted = true;
-        if (Hls.isSupported()) {
-            this.hls = new Hls({maxMaxBufferLength: 60});
-            this.hls.loadSource(this.src);
-            this.hls.attachMedia(this.videoNode);
-            this.videoNode.volume = 1;
+        // If we have found the language, we can setup HLS. If not we will wait for the language to be found
+        if (Hls.isSupported() && this.state.activeLanguageStreamIndex !== null) {
+            this.setupHls();
         }
         this.soundBar.value = 100;
         this.seekBar.value = 0;
         this.pingInterval = setInterval(this.ping, 5000);
-        this.setupListeners();
     }
 
     componentWillUnmount() {

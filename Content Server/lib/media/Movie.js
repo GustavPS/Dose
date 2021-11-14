@@ -269,6 +269,28 @@ class Movie {
             })
         });
     }
+
+    getAudioCodecs() {
+        return new Promise((resolve, reject) => {
+            db.many("SELECT language, codec, stream_index FROM movie_language WHERE movie_id = $1 ORDER BY stream_index", [this.#movieId]).then(result => {
+                resolve(result);
+            }).catch(error => {
+                logger.ERROR(`Error getting movie codecs: ${error}`);
+                reject();
+            });
+        });
+    }
+
+    getAudioCodecByStreamIndex(streamIndex) {
+        return new Promise((resolve, reject) => {
+            db.one("SELECT language, codec, stream_index FROM movie_language WHERE movie_id = $1 AND stream_index = $2", [this.#movieId, streamIndex]).then(result => {
+                resolve(result);
+            }).catch(error => {
+                logger.ERROR(`Error getting movie codec ${streamIndex}: ${error}`);
+                reject();
+            });
+        });
+    }
 }
 
 module.exports = Movie;
