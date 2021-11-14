@@ -141,6 +141,7 @@ class Transcoding {
                 '-map 0',
                 '-map -v',
                 '-map 0:V',
+                '-map -a',
                 `-map 0:${audioStreamIndex}`,
                 '-g 52',
                 `-crf ${this.CRF_SETTING}`,
