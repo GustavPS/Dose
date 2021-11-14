@@ -326,7 +326,9 @@ export default class HlsPlayer extends React.Component {
         validateServerAccess(this.server, (serverToken) => {
             const currentTime = this.getCurrentTime();
             const videoDuration = this.getVideoDuration();
-            fetch(`${this.server.server_ip}/api/video/${this.id}/currenttime/set?type=${this.type}&time=${currentTime}&videoDuration=${videoDuration}&token=${serverToken}`);
+            if (!isNaN(currentTime) && !isNaN(videoDuration)) {
+                fetch(`${this.server.server_ip}/api/video/${this.id}/currenttime/set?type=${this.type}&time=${currentTime}&videoDuration=${videoDuration}&token=${serverToken}`);
+            }
         });
     }
 
