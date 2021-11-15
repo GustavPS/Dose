@@ -75,6 +75,11 @@ export default class HlsPlayer extends React.Component {
         });
     }
 
+    /**
+     * Get the source url for the video
+     * 
+     * @returns The src for the video
+     */
     getSrc() {
         if (this.state.activeLanguageStreamIndex == null) {
             console.log(`[HLS] WARNING: Calling getSrc() when activelanguageStreamIndex is null`);
@@ -119,8 +124,13 @@ export default class HlsPlayer extends React.Component {
                 return languages[i];
             }
         }
-        console.log(`[HLS] Couldn't fins a default language. This will lead to audio issues`);
-        return null;
+        if (languages.length > 0) {
+            console.log(`[HLS] Couldn't find a default language. Using first from stream`);
+            return languages[0];
+        } else {
+            console.log(`[HLS] Couldn't find any language for the video. This will probably lead to the video not playig`);
+            return null;
+        }
     }
 
 
