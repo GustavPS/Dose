@@ -17,7 +17,7 @@ import HlsPlayer from '../../../../../../../../../components/hlsPlayer';
 export default function Home(props) {
   const server = props.server;
   const router = useRouter();
-  const { id } = router.query;
+  const { id, internalID } = router.query;
   const serverToken = props.serverToken;
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
@@ -274,7 +274,7 @@ export default function Home(props) {
       ref={videoRef}
       src={`${server.server_ip}/api/video/${currentEpisode.internalID}/hls/master`}
       server={server}
-      id={id}
+      id={internalID}
       notifyAt={notifyAtValue}
       notify={showNextEpisodeBox}
       timeUpdate={timeUpdate}
