@@ -88,11 +88,11 @@ const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, direc
     return m3u8;
 }
 
-const getSubtitleStreams = (id, subtitles) => {
+const getSubtitleStreams = (id, subtitles, type) => {
     let m3u8 = "";
     let autoselect = "YES";
     for (let subtitle of subtitles) {
-        m3u8 += `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${subtitle.language}",NAME="${subtitle.language}",FORCED=NO,AUTOSELECT=${autoselect},DEFAULT=${autoselect},URI="/api/video/${id}/hls/subtitles/${subtitle.id}"\n`;
+        m3u8 += `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${subtitle.language}",NAME="${subtitle.language}",FORCED=NO,AUTOSELECT=${autoselect},DEFAULT=${autoselect},URI="/api/video/${id}/hls/subtitles/${subtitle.id}?type=${type}"\n`;
         autoselect = "NO";
     }
     return m3u8;
@@ -135,7 +135,7 @@ export default async (req, res) => {
 #EXT-X-INDEPENDENT-SEGMENTS
 `;
     if (subtitles.length > 0) {
-        m3u8 += getSubtitleStreams(id, subtitles);
+        m3u8 += getSubtitleStreams(id, subtitles, type);
     }
 
     m3u8 += getM3u8Streams(resolutions, fps, id, duration, groupHash, audioStream, directPlay, type);

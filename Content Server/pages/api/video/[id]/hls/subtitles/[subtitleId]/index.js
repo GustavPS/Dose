@@ -1,7 +1,7 @@
 
 
 export default async (req, res) => {
-    const { id, subtitleId } = req.query;
+    const { id, subtitleId, type } = req.query;
     const movieLength = 14400;
     let m3u8 = `#EXTM3U
 #EXT-X-TARGETDURATION:${movieLength}
@@ -9,7 +9,7 @@ export default async (req, res) => {
 #EXT-X-MEDIA-SEQUENCE:0
 #EXT-X-PLAYLIST-TYPE:VOD
 #EXTINF:${movieLength}
-/api/video/${id}/hls/subtitles/${subtitleId}/0
+/api/video/${id}/hls/subtitles/${subtitleId}/0?type=${type}
 #EXT-X-ENDLIST`;
 
     res.set({

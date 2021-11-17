@@ -8,10 +8,10 @@ const logger = new Logger().getInstance();
 
 
 export default async (req, res) => {
-    const { id, subtitleId } = req.query;
+    const { id, subtitleId, type } = req.query;
     let subtitlePath;
     try {
-        subtitlePath = await getMovieSubtitlePath(subtitleId);
+        subtitlePath = type == "movie" ? await getMovieSubtitlePath(subtitleId) : await getEpisodeSubtitlePath(subtitleId);
     } catch (error) {
         logger.ERROR(error);
         res.status(404).send('Subtitle not found');
@@ -80,6 +80,21 @@ const getMovieSubtitlePath = (subtitleID) => {
             resolve(path);
         }).catch(error => {
             logger.ERROR(error);
+            reject(404);
+        })
+    });
+}
+
+const getEpisodeSubtitlePath = (subtitleID) => {
+    return new Promise((resolve, reject) => {
+        db.one(`SELECT serie_episode_subtitle.path AS subtitle_path, library.path AS library_path FROM library
+                INNER JOIN serie_episode_subtitle
+                ON serie_episode_subtitle.library_id = library.id AND serie_episode_subtitle.id = $1
+        `, [subtitleID])
+        .then(result => {
+            let path = result.library_path + result.subtitle_path;
+            resolve(path);
+        }).catch(error => {
             reject(404);
         })
     });
