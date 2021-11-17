@@ -198,8 +198,7 @@ export default function Home(props) {
       window.history.replaceState('state', 'Video', `${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}/season/${currentEpisode.season}/episode/${currentEpisode.episode}?internalID=${currentEpisode.internalID}`);
       
       getEpisodeInformation().then(() => {
-        //${server.server_ip}
-        const src = `http://192.168.1.219:3001/api/video/${currentEpisode.internalID}/hls/master`;
+        const src = `${server.server_ip}/api/video/${currentEpisode.internalID}/hls/master`;
         console.log(`Switching to next episode, src: ${src}`);
         videoRef.current.setSrc(src), currentEpisode.internalID;
         getNextEpisodeID();
@@ -273,7 +272,7 @@ export default function Home(props) {
 
     <HlsPlayer
       ref={videoRef}
-      src={`http://192.168.1.219:3001/api/video/${currentEpisode.internalID}/hls/master`}
+      src={`${server.server_ip}/api/video/${currentEpisode.internalID}/hls/master`}
       server={server}
       id={id}
       notifyAt={notifyAtValue}
