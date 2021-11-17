@@ -129,17 +129,20 @@
     transform: scale(1.2);
 }
 
-.title {
+.title, .infoText {
     color: white;
     text-align: center;
     font-size: 25px;
-    line-height: 50px;
     margin: 0;
     padding: 0;
     -webkit-user-select: none; /* Safari */  
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none; /* Standard */
+}
+
+.infoText {
+    font-size: 15px;
 }
 
 .backImage {

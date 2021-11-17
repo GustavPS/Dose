@@ -28,22 +28,22 @@ class HlsManager {
         return hash;
     }
 
-    startMovieTranscoding(movie, quality, startSegment, groupHash, audioStreamIndex, audioTranscoding) {
+    startTranscoding(content, quality, startSegment, groupHash, audioStreamIndex, audioTranscoding) {
         return new Promise(resolve => {
-            movie.getFilePath()
+            content.getFilePath()
             .then(filePath => {
                 const isDirectplay = quality == "DIRECTPLAY";
                 const hash = this.getUniqueTranscodingHash();
                 const output = Transcoding.createTempDir();
                 let promises = [];
 
-                const fastTranscoding = new Transcoding(filePath, movie.movieId, startSegment, hash, groupHash, true); // Fast transcoding
+                const fastTranscoding = new Transcoding(filePath, content.id, startSegment, hash, groupHash, true); // Fast transcoding
                 global.transcodings.push(fastTranscoding);
                 promises.push(fastTranscoding.start(quality, output, audioStreamIndex, audioTranscoding));
                 // If we're using directplay, we don't need the slow transcoding
                 if (!isDirectplay) {
                     const slowTranscodingStartSegment = startSegment + (Transcoding.FAST_START_TIME / Transcoding.SEGMENT_DURATION)
-                    const slowTranscoding = new Transcoding(filePath, movie.movieId, slowTranscodingStartSegment, hash, groupHash, false); // Slow transcoding
+                    const slowTranscoding = new Transcoding(filePath, content.id, slowTranscodingStartSegment, hash, groupHash, false); // Slow transcoding
                     global.transcodings.push(slowTranscoding);
                     promises.push(slowTranscoding.start(quality, output, audioStreamIndex, audioTranscoding));
                 }

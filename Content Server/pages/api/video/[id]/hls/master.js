@@ -2,6 +2,7 @@ import Movie from "../../../../../lib/media/Movie";
 import HlsManager from "../../../../../lib/hls/HlsManager";
 import getBrowser from "../../../../../lib/browsers/util";
 import { useUserAgent } from 'next-useragent'
+import Episode from "../../../../../lib/media/Episode";
 
 const LANGUAGES_LIST = require('../../../../../lib/languages');
 
@@ -38,51 +39,51 @@ const getPixels = (quality) => {
     }
 }
 
-const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, directplay) => {
+const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, directplay, type) => {
     let m3u8 = "";
     let bw = 4000;
     if (directplay) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=4500,AVERAGE-BANDWIDTH=4500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",FRAME-RATE=${fps},NAME="Directplay",SUBTITLES="subs"\n`;
-        m3u8 += `/api/video/${id}/hls/DIRECTPLAY?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
+        m3u8 += `/api/video/${id}/hls/DIRECTPLAY?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
     }
     if (resolution["8k"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=6000,AVERAGE-BANDWIDTH=6000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('8k')},FRAME-RATE=${fps},NAME="8K",SUBTITLES="subs"\n`;
-        m3u8 += `/api/video/${id}/hls/8K?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
+        m3u8 += `/api/video/${id}/hls/8K?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
     }
     bw -= 500;
     if (resolution["4k"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=5500,AVERAGE-BANDWIDTH=5500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('4k')},FRAME-RATE=${fps},NAME="4K",SUBTITLES="subs"\n`;
-        m3u8 += `/api/video/${id}/hls/4K?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
+        m3u8 += `/api/video/${id}/hls/4K?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
     }
     bw -= 500;
     if (resolution["1440p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=5000,AVERAGE-BANDWIDTH=5000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('1440p')},FRAME-RATE=${fps},NAME="1440P",SUBTITLES="subs"\n`;
-        m3u8 += `/api/video/${id}/hls/1440P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
+        m3u8 += `/api/video/${id}/hls/1440P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
     }
     bw -= 500;
     if (resolution["1080p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=4000,AVERAGE-BANDWIDTH=4000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('1080p')},FRAME-RATE=${fps},NAME="1080P",SUBTITLES="subs"\n`;
-        m3u8 += `/api/video/${id}/hls/1080P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
+        m3u8 += `/api/video/${id}/hls/1080P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
     }
     bw -= 500;
     if (resolution["720p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=3000,AVERAGE-BANDWIDTH=3000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('720p')},FRAME-RATE=${fps},NAME="720P",SUBTITLES="subs"\n`;
-        m3u8 += `/api/video/${id}/hls/720P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
+        m3u8 += `/api/video/${id}/hls/720P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
     }
     bw -= 500;
     if (resolution["480p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=2000,AVERAGE-BANDWIDTH=2000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('480p')},FRAME-RATE=${fps},NAME="480P",SUBTITLES="subs"\n`;
-        m3u8 += `/api/video/${id}/hls/480P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
+        m3u8 += `/api/video/${id}/hls/480P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
     }
     bw -= 500;
     if (resolution["360p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=1000,AVERAGE-BANDWIDTH=1000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('360p')},FRAME-RATE=${fps},NAME="360P",SUBTITLES="subs"\n`;
-        m3u8 += `/api/video/${id}/hls/360P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
+        m3u8 += `/api/video/${id}/hls/360P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
     }
     bw -= 500;
     if (resolution["240p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=500,AVERAGE-BANDWIDTH=500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('240p')},FRAME-RATE=${fps},NAME="240P",SUBTITLES="subs"\n`;
-        m3u8 += `/api/video/${id}/hls/240P?duration=${duration}&group=${group}&audioStream=${audioStream}\n`
+        m3u8 += `/api/video/${id}/hls/240P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
     }
     return m3u8;
 }
@@ -97,17 +98,17 @@ const getSubtitleStreams = (id, subtitles) => {
     return m3u8;
 }
 
-
 export default async (req, res) => {
-    const { id, audioStream } = req.query;
-    const movie = new Movie(id);
+    const { id, audioStream, type } = req.query;
+    const content = type == "movie" ? new Movie(id) : new Episode(id);
+    //const movie = new Movie(id);
     const userAgent = useUserAgent(req.headers['user-agent']);
     const isChromecast = req.headers['user-agent'].indexOf('CrKey') !== -1; // Currently Chromecast is not supported for directplay streaming
     const browser   = getBrowser(userAgent);
 
-    const path = await movie.getFilePath()
-    const resolutions = await movie.getResolutions();
-    const subtitles = await movie.getSubtitles();
+    const path = await content.getFilePath()
+    const resolutions = await content.getResolutions();
+    const subtitles = await content.getSubtitles();
     let directPlay = browser.videoCodecSupported(resolutions["codec"]) && !isChromecast;
     const hlsManager = new HlsManager();
     const met = await getMetadata(path);
@@ -137,6 +138,6 @@ export default async (req, res) => {
         m3u8 += getSubtitleStreams(id, subtitles);
     }
 
-    m3u8 += getM3u8Streams(resolutions, fps, id, duration, groupHash, audioStream, directPlay);
+    m3u8 += getM3u8Streams(resolutions, fps, id, duration, groupHash, audioStream, directPlay, type);
     res.status(200).send(m3u8);
 }

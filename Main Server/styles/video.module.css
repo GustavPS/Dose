@@ -13,6 +13,72 @@
     transition: all 0.2;
 }
 
+.nextEpisodeButton {
+    position: absolute;
+    z-index: 200;
+    right: 25px;
+    bottom: 150px;
+    height: 50px;
+}
+
+.nextEpisodeColor {
+    background-color: #141f37;
+    border: 1px solid transparent;
+    border-radius: .75rem;
+    box-sizing: border-box;
+    color: #FFFFFF;
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: 0.2s all ease-in;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 50%;
+    height: 100%;
+}
+
+.nextEpisodeContainer {
+    width: 100%;
+    height: 100%;
+    color: white;
+    font-family: "Inter var",ui-sans-serif,system-ui,-apple-system,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 50px;
+    text-align: center;
+    text-decoration: none #6B7280 solid;
+    text-decoration-thickness: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    
+    background-color: #141f3744;
+    border-radius: .75rem;
+    border: 1px solid #141f3744;
+    padding: 0 10px;
+    flex: 0 0 auto;
+
+
+}
+
+.nextEpisodeContainer p {
+    position: relative;
+    z-index: 2;
+    margin: 0;
+    padding: 0;
+}
+
+
+.nextEpisodeButton:hover > .nextEpisodeContainer > .nextEpisodeColor {
+  background-color: #141f37;
+  width: 100% !important;
+}
+.nextEpisodeButton:hover {
+    cursor: pointer;
+}
+
 
 
 .description {

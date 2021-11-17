@@ -1,16 +1,23 @@
 const db = require('../db');
+const Content = require('./Content');
 const Logger = require('../logger');
 const logger = new Logger().getInstance();
 
-class Movie {
+class Movie extends Content {
     #movieId;
     constructor (movieId) {
+        super();
         this.#movieId = movieId;
     }
 
     /** GETTERS **/
-    
+
+    // TODO: Remove function and only use id getter function below
     get movieId() {
+        return this.#movieId;
+    }
+
+    get id() {
         return this.#movieId;
     }
 

@@ -30,8 +30,22 @@ export default class ChromecastHandler {
         this.isConnectedChanged = this.isConnectedChanged.bind(this);
     }
 
+    /**
+     * Set the src of the chromecast player
+     * 
+     * @param {string} src - The source to play 
+     */
     setSrc(src) {
         this.src = src;
+    }
+
+    /**
+     * Set the initial seek
+     * 
+     * @param {number} seconds - The time to start the video at 
+     */
+    setInitialSeek(seconds) {
+        this.initialSeek = seconds;
     }
 
     /**
@@ -98,6 +112,7 @@ export default class ChromecastHandler {
         if (!this.casting) {
             throw new Error("[HLS] ChromecastHandler not connected!");
         }
+        console.log("[HLS] Disconnecting chromecast")
         this.casting = false;
         const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
         castSession.endSession(true);
@@ -143,6 +158,16 @@ export default class ChromecastHandler {
     }
 
     /**
+     * Reload the source of the chromecast player
+     */
+    reloadSource() {
+        if (!this.casting) {
+            throw new Error("[HLS] ChromecastHandler not connected!");
+        }
+        this.requestChromecastSessionSuccess();
+    }
+
+    /**
      * Called when the requestSession() promise resolves.
      */
     requestChromecastSessionSuccess() {
@@ -151,6 +176,7 @@ export default class ChromecastHandler {
         const request = new chrome.cast.media.LoadRequest(mediaInfo);
 
         castSession.loadMedia(request).then(() => {
+            this.disconnected = false;
             this.casting = true;
             this.remotePlayer = new cast.framework.RemotePlayer();
             this.remotePlayerController = new cast.framework.RemotePlayerController(this.remotePlayer);
@@ -160,6 +186,12 @@ export default class ChromecastHandler {
         }).catch((error) => {
             console.log(`[HLS] ChromecastHandler casting error: ${error}`)
         });
+    }
+
+    removeListeners() {
+        this.remotePlayerController.removeEventListener(cast.framework.RemotePlayerEventType.MEDIA_INFO_CHANGED);
+        this.remotePlayerController.removeEventListener(cast.framework.RemotePlayerEventType.CURRENT_TIME_CHANGED);
+        this.remotePlayerController.removeEventListener(cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED);
     }
 
     /**
@@ -184,9 +216,11 @@ export default class ChromecastHandler {
      * Updates the progress of the video to the owner of this instance
      */
     updateProgress() {
-        const currentTime = Math.floor(this.remotePlayer.currentTime);
-        const duration = this.remotePlayer.duration;
-        this.progressChangedCallback(currentTime, duration);
+        if (this.casting) {
+            const currentTime = Math.floor(this.remotePlayer.currentTime);
+            const duration = this.remotePlayer.duration;
+            this.progressChangedCallback(currentTime, duration);
+        }
     }
 
     /**
@@ -217,6 +251,7 @@ export default class ChromecastHandler {
         console.log(`[HLS] ChromecastHandler isConnectedChanged, connected: ${connected}`);
         if (!connected) {
             this.casting = false;
+            this.removeListeners();
             this.disconnect();
         }
     }

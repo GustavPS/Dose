@@ -5,8 +5,7 @@ import validateServerAccess from '../lib/validateServerAccess';
 import Hls from "hls.js";
 import cheomecastHandler from '../lib/chromecastHandler';
 import Resolution from '../lib/resolution';
-import { castArray } from 'lodash';
-
+//import Script from 'next/script'
 
 export default class HlsPlayer extends React.Component {
     constructor(props) {
@@ -17,16 +16,22 @@ export default class HlsPlayer extends React.Component {
         this.src = this.props.src;
         this.hls = undefined;
         this.group = undefined; // group id from manifest
+        this.notifyAt = this.props.notifyAt // When we have this time left in the video, we will notify the caller
+        this.notify = this.props.notify; // Function to call when we have reached the notifyAt time
+        this.notified = false // True if we have notified the caller
+        this.timeUpdate = this.props.timeUpdate; // Function to call when the time is updated
 
         this.state = {
             videoPaused: false,
             title: this.props.title,
+            infoText: this.props.infoText,
             subtitles: [],
             resolutions: [],
             audioLanguages: [],
             activeLanguageStreamIndex: null, // -1 = Not selected yet
             activeResolutionLevel: 0, // The index of the active resolution, 0 == higheest, i.e state.resolutions[0]
-            activeSubtitleId: -1 // -1 = no subtitle selected
+            activeSubtitleId: -1, // -1 = no subtitle selected
+            importGCastAPI: false
         }
 
         this.updateCurrentTimeInterval = undefined;
@@ -59,10 +64,11 @@ export default class HlsPlayer extends React.Component {
         this.onManifestLoaded = this.onManifestLoaded.bind(this);
         this.chromecastDisconnect = this.chromecastDisconnect.bind(this);
         this.updateVideoProgress = this.updateVideoProgress.bind(this);
+        this.chromecastProgressUpdate = this.chromecastProgressUpdate.bind(this);
 
         let runningOnClient = typeof window !== "undefined";
         if (runningOnClient) {
-            this.chromecastHandler = new cheomecastHandler(this.updateSeekTime, this.chromecastDisconnect);
+            this.chromecastHandler = new cheomecastHandler(this.chromecastProgressUpdate, this.chromecastDisconnect);
         }
 
         this.getLanguages()
@@ -76,6 +82,18 @@ export default class HlsPlayer extends React.Component {
     }
 
     /**
+     * Called when chromecast progress is updated
+     * 
+     * @param {number} currentTime - The current time of the video 
+     * @param {number} duration - The duration of the video
+     */
+    chromecastProgressUpdate(currentTime, duration) {
+        this.updateSeekTime(currentTime, duration);
+        this.notifyParentIfNeeded(currentTime, duration);
+
+    }
+
+    /**
      * Get the source url for the video
      * 
      * @returns The src for the video
@@ -83,11 +101,34 @@ export default class HlsPlayer extends React.Component {
     getSrc() {
         if (this.state.activeLanguageStreamIndex == null) {
             console.log(`[HLS] WARNING: Calling getSrc() when activelanguageStreamIndex is null`);
-            return `${this.src}?audioStream=0`;
+            return `${this.src}?audioStream=0&type=${this.type}`;
         } else {
-            return `${this.src}?audioStream=${this.state.activeLanguageStreamIndex}`;
+            return `${this.src}?audioStream=${this.state.activeLanguageStreamIndex}&type=${this.type}`;
         }
     }
+
+    /**
+     * Set the video source
+     */
+    setSrc(src, id) {
+        clearInterval(this.updateCurrentTimeInterval);
+        clearInterval(this.pingInterval);
+
+        this.src = src;
+        this.id = id;
+        this.notified = false;
+        this.chromecastHandler.setSrc(this.getSrc());
+        this.chromecastHandler.setInitialSeek(0);
+        this.hls.loadSource(this.getSrc());
+        this.hls.attachMedia(this.videoNode);
+
+        if (this.chromecastHandler.isCasting()) {
+            this.chromecastHandler.reloadSource();
+        } else {
+            this.videoNode.play();
+        }
+    }
+
 
     /**
      * Get the video languages from the server
@@ -181,7 +222,6 @@ export default class HlsPlayer extends React.Component {
         // Reversed because hls.levels have reversed order in terms of quality. We want highest quality at top
         for (let i = this.hls.levels.length - 1; i >= 0; i--) {
             resolutions.push(new Resolution(i, data.levels[i].name));
-            console.log(resolutions);
         }
         this.setState({
             resolutions: resolutions,
@@ -219,6 +259,15 @@ export default class HlsPlayer extends React.Component {
      */
     setTitle(title) {
         this.setState({title: title})
+    }
+
+    /**
+     * Set the info text of the video
+     * 
+     * @param {string} text - The text to display
+     */
+    setInfoText(text) {
+        this.setState({infoText: text});
     }
 
     /**
@@ -287,6 +336,13 @@ export default class HlsPlayer extends React.Component {
     }
 
     componentDidMount() {
+        // Check the localStorage if the chromecast API has already been loaded, if not, load it
+        let runningOnClient = typeof window !== "undefined";
+        if (runningOnClient && window["gCastIncluded"] == null) {
+            this.setState({importGCastAPI: true});
+            window["gCastIncluded"] = true;
+        }
+
         this._ismounted = true;
         // If we have found the language, we can setup HLS. If not we will wait for the language to be found
         if (Hls.isSupported() && this.state.activeLanguageStreamIndex !== null) {
@@ -419,10 +475,34 @@ export default class HlsPlayer extends React.Component {
 
     /**
      * Called when the video time updates
+     * Note: Not called when chromecast is active
      */
     onVideoTimeUpdate() {
         if (!this.seeking && this._ismounted) {
-            this.updateSeekTime();
+            if (!this.chromecastHandler.isCasting()) {
+                this.updateSeekTime();
+            }
+            this.notifyParentIfNeeded(this.videoNode.currentTime, this.videoNode.duration);
+        }
+    }
+
+    /**
+     * Called from both the video and chromecast player when the progress updates
+     * Sends video time updates to the parent component
+     * Sends a notification to the parent component when the video is less than the notification time
+     * 
+     * @param {number} currentTime - The current time of the video 
+     * @param {number} duration - The duration of the video 
+     */
+    notifyParentIfNeeded(currentTime, duration) {
+        if (this.timeUpdate != undefined) {
+            this.timeUpdate(currentTime, duration); // Call the parent function
+        }
+        if (this.notifyAt != undefined &&
+            duration - currentTime <= this.notifyAt && 
+            !this.notified) {
+                this.notified = true;
+                this.notify();
         }
     }
 
@@ -484,7 +564,6 @@ export default class HlsPlayer extends React.Component {
         if (this.chromecastHandler.isCasting()) {
             this.chromecastHandler.setResolution(resolution);
         } else {
-            console.log("hej")
             this.hls.nextLevel = resolution.level;
         }
         this.setState({activeResolutionLevel: resolution.level});
@@ -495,19 +574,25 @@ export default class HlsPlayer extends React.Component {
      */
     chromecastDisconnect() {
         clearInterval(this.updateCurrentTimeInterval);
-        this.videoNode.currentTime = this.chromecastSeekValue;
-        this.togglePlay();
+        if (this._ismounted) {
+            this.videoNode.currentTime = this.chromecastSeekValue;
+            this.togglePlay();
+        }
     }
     
     
+    // TODO: Shouldn't include chromecast api from cdn, should be included in the main server and use import statement
     render() {
         return (
             <>
-                <Head>
-                    <script src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-                </Head>
+            <Head>
+                {this.state.importGCastAPI &&
+                    <script src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" strategy="beforeInteractive"></script>
+                }
+            </Head>
                 <div className={Styles.videoContainer} ref={node => this.videoContainer = node} onDoubleClick={this.toggleFullscreen}>
                     <video ref={node => this.videoNode = node} playsInline className={Styles.videoPlayer} onClick={this.togglePlay} />
+                    {this.props.children}
                     <div className={Styles.topControls}>
                         <div className={Styles.backImage}  onClick={() => Router.back()}></div>
                     </div>
@@ -537,6 +622,7 @@ export default class HlsPlayer extends React.Component {
                             </div>
                             <div className={Styles.lowerMiddleControls}>
                                 <h5 className={Styles.title}>{this.state.title}</h5>
+                                <h6 className={Styles.infoText}>{this.state.infoText}</h6>
                             </div>
                             <div className={Styles.lowerRightControls}>
                                 <div className={`${Styles.fullscreenImage} ${Styles.button}`} onClick={this.toggleFullscreen}></div>
