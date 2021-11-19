@@ -18,7 +18,7 @@
     "hls.js": "^0.13.2",
     "js-cookie": "^2.2.1",
     "jsonwebtoken": "^8.5.1",
-    "next": "^10.0.5",
+    "next": "^11.1.1",
     "next-cookies": "^2.0.3",
     "node-async-locks": "^2.0.0",
     "pg-promise": "^10.5.5",
