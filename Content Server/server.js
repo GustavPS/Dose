@@ -19,6 +19,8 @@ const logger = new Logger().getInstance();
 const sockets = require('./sockets');
 const express = require('express');
 
+const getSegment = require('./pages/api/video/[id]/hls/[quality]/segments/[segment]');
+
 var crypto = require('crypto');
 
 console.log(`######                       
@@ -41,7 +43,16 @@ function startWebServer() {
     const server = http.createServer(expressApp);
     sockets.connect(server);
 
+    /**
+     * Setup regular express API endpoint to the HLS segment endpoint since
+     * nextJS will remove support for API-endpoints with more than 4MB responses in the future.
+     */
+    expressApp.get('/api/video/:id/hls/:quality/segments/:segment', async (req, res) => {
+      getSegment(req, res);
+    });
+    // Setup regular nextJS endpoints
     expressApp.all('*', (req, res) => nextHandler(req, res));
+
 
     server.listen(port, () => {
       logger.INFO(`Ready on port ${port}`);

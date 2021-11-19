@@ -117,7 +117,6 @@ export default async (req, res) => {
     let fps = met.streams[0].r_frame_rate;
     for (let i = 0; i < met.streams.length; i++) {
         if (met.streams[i].codec_type === 'video') {
-            console.log(met.streams[i].r_frame_rate)
             const firstParam = met.streams[i].r_frame_rate.substring(0, met.streams[i].r_frame_rate.indexOf('/'));
             const secondParam = met.streams[i].r_frame_rate.substring(met.streams[i].r_frame_rate.indexOf('/')+1, met.streams[i].r_frame_rate.length);
             fps = parseInt(firstParam) / parseInt(secondParam);

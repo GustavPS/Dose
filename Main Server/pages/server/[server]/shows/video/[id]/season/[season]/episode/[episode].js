@@ -1,15 +1,11 @@
 import Head from 'next/head'
-import Layout from '../../../../../../../../../components/layout';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router'
-import ReactPlayer from 'react-player'
 import Styles from '../../../../../../../../../styles/video.module.css';
 import fetch from 'node-fetch'
-import vtt from 'vtt-live-edit';
 import Router from 'next/router';
 import cookies from 'next-cookies'
 import validateServerAccess from '../../../../../../../../../lib/validateServerAccess';
-import VideoComponent from '../../../../../../../../../components/videoComponent';
 import HlsPlayer from '../../../../../../../../../components/hlsPlayer';
 
 //let internalID, season, episode, show;

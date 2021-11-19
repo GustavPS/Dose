@@ -2,8 +2,9 @@ import Styles from './videoComponent.module.css';
 import Head from 'next/head'
 import Router from 'next/router';
 import validateServerAccess from '../lib/validateServerAccess';
+import { Component } from 'react';
 
-export default class VideoComponent extends React.Component {
+export default class VideoComponent extends Component {
     constructor(props) {
         super(props);
         // Video element

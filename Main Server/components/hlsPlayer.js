@@ -5,9 +5,9 @@ import validateServerAccess from '../lib/validateServerAccess';
 import Hls from "hls.js";
 import cheomecastHandler from '../lib/chromecastHandler';
 import Resolution from '../lib/resolution';
-//import Script from 'next/script'
+import { Component } from 'react';
 
-export default class HlsPlayer extends React.Component {
+export default class HlsPlayer extends Component {
     constructor(props) {
         super(props);
         this.server = this.props.server;

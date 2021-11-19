@@ -1,12 +1,12 @@
 import Head from 'next/head'
 import Link from 'next/link';
-
+import { Component } from 'react';
 import Layout from '../components/layout'
 import LoginStyle from '../styles/login.module.css';
 import { Form, Button } from 'react-bootstrap';
 
 
-export default class Register extends React.Component {
+export default class Register extends Component {
   constructor(props) {
     super(props);
     this.state = {

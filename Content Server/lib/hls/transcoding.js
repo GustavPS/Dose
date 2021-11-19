@@ -6,7 +6,7 @@ const logger = new Logger().getInstance();
 
 class Transcoding {
     static TEMP_FOLDER = process.env.TEMP_DIRECTORY;
-    static SEGMENT_DURATION = 4;
+    static SEGMENT_DURATION = 1;
     static TIMEOUT_TIME = 20000; // 20 seconds in milliseconds
     static FAST_START_SEGMENTS = 50;
     static FAST_START_TIME = Transcoding.SEGMENT_DURATION * Transcoding.FAST_START_SEGMENTS;

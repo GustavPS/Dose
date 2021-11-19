@@ -1,11 +1,11 @@
 import style from './serverBox.module.css';
 import { useRef } from 'react';
+import { Component, createRef } from 'react';
 
-
-export default class ServerBox extends React.Component {
+export default class ServerBox extends Component {
     constructor(props) {
         super(props);
-        this.imgRef = React.createRef();
+        this.imgRef = createRef();
 
 
         this.serverName = props.name;

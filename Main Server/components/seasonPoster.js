@@ -1,7 +1,7 @@
 import style from './seasonPoster.module.css';
+import { Component } from 'react';
 
-
-export default class SeasonPoster extends React.Component {
+export default class SeasonPoster extends Component {
     constructor(props) {
         super(props);
         this.season = props.title;

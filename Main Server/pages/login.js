@@ -5,9 +5,10 @@ import LoginStyle from '../styles/login.module.css';
 import { Form, Button } from 'react-bootstrap';
 import cookie from 'js-cookie';
 import Router from 'next/router';
+import { Component } from 'react';
 
 
-export default class Login extends React.Component {
+export default class Login extends Component {
   constructor(props) {
     super(props);
     this.state = {

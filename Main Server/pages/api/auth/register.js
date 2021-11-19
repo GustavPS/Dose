@@ -1,5 +1,3 @@
-import { getLocationOrigin } from 'next/dist/next-server/lib/utils';
-
 const db = require('../../../lib/db').default;
 const hash = require('./hash');
 

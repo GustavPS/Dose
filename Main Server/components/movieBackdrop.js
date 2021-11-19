@@ -1,8 +1,8 @@
 import style from './movieBackdrop.module.css';
 import validateServerAccess from '../lib/validateServerAccess';
+import { Component } from 'react';
 
-
-export default class MovieBackdrop extends React.Component {
+export default class MovieBackdrop extends Component {
     constructor(props) {
         super(props);
         this.title = props.title;

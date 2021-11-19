@@ -1,7 +1,7 @@
 import style from './episodePoster.module.css';
+import { Component } from 'react';
 
-
-export default class EpisodePoster extends React.Component {
+export default class EpisodePoster extends Component {
     constructor(props) {
         super(props);
         this.show = props.show;
