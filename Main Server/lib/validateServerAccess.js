@@ -3,6 +3,10 @@ import Router from 'next/router';
 // We have to use a lock to avoid race-condition if there are multiple calls to this function at the same time
 import lock from './lock';
 
+const COOKIE_SETTINGS = {
+    expires: 7
+}
+
 const validateServerAccess = async (server, cb) => {
     lock.enter(async function (token) {
         let   mainAccessToken          = cookie.get('token');
@@ -145,14 +149,14 @@ const mainTokenExist = () => {
 }
 
 const setServerToken = (token, validTo) => {
-    cookie.set('serverToken', token);
-    cookie.set('serverValidTo', validTo);
+    cookie.set('serverToken', token, COOKIE_SETTINGS);
+    cookie.set('serverValidTo', validTo, COOKIE_SETTINGS);
 } 
 
 const setMainToken = (token, refreshToken, validTo) => {
-    cookie.set('token', token);
-    cookie.set('refreshToken', refreshToken);
-    cookie.set('validTo', validTo);
+    cookie.set('token', token, COOKIE_SETTINGS);
+    cookie.set('refreshToken', refreshToken, COOKIE_SETTINGS);
+    cookie.set('validTo', validTo, COOKIE_SETTINGS);
 }
 
 module.exports = validateServerAccess;

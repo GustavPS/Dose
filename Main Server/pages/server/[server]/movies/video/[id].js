@@ -11,8 +11,14 @@ import Router from 'next/router';
 import cookies from 'next-cookies'
 
 import VideoComponent from '../../../../../components/videoComponent';
+import HlsPlayer from '../../../../../components/hlsPlayer';
 import VideoTrailer from '.././../../../../components/videoTrailer';
 import validateServerAccess from '../../../../../lib/validateServerAccess';
+import Actor from '../../../../../components/actor';
+import useWindowSize from '../../../../../components/hooks/WindowSize';
+import MovieBackdrop from '../../../../../components/movieBackdrop';
+
+
 
 import ChangeImages from '../../../../../components/changeImages';
 
@@ -28,13 +34,18 @@ export default function Home(props) {
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
   const [inWatchList, setInWatchList] = useState(false);
+  const [actors, setActors] = useState([]);
+  const [recommended, setRecommended] = useState([]);
 
   const [viewTrailer, setViewTrailer] = useState(false);
   const [trailer, setTrailer] = useState(false);
 
   const [loaded, setLoaded] = useState(false)
+  const [recommendedLoaded, setRecommendedLoaded] = useState(false);
 
   const videoRef = useRef();
+  const windowSize = useWindowSize();
+
 
 
   // Used for manual metadata search
@@ -47,6 +58,48 @@ export default function Home(props) {
   // This has it's own useEffect because if it doesn't videojs doesn't work (????)
   useEffect(() => {
     validateServerAccess(server, (serverToken) => {
+      fetch(`${server.server_ip}/api/movies/${id}/getRecommended?token=${serverToken}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+      })
+      .then(r => r.json())
+      .then(result => {
+        if (result.success) {
+          console.log(result);
+          result.movies.forEach(movie => {
+            for (let image of movie.images) {
+                if (image.active) {
+                    if (image.type === 'BACKDROP') {
+                        if (image.path === 'no_image') {
+                            movie.backdrop = null;
+                        } else {
+                            movie.backdrop = image.path;
+                        }
+                    } else {
+                        if (image.path === 'no_image') {
+                            movie.backdrop = null;
+                        } else {
+                            movie.poster = image.path;
+                        }
+                    }
+
+                    if (movie.backdrop != null && movie.poster != null) {
+                        break;
+                    }
+                }
+            }
+        });
+          setRecommended(result.movies);
+        }
+      })
+      .then(() => {
+        setRecommendedLoaded(true);
+      });
+
+
+
       fetch(`${server.server_ip}/api/movies/${id}?token=${serverToken}`, {
         method: 'GET',
         headers: {
@@ -102,8 +155,15 @@ export default function Home(props) {
         setInWatchList(meta.inwatchlist);
         setWatched(meta.watched);
         setMetadata(meta);
-        console.log(meta.trailer);
         setTrailer(meta.trailer);
+        meta.actors = meta.actors.sort((a, b) => {
+          return parseFloat(a.order) - parseFloat(b.order);
+        });
+        setActors(meta.actors);
+
+        if (router.query.autoPlay) {
+          videoRef.current.show();
+        }
       }).then(() => {
         setLoaded(true)
       });
@@ -120,7 +180,7 @@ export default function Home(props) {
         } else {
           console.log("ERROR MARKING AS WATCHED: " + status);
         }
-      })      .catch(err => {
+      }).catch(err => {
         console.log(err);
       });
     });
@@ -218,30 +278,75 @@ export default function Home(props) {
       });
     });
   }
+
+
+  const getActors = () => {
+    let elements = [];
+    for (const actor of actors) {
+      elements.push(
+        <Actor key={actor.order} name={actor.name} characterName={actor.character} image={actor.image} />
+      )
+    }
+    return elements;
+  }
+
+  const getRecommended = () => {
+    let elements = [];
+    for (const movie of recommended) {
+      let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
+      elements.push(
+          <MovieBackdrop markAsDoneButton id={movie.id} time={0} runtime={0} title={movie.title} overview={movie.overview} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
+      );
+    }
+    return elements;
+  }
+
+  const selectMovie = (id) => {
+    Router.push(`/server/${server.server_id}/movies/video/${id}`);
+    Router.events.on("routeChangeComplete", () => {
+      Router.reload(window.location.pathname);
+
+
+    });
+  }
   
+  const scrollLeft = (id) => {
+    document.getElementById(id).scrollLeft -= (window.innerWidth)*0.8;
+    window.scrollTo(window.scrollX, window.scrollY - 1);
+    window.scrollTo(window.scrollX, window.scrollY + 1);
+  }
+  const scrollRight = (id) => {
+      document.getElementById(id).scrollLeft += (window.innerWidth)*0.8;
+      window.scrollTo(window.scrollX, window.scrollY - 1);
+      window.scrollTo(window.scrollX, window.scrollY + 1);
+  }
+
   return (
     <>
-    <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
-                    internalID={id} Movie
-                    >
-    </VideoComponent>
+    <HlsPlayer
+      ref={videoRef}
+      src={`${server.server_ip}/api/video/${id}/hls/master`}
+      server={server}
+      id={id}
+      type={"movie"}>
+
+    </HlsPlayer>
     <Head>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
 
     <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
     <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
-    <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
     </Head>
-    {!loaded &&
+    {(!loaded || !recommendedLoaded) &&
       <div className={Styles.loadingioSpinnerEclipse}>
           <div className={Styles.ldio}>
               <div></div>
           </div>
       </div>
     }
-    {loaded &&
+    {loaded && recommendedLoaded && 
     <>
 
 
@@ -254,7 +359,12 @@ export default function Home(props) {
 
     <div id="container">
     <div style={{backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')`}} className={Styles.background}></div>
-    <div className="backIcon" onClick={() => Router.back()}></div>
+    <div className="backIcon" onClick={() => {
+      Router.back();
+      Router.events.on("routeChangeComplete", () => {
+        Router.reload(window.location.pathname);
+      });
+      }}></div>
 
 
     {metadataBox &&
@@ -350,10 +460,42 @@ export default function Home(props) {
     <div className={Styles.bottom}>
       <h1>Actors</h1>
       <div className={Styles.actors}>
-        <div className={Styles.actor}>
-
+        <div id="actors" className={Styles.actorBox}>
+          {getActors()}
         </div>
+        {actors.length * 200 > windowSize.width &&
+                                <>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('actors')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('actors')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                    </div>
+                                </>
+                            }
       </div>
+
+    <h1>Recommended</h1>
+    {recommended.length > 0 &&
+                    <div style={{position: 'relative'}}>
+                        <div className={Styles.movieRow}>
+                            <div id="recommended" className={Styles.scrollable}>
+                                {getRecommended()}
+                            </div>
+                            {recommended.length * 480 > windowSize.width &&
+                                <div>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('recommended')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('recommended')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                    </div>
+                                </div>
+                            }
+                        </div> 
+                    <hr className={Styles.divider}></hr>
+                    </div> 
+                }
     </div>
     </div>
     </>

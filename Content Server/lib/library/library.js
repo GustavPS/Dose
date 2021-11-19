@@ -3,6 +3,13 @@ const pathLib = require('path');
 const fs = require('fs');
 const glob = require('glob');
 const Resolution = require('../resolution');
+const LANGUAGE_LIST = require('../../lib/languages');
+const ytdl = require('ytdl-core');
+var ffmpeg = require('fluent-ffmpeg');
+const eol = require("eol")
+const Logger = require('../logger');
+const logger = new Logger().getInstance();
+
 
 
 const MOVIE_FORMATS = [
@@ -13,6 +20,7 @@ const SUB_FORMATS = [
 ]
 
 var AsyncLock = require('async-lock');
+const { rejects } = require('assert');
 
 class Library {
     constructor(name, path, id, metadata) {
@@ -21,37 +29,7 @@ class Library {
         this.id = id;
         this.metadata = metadata;
         this.lock = new AsyncLock();
-        /*
-        this.subLanguages = [
-            {
-                shortName: 'eng',
-                longName: 'English'
-            },
-            {
-                shortName: 'swe',
-                longName: 'Swedish'
-            },
-            {
-                shortName: 'ara',
-                longName: 'Arabic'
-            },
-            {
-                shortName: 'chi',
-                longName: 'Chinese'
-            },
-            {
-                shortName: 'fre',
-                longName: 'French'
-            },
-            {
-                shortName: 'pol',
-                longName: 'Polish'
-            }, {
-                shortName: 'unknown',
-                longName: 'Unknown'
-            }
-        ]
-        */
+        this.awaitingSubtitles = [];
     }
 
     async findAudioStreams(streams) {
@@ -193,19 +171,18 @@ class Library {
                             ])
                             .output(outputPath)
                             .on('start', function(commandLine) {
-                                //console.log(commandLine);
+                                logger.DEBUG(`Extract sub command: ${commandLine}`);
+                                logger.INFO(`Found a subtitle (${stream.tags.language}) for ${name}. Converting it now..`);
                             })
                             .on('error', function(err, stdout, stderr) {
-                                console.log('an error happened converting subtitle: ' + err.message);
-                                console.log(stdout);
-                                console.log(stderr);
+                                logger.ERROR('An error happened converting subtitle: ' + err.message);
+                                logger.ERROR(stdout);
+                                logger.ERROR(stderr);
                                 done(true);
                             })
                             .on('progress', function(progress) {
-                                process.stdout.write(` > Found a subtitle (${stream.tags.language}) for ${name}. Converting it now. - ${progress.percent}% \r`);
                             })
                             .on('end', function(stdout, stderr) {
-                                console.log(` > Found a subtitle (${stream.tags.language}) for ${name}. Converting it now. - 100% (done)                            `);
                                 done(true);
                             })
                             .run();
@@ -216,7 +193,7 @@ class Library {
                     }
                 }
                 if (!found) {
-                    console.log(` > No subtitles found in ${name}`);
+                    logger.INFO(`No subtitles found in ${name}`);
                     resolve(true);
                 }
             } else {
@@ -242,6 +219,167 @@ class Library {
     }
     removeEntry(path) {
         throw('removeEntry must be implemented.');
+    }
+
+    /**
+     * Download and save the trailer for a movie/show. NOTE: Only tested for movies
+     * 
+     * @param {string} trailer  Youtube link to trailer
+     * @param {string} name Name of movie/show
+     * @param {string} savePath Path to movie/show
+     * @returns 
+     */
+    downloadTrailer(trailer, name, savePath) {
+        let folderPath = pathLib.dirname(savePath);
+        let fullPath = pathLib.join(this.path, folderPath);
+        return new Promise(async (resolve) => {
+            let shouldDownload = true;
+            // Don't download if we have already downloaded the trailer
+            fs.readdirSync(fullPath).forEach(file => {
+                if (file.includes("_downloaded_trailer") && file.includes(".mp4")) {
+                    shouldDownload = false;
+                    if (!file.includes("_not_cropted")) {
+                        resolve(pathLib.join(folderPath, `${name}_downloaded_trailer.mp4`));
+                    } else {
+                        resolve(false);
+                    }
+                    return;
+                }
+            });
+
+            if (trailer == null || trailer == undefined || trailer == "") {
+                shouldDownload = false;
+                resolve(false);
+                return;
+            }
+
+            if (shouldDownload) {
+                let path = pathLib.join(fullPath, `${name}_downloaded_trailer_not_cropted.mp4`);
+                //const info = await ytdl.getInfo(trailer);
+                const maxAttempts = 20;
+                let ignoreThrottling = false;
+                let currentAttempts = 1;
+                const startDownload = () => {
+                    let starttime = null;
+                    const download = ytdl("https://www.youtube.com/watch?v=" + trailer, {quality: 'highestvideo', filter: format => format.container === 'mp4'});
+                    download.pipe(fs.createWriteStream(path));
+                    download.once("response", () => {
+                        starttime = Date.now();
+                    });
+                    download.on("progress", (chunkLength, downloaded, total) => {
+                        const percent = downloaded / total;
+                        const downloaded_minutes = (Date.now() - starttime) / 1000 / 60;
+                        const estimated_download_time = downloaded_minutes / percent - downloaded_minutes;
+                
+                        // if the estimated download time is more than 2 minutes then we cancel and restart the download, this value works fine for me but you may need to change it based on your server/internet speed.
+                        if (estimated_download_time.toFixed(2) >= 2) {
+                            if (currentAttempts++ >= maxAttempts && !ignoreThrottling) {
+                                logger.WARNING(`Youtube is throttling, but have already tried ${maxAttempts} times, continuing..`);
+                                ignoreThrottling = true;
+                            } else if (!ignoreThrottling) {
+                                logger.WARNING("Seems like YouTube is limiting our download speed, restarting the download to mitigate the problem..");
+                                download.destroy();
+                                startDownload();
+                            }
+                        }
+                    });
+                    download.on('error', err => {
+                        logger.ERROR(`Error downloading trailer: ${err}`);
+                        download.destroy();
+                        resolve(false);
+                        return;
+                    });
+
+                    download.on('retry', (number, error) => {
+                        logger.ERR(`Error downloading trailer! Retry: ${number}, Error: ${error}`);
+                        download.destroy();
+                        resolve(false);
+                        return;
+                    });
+
+                    download.on('end', () => {
+                        // TODO: Movie this to own function
+                        let proc = ffmpeg(path).inputOptions([
+                            '-ss 10'
+                        ]).outputOptions([
+                            '-vframes 500',
+                            '-vf cropdetect',
+                            '-f null'
+                        ]).on('end', (stdout, stderr) => {
+                            const lines = eol.split(stderr);
+                            let crops = {};
+    
+                            lines.forEach(line => {
+                                if (line.includes("crop=")) {
+                                    let re = new RegExp("crop=(-?\\d+:-?\\d+:-?\\d+:-?\\d+)", 'gm');
+                                    const matches = re.exec(line);
+                                    if (matches != null && matches.length >= 2) {
+                                        if (matches[1] in crops) {
+                                            crops[matches[1]]++;
+                                        } else {
+                                            crops[matches[1]] = 1;
+                                        }
+                                    }
+                                }
+                            });
+                            let maxKey, maxValue = 0;
+                            for(const [key, value] of Object.entries(crops)) {
+                                if(value > maxValue) {
+                                  maxValue = value;
+                                  maxKey = key;
+                                }
+                            }
+                            // Remove all "-"
+                            maxKey = maxKey.split('-').join('');
+    
+                            logger.DEBUG(`Removing black bars from trailer, using crop ${maxKey}`);
+                            let cropProc = ffmpeg(path)
+                            .inputOptions([
+                                '-ss 10'
+                            ])
+                            .outputOptions([
+                                `-vf crop=${maxKey}`,
+                                '-c:a copy'
+                            ]).output(pathLib.join(fullPath, `${name}_downloaded_trailer.mp4`))
+                            .on('end', (stdout, stderr) => {
+                                resolve(pathLib.join(folderPath, `${name}_downloaded_trailer.mp4`));
+                                logger.INFO("Done!");
+                                try {
+                                    fs.unlinkSync(path)
+                                    //file removed
+                                  } catch(err) {
+                                      logger.ERROR(err);
+                                  }
+                            })
+                            .on('start', (cmd) => {
+                                logger.DEBUG(`Remove black bars cmd: ${cmd}`);
+                            })
+                            .on('error', function(err, stdout, stderr) {
+                                logger.ERROR(`Error removing black bars: ${err}`);
+                                logger.ERROR(stdout);
+                                logger.ERROR(stderr);
+                                resolve(false);
+                            }).run();
+                        })
+                        .on('start', (cmd) => {
+                            logger.DEBUG(`Cropdetect cmd: ${cmd}`);
+                        })
+                        .on('error', function(err, stdout, stderr) {
+                            logger.ERROR(`Error during cropdetect: ${err}`);
+                            logger.ERROR(stdout);
+                            logger.ERROR(stderr);
+                            resolve(false);
+                        })
+                        .output("/dev/null").run();
+                    });
+                }
+                startDownload();
+            }
+        });
+    }
+
+    isFileTrailer(name) {
+        return name.includes("downloaded_trailer");
     }
 
     nameMatch(name) {
@@ -295,6 +433,28 @@ class Library {
             possibleReleaseYear: possibleReleaseYear,
             parentFolder: parentFolder
         }
+    }
+
+    getSubtitleInfo(fileName) {
+        let subtitleInfo = {
+            language: "Unknown",
+            extracted: false,
+            synced: false
+        }
+        subtitleInfo.synced = fileName.toString().toLocaleLowerCase().includes('_synced_') ||
+                              fileName.toString().toLocaleLowerCase().includes('.synced.');
+        subtitleInfo.extracted = fileName.toString().toLocaleLowerCase().includes('_extracted_') ||
+                                 fileName.toString().toLocaleLowerCase().includes('.extracted.');
+
+        for (let lang of LANGUAGE_LIST) {
+            let foundLanguage = fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName) ||
+                                fileName.toString().toLocaleLowerCase().includes('.' + lang.shortName + ".");
+            if (foundLanguage) {
+                subtitleInfo.language = lang.longName;
+                break;
+            }
+        }
+        return subtitleInfo;
     }
 }
 

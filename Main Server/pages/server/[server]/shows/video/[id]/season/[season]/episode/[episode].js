@@ -10,31 +10,49 @@ import Router from 'next/router';
 import cookies from 'next-cookies'
 import validateServerAccess from '../../../../../../../../../lib/validateServerAccess';
 import VideoComponent from '../../../../../../../../../components/videoComponent';
+import HlsPlayer from '../../../../../../../../../components/hlsPlayer';
 
-let internalID, season, episode, show;
+//let internalID, season, episode, show;
 
 export default function Home(props) {
   const server = props.server;
   const router = useRouter();
-  const { id } = router.query;
+  const { id, internalID } = router.query;
   const serverToken = props.serverToken;
   const [metadata, setMetadata] = useState({});
   const [watched, setWatched] = useState(false);
+  const [showNextEpisode, setShowNextEpisode] = useState(false);
+  const [currentEpisode, setCurrentEpisode] = useState({
+    internalID: router.query.internalID,
+    season: router.query.season,
+    episode: router.query.episode,
+    show: router.query.id
+  });
 
+  const nextEpisode = useRef({
+      internalID: 0,
+      season: 0,
+      episode: 0,
+      found: false
+  });
   const [loaded, setLoaded] = useState(false)
+  const initialRender = useRef(true);
+  const nextEpisodeBoxVisible = useRef(false);
 
+  const notifyAtValue = 40;
+/*
   internalID = router.query.internalID;
   season = router.query.season;
   episode = router.query.episode;
   show = router.query.id; // show id
+  */
 
   const videoRef = useRef();
+  const nextEpisodeButtonRef = useRef();
 
-
-  // This has it's own useEffect because if it doesn't videojs doesn't work (????)
-  useEffect(() => {
-    validateServerAccess(server, (serverToken) => {
-      fetch(`${server.server_ip}/api/series/${id}/season/${season}/episode/${episode}?token=${serverToken}`, {
+  const getEpisodeInformation = () => {
+    return new Promise(resolve => {
+      fetch(`${server.server_ip}/api/series/${id}/season/${currentEpisode.season}/episode/${currentEpisode.episode}?token=${serverToken}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -85,11 +103,20 @@ export default function Home(props) {
         console.log(meta.show_name);
   
         videoRef.current.setTitle(meta.show_name);
+        videoRef.current.setInfoText(`Season ${currentEpisode.season} Episode ${currentEpisode.episode}`);
         setWatched(meta.watched);
         setMetadata(meta);
-      }).then(() => {
-        setLoaded(true)
-      });
+        resolve();
+      })
+    });
+  };
+
+
+  // This has it's own useEffect because if it doesn't videojs doesn't work (????)
+  useEffect(() => {
+    getEpisodeInformation().then(() => {
+      setLoaded(true);
+      getNextEpisodeID();
     });
   }, []);
 
@@ -141,7 +168,98 @@ export default function Home(props) {
     });
   }
 
-    
+  const showNextEpisodeBox = () => {
+    console.log("Notified");
+    console.log(nextEpisode);
+    if (nextEpisode.current.found) {
+      nextEpisodeBoxVisible.current = true;
+      setShowNextEpisode(true);
+    }
+  }
+
+  const timeUpdate = (time, duration) => {
+    if (nextEpisodeBoxVisible.current) {
+      const width = Math.abs(((duration - time) / notifyAtValue - 1) * 100);
+      nextEpisodeButtonRef.current.style.width = `${width}%`;
+
+      if (width == 100) {
+        changeToNexEpisode();
+      }
+    }
+  };
+
+  // Called when currentEpisode is changed
+  useEffect(() => {
+    if (initialRender.current) {
+      initialRender.current = false;
+    } else {
+      console.log("Episode changed");
+      console.log(currentEpisode);
+      window.history.replaceState('state', 'Video', `${process.env.NEXT_PUBLIC_SERVER_URL}/server/${server.server_id}/shows/video/${id}/season/${currentEpisode.season}/episode/${currentEpisode.episode}?internalID=${currentEpisode.internalID}`);
+      
+      getEpisodeInformation().then(() => {
+        const src = `${server.server_ip}/api/video/${currentEpisode.internalID}/hls/master`;
+        console.log(`Switching to next episode, src: ${src}`);
+        videoRef.current.setSrc(src), currentEpisode.internalID;
+        getNextEpisodeID();
+      });
+    }
+
+  },[currentEpisode]);
+
+
+  const changeToNexEpisode = () => {
+    nextEpisodeBoxVisible.current = false;
+    setShowNextEpisode(false);
+    const episode = {
+      season: nextEpisode.current.season,
+      episode: nextEpisode.current.episode,
+      internalID: nextEpisode.current.internalID,
+      show: currentEpisode.show
+    };
+    setCurrentEpisode(episode)
+  };
+
+
+  const getNextEpisodeID = () => {
+    validateServerAccess(server, (serverToken) => {
+        fetch(`${server.server_ip}/api/series/getNextEpisode?serie_id=${currentEpisode.show}&season=${currentEpisode.season}&episode=${currentEpisode.episode}&token=${serverToken}`)
+        .then(r => r.json())
+        .then(result => {
+          if (result.foundEpisode) {
+            const episode = {
+              season: result.season,
+              episode: result.episode,
+              internalID: result.internalID,
+              found: true
+            }
+            nextEpisode.current = episode;
+            console.log(`Found next episode: season: ${result.season}, episode: ${result.episode}, internalId: ${result.internalID}`);
+          } else {
+            nextEpisode.current = {
+              season: 0,
+              episode: 0,
+              internalID: 0,
+              found: false
+            }
+            console.log("No next episode found");
+          }
+           //this.setNextEpisodeID(result.internalID, result.season, result.episode, result.foundEpisode);
+        });
+    });
+  }
+
+    /**
+     *     <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
+                        internalID={internalID}
+                        season={season}
+                        episode={episode}
+                        show={show}
+                        onChangeEpisode={(season, episode, internalID) => onChangeEpisode(season, episode, internalID)}
+                        >
+    </VideoComponent>
+     */
+
   return (
     <>
     <Head>
@@ -150,17 +268,28 @@ export default function Home(props) {
         <link href="https://unpkg.com/@silvermine/videojs-quality-selector/dist/css/quality-selector.css" rel="stylesheet" />
         <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
         <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
-        <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-
     </Head>
-    <VideoComponent ref={videoRef} server={server} serverToken={serverToken}
-                        internalID={internalID}
-                        season={season}
-                        episode={episode}
-                        show={show}
-                        onChangeEpisode={(season, episode, internalID) => onChangeEpisode(season, episode, internalID)}
-                        >
-    </VideoComponent>
+
+    <HlsPlayer
+      ref={videoRef}
+      src={`${server.server_ip}/api/video/${currentEpisode.internalID}/hls/master`}
+      server={server}
+      id={internalID}
+      notifyAt={notifyAtValue}
+      notify={showNextEpisodeBox}
+      timeUpdate={timeUpdate}
+      type={"serie"}>
+        {showNextEpisode &&
+                <div className={Styles.nextEpisodeButton} onClick={changeToNexEpisode}>
+                <div className={Styles.nextEpisodeContainer}>
+                  <div className={Styles.nextEpisodeColor} ref={nextEpisodeButtonRef}></div>
+                  <p>Play Next Episode</p>
+                </div>
+              </div>
+        }
+
+    </HlsPlayer>
+
     {!loaded &&
       <div className={Styles.loadingioSpinnerEclipse}>
           <div className={Styles.ldio}>
@@ -191,7 +320,7 @@ export default function Home(props) {
           <div className={Styles.actions}>
             {metadata.currentTimeSeconds > 0 &&
             <div style={{marginRight: "15px"}}>
-              <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
+              <div className={Styles.playButton} onClick={() => videoRef.current.show(metadata.currentTimeSeconds)}></div>
               <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
             </div>
             }

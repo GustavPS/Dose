@@ -177,7 +177,7 @@ export default (props) => {
             if (genre.movieElements.length != 0) {
                 render.push(
                     <>
-                        <Link href={`/server/${server.server_id}/movies/genre/${genre.name}`}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>{genre.name}</h2></a></Link>
+                        <Link href={`/server/${server.server_id}/movies/genre/${genre.name}`}><a style={{color: 'white'}}><h2 className={Styles.heading} style={{textTransform: 'capitalize'}}>{genre.name}</h2></a></Link>
                     <div className={Styles.movieRow}>
                         <div id={genre.name + "Movies"} className={Styles.scrollable}>
                             {genre.movieElements}

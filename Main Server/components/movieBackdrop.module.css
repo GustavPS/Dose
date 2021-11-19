@@ -1,8 +1,8 @@
 .backdrop {
     white-space: normal;
     /*width: 20vw;*/
-    width: 445px;
-    height: 250px;
+    width: 395px;
+    height: 200px;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -13,10 +13,26 @@
     position: relative;
     text-shadow: 0px 0px 6px #000;
     overflow-x: hidden;
+    border-radius: 15px;
 }
 
+.backdropWithAnimation {
+    animation: animation 1s;
+    -webkit-animation: animation 1s;
+    -moz-animation: animation 1s;
+    -o-animation: animation 1s;
+    -ms-animation: animation 1s;
+}
+
+@keyframes animation {
+    0% {width: 0; opacity: 0;}
+    50% { width: 395px; opacity: 0; }
+    100% { width: 395px; opacity: 1;}
+}
+
+
 .backdrop:hover {
-    width: 30vw;
+    width: 450px;
     cursor: pointer;
 }
 

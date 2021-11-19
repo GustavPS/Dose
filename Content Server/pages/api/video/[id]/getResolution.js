@@ -2,6 +2,8 @@ const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
 const getBrowser = require('../../../../lib/browsers/util');
+const Logger = require('../../../../lib/logger');
+const logger = new Logger().getInstance();
 import { useUserAgent } from 'next-useragent'
 
 export default async(req, res) => {
@@ -34,7 +36,7 @@ export default async(req, res) => {
         resolution = await getEpisodeResolution(req.query.id);
       }
     } catch(error) {
-      console.log(` > User tried to get the available resolutions movie/episode with id ${req.query.id} which does not exist`);
+      logger.DEBUG(`User tried to get the available resolutions movie/episode with id ${req.query.id} which does not exist`);
       res.status(404).end();
       return;
     }
@@ -66,7 +68,7 @@ export default async(req, res) => {
     }
 
     if (availableResolutions.length == 0) {
-      console.log(" > No saved resolutions, using 1080p");
+      logger.DEBUG(`No saved resolutions, using 1080p`);
       availableResolutions.push("1080p");
     }
 
@@ -86,7 +88,7 @@ function getMovieResolution(movieID) {
       db.one('SELECT "240p", "360p", "480p", "720p", "1080p", "1440p", "4k", "8k", "codec" FROM movie_resolution WHERE movie_id = $1', [movieID]).then(result => {
           resolve(result);
       }).catch(error => {
-        console.log(error);
+        logger.ERROR(`Can't get movie resolution: ${error}`);
         reject();
       });
   });
@@ -97,7 +99,7 @@ function getEpisodeResolution(episodeID) {
       db.one('SELECT "240p", "360p", "480p", "720p", "1080p", "1440p", "4k", "8k", "codec" FROM serie_episode_resolution WHERE episode_id = $1', [episodeID]).then(result => {
           resolve(result);
       }).catch(error => {
-        console.log(error);
+        logger.ERROR(`Can't get episode resolution: ${error}`);
         reject();
       });
   });

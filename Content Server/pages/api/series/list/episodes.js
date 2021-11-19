@@ -30,20 +30,27 @@ export default (req, res) => {
           res.status(400).end();
       } else {
           db.any(`
-          SELECT i.serie_id AS serie_id, i.season_number AS season, i.episode_number AS episode, n.id AS internalEpisodeID, i.name AS title, i.air_date AS first_air_date, i.added_date, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images
+          SELECT i.serie_id AS serie_id, i.season_number AS season, i.episode_number AS episode, n.id AS internalEpisodeID, i.name AS title, i.air_date AS first_air_date, i.added_date, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images, l.poster_path as season_poster
           FROM serie_episode_metadata i
 
           -- Join with serie_image and image to get an array of the movies images
           INNER JOIN serie_image j
           ON i.serie_id = j.serie_id
+
           INNER JOIN image k
           ON j.image_id = k.id AND j.active = true
+
+          INNER JOIN serie_season_metadata l
+          on l.serie_id = i.serie_id AND l.season_id = i.season_number
+
 
           -- Join with serie_episode to get the internalEpisodeId
           INNER JOIN serie_episode n
           ON i.serie_id = n.serie_id AND i.season_number = n.season_number AND i.episode_number = n.episode
 
-          GROUP BY i.serie_id, i.season_number, i.episode_number, i.added_date, n.id
+          
+
+          GROUP BY i.serie_id, i.season_number, i.episode_number, i.added_date, n.id, l.poster_path
           ORDER BY ${orderBy} DESC
           OFFSET $1
           LIMIT $2

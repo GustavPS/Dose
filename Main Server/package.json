@@ -8,7 +8,11 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
+    "@silvermine/videojs-chromecast": "^1.3.2",
+    "@silvermine/videojs-quality-selector": "^1.2.5",
+    "@types/react-transition-group": "^4.4.2",
     "bootstrap": "^4.4.1",
+    "chromecast-api": "^0.4.0",
     "cookies": "^0.8.0",
     "didyoumean": "^1.2.1",
     "hls.js": "^0.13.2",
@@ -19,18 +23,24 @@
     "node-async-locks": "^2.0.0",
     "pg-promise": "^10.5.5",
     "plyr": "^3.6.2",
-    "react": "16.13.1",
+    "react": "^16.13.1",
     "react-bootstrap": "^1.0.1",
     "react-bottom-scroll-listener": "^5.0.0",
+    "react-cast-sender": "^0.1.8",
     "react-dom": "16.13.1",
+    "react-hls-player": "^3.0.7",
     "react-iframe": "^1.8.0",
     "react-in-viewport": "^1.0.0-alpha.11",
     "react-on-screen": "^2.1.1",
     "react-player": "^2.0.1",
+    "react-spring": "^9.2.4",
+    "socket.io-client": "^4.1.3",
     "swr": "^0.2.0",
+    "videojs-contrib-quality-levels": "^2.1.0",
+    "videojs-hls-quality-selector": "^1.1.4",
     "vtt-live-edit": "^1.0.7"
   },
   "devDependencies": {
-    "video.js": "^7.7.6"
+    "video.js": "^7.15.4"
   }
 }

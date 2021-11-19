@@ -1,6 +1,8 @@
 const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
+const Logger = require('../../../../lib/logger');
+const logger = new Logger().getInstance();
 
 const ORDERBY = [
   'id',
@@ -25,6 +27,7 @@ export default (req, res) => {
         let user_id = decoded.user_id;
         db.one(`
         SELECT i.movie_id AS id, i.title, i.overview, i.release_date, i.runtime, i.popularity, i.added_date, i.trailer, array_agg(DISTINCT t.name) AS genres, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images,
+        json_agg(DISTINCT jsonb_build_object('image', act.image, 'name', act.name, 'character', mov_actor.character_name, 'order', mov_actor.order_in_credit)) AS actors,
         m.movie_id AS watched, string_agg(DISTINCT mov.path, ',') AS path, watch.movie_id as inWatchlist
         FROM movie_metadata i
 
@@ -39,6 +42,11 @@ export default (req, res) => {
         ON i.movie_id = j.movie_id
         INNER JOIN image k
         ON j.image_id = k.id
+
+        INNER JOIN movie_actor mov_actor
+        ON i.movie_id = mov_actor.movie_id
+        INNER JOIN actor act
+        ON mov_actor.actor_id = act.id
 
         INNER JOIN movie mov
 		ON mov.id = i.movie_id
@@ -67,7 +75,8 @@ export default (req, res) => {
             });
 
         }).catch(error => {
-            console.log(` > User tried to get the information for movie with id ${req.query.movie} which does not exist`);
+            logger.DEBUG(`User tried to get the information for movie with id ${req.query.movie} which does not exist`);
+            logger.DEBUG(error);
             res.status(404).end();
             resolve();
             return;

@@ -9,7 +9,9 @@
 /coverage
 
 # next.js
-/.next/
+Main\ server/.next/
+Content\ server/.next/
+Content\ Server/logs/
 /out/
 
 # production

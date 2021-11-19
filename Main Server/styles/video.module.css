@@ -13,6 +13,72 @@
     transition: all 0.2;
 }
 
+.nextEpisodeButton {
+    position: absolute;
+    z-index: 200;
+    right: 25px;
+    bottom: 150px;
+    height: 50px;
+}
+
+.nextEpisodeColor {
+    background-color: #141f37;
+    border: 1px solid transparent;
+    border-radius: .75rem;
+    box-sizing: border-box;
+    color: #FFFFFF;
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: 0.2s all ease-in;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 50%;
+    height: 100%;
+}
+
+.nextEpisodeContainer {
+    width: 100%;
+    height: 100%;
+    color: white;
+    font-family: "Inter var",ui-sans-serif,system-ui,-apple-system,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 50px;
+    text-align: center;
+    text-decoration: none #6B7280 solid;
+    text-decoration-thickness: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    
+    background-color: #141f3744;
+    border-radius: .75rem;
+    border: 1px solid #141f3744;
+    padding: 0 10px;
+    flex: 0 0 auto;
+
+
+}
+
+.nextEpisodeContainer p {
+    position: relative;
+    z-index: 2;
+    margin: 0;
+    padding: 0;
+}
+
+
+.nextEpisodeButton:hover > .nextEpisodeContainer > .nextEpisodeColor {
+  background-color: #141f37;
+  width: 100% !important;
+}
+.nextEpisodeButton:hover {
+    cursor: pointer;
+}
+
 
 
 .description {
@@ -73,8 +139,13 @@
 
 .actions {
     width: 100%;
+    text-align: center;
     height: 50px;
     display: inline-flex;
+}
+
+.actions div {
+    cursor: pointer
 }
 
 .playButton {
@@ -85,7 +156,7 @@
     background-size: 30px;
     background-color: rgba(85, 85, 85, 0.08);
     border-radius: 10px;
-    width: 100%;
+    width: 120px;
     height: 70px;
 }
 
@@ -143,3 +214,58 @@
     transform-origin: 0 0; /* see note above */
   }
   .ldio div { box-sizing: content-box; }
+
+  .actors {
+
+      width: 100%;
+      position: relative;
+  }
+
+  .actors .actorBox {
+        width: 100%;
+        scroll-behavior: smooth;
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+      display: inline-flex;
+      overflow-x: scroll;
+
+
+  }
+  .actors .actorBox::-webkit-scrollbar {
+    display: none;
+  }
+
+  .outerActors {
+      position: relative;
+  }
+
+  .bottom h1 {
+    font-weight: bold;
+    font-size: 25px;
+    margin-left: 15px;
+}
+
+.scrollButton {
+    filter: invert(1);
+    position: absolute;
+    top: 42%;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.scrollable {
+    overflow: auto;
+    overflow-y: visible;
+    -ms-overflow-style: none;
+    white-space: nowrap;
+    scroll-behavior: smooth;
+    position: relative;
+}
+
+.scrollable::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bottom {
+      z-index: 1;
+  }

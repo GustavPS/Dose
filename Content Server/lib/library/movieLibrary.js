@@ -5,9 +5,10 @@ const pathLib = require('path');
 var ffmpeg = require('fluent-ffmpeg');
 var AsyncLock = require('async-lock');
 const lock = require('../globalLock');
-
-const LANGUAGE_LIST = require('../../lib/languages');
-
+const sockets = require('../../sockets');
+const Logger = require('../logger');
+const result = require('node-async-locks/lib/async-wrapper');
+const logger = new Logger().getInstance();
 
 class MovieLibrary extends Library {
 
@@ -26,6 +27,33 @@ class MovieLibrary extends Library {
         return 'MOVIES';
     }
 
+    addToAwaitingSubtitles(movieName, path, parentFolder) {
+        this.awaitingSubtitles.push({
+            movieName: movieName,
+            path: path,
+            parentFolder: parentFolder
+        });
+    }
+
+    getAwaitingSubtitles(movieName) {
+        let result = [];
+        for (let sub of this.awaitingSubtitles) {
+            if (sub.movieName === movieName) {
+                result.push(sub);
+            }
+        }
+        return result;
+    }
+
+    removeFromAwaitingSubtitles(movieName) {
+        for (let i = this.awaitingSubtitles.length-1; i >= 0; i--) {
+            let sub = this.awaitingSubtitles[i];
+            if (sub.movieName === movieName) {
+                this.awaitingSubtitles.splice(this.awaitingSubtitles[i], 1);
+            }
+        }
+    }
+
     async addMovieIfNotSaved(movieName, path, possibleReleaseYear) {
         return new Promise(async (resolve) => {
             let internalMovieID;
@@ -35,7 +63,7 @@ class MovieLibrary extends Library {
                 let result = await t.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id]);
                 // If we haven't saved this movie, insert it
                 if (result.length === 0) {
-                    console.log(` > Found a new movie (${path} for library: '${this.name}')`);
+                    logger.INFO(`Found a new movie ${movieName} (${path} for library: '${this.name}')`);
                     // Insert into the movie table and get the assigned ID
                     internalMovieID = await t.one('INSERT INTO movie (path, library, name) VALUES ($1, $2, $3) RETURNING id', [path, this.id, movieName]);
                     internalMovieID = internalMovieID.id;
@@ -55,7 +83,7 @@ class MovieLibrary extends Library {
 
                     // TODO: Parse it as a boolean somehow
                     if (process.env.EXTRACT_SUBTITLES == "TRUE") {
-                        console.log(` > Trying to convert subtitles, this may take a while...`);
+                        logger.INFO(`Trying to convert subtitles, this may take a while...`);
                         let subtitleConvertionResult = await this.convertSubtitles(movieName, path, fileStreams);
     
                         // If the conversion failed (because the file was busy), try again.
@@ -85,26 +113,55 @@ class MovieLibrary extends Library {
                             logYearInfo = `(Unknown year)`;
                         }
 
-                        console.log(` > Saving metadata for movie '${movieName}' ${logYearInfo}`);
-                        this.metadata.insertMetadata(result.metadata, result.images,
-                                                     result.trailer, internalMovieID).then(() => {
-                            resolve();
+                        logger.INFO(`Saving metadata for movie '${movieName}' ${logYearInfo}`);
+                        this.metadata.insertMetadata(result.metadata, result.images, result.actors, result.recommendations,
+                                                        result.trailer, internalMovieID).then(() => {
+                                logger.INFO(`Downloading trailer for movie '${movieName}' ${logYearInfo}`)
+                                this.downloadTrailer(result.trailer, movieName, path)
+                                .then((trailerPath) => {
+                                    if (trailerPath != false) {
+                                        db.none('UPDATE movie SET trailer = $1 WHERE id = $2', [trailerPath, internalMovieID])
+                                    } else {
+                                        logger.INFO(`Trailer already downloaded`);
+                                    }
+                                    let back = undefined;
+                                    for (let backdrop of result.images.backdrops) {
+                                        if(backdrop.active == true){
+                                            back = backdrop.file_path
+                                            break;
+                                        }
+                                    }
+                                    sockets.emit("newMovie", {"id": internalMovieID, "title": result.metadata.title, "overview": result.metadata.overview, "backdrop_path": back} )
+                                    
+                                resolve(true);
+                            });
                         });
+
+
                     }).catch(async (error) => {
-                        console.log(` > Couldn't find any metadata for movie (using dummy data) '${movieName}'`);
+                        logger.INFO(`Couldn't find any metadata for movie '${movieName}'`);
                         let images = {
-                            backdrops: [],
-                            posters: []
+                            backdrops: {
+                                foundPrefferedLanguage: false,
+                                list: []
+                            },
+                            posters: {
+                                foundPrefferedLanguage: false,
+                                list: []
+                            },
+                            logos: {
+                                foundPrefferedLanguage: false,
+                                list: []
+                            }
                         }
                         let metadata = this.metadata.getDummyMetadata(movieName);
                         let trailer = "";
-                        
-                        this.metadata.insertMetadata(metadata, images, trailer, internalMovieID).then(() => {
-                            resolve();
+                        this.metadata.insertMetadata(metadata, images, [], [], trailer, internalMovieID).then(() => {
+                            resolve(true);
                         });
                     });
                 } else {
-                    resolve();
+                    resolve(false);
                 }
             });
         });
@@ -113,33 +170,37 @@ class MovieLibrary extends Library {
     addSubtitleIfNotSaved(movieName, path, parentFolder) {
         return new Promise(async (resolve, reject) => {
             let fileName = pathLib.basename(path);
-            let language = null;
-            for (let lang of LANGUAGE_LIST) {
-                let foundLanguage = fileName.toString().toLocaleLowerCase().includes('_' + lang.shortName) ||
-                                    fileName.toString().toLocaleLowerCase().includes('.' + lang.shortName + ".");
-                if (foundLanguage) {
-                    language = lang.longName;
-                    break;
-                }
-            }
+            let subtitleInfo = this.getSubtitleInfo(fileName);
+
             // TODO: There is a bug here, if multiple movies is in the same folder we will add the subtitle for all movies
             // However, having multiple movies in the same folder is not supported, but if that is changed
             // this have to be fixed
+            // TODO: This can also be done more efficient, by directly searching for the movie in the DB
+            // instead of grabbing all of them in the library
             db.any("SELECT * FROM movie WHERE library = $1", [parseInt(this.id)]).then(async (movies) => {
+                let subtitleInserted = false;
+                let alreadyAdded = false;
                 for (let movie of movies) {
                     let movieFolder =  pathLib.dirname(movie.path);
                     if (movieFolder === parentFolder) {
                         let result = await db.any('SELECT * FROM subtitle WHERE movie_id = $1 AND path = $2 AND library_id = $3', [movie.id, path, movie.library]);
+                        alreadyAdded = result.length !== 0;
                         if (result.length === 0) {
-                            console.log(` > Saving subtitle for ${movieName} in library ${movie.library}`);
-                            await db.none('INSERT INTO subtitle (path, movie_id, library_id, language) VALUES ($1, $2, $3, $4)', [path, movie.id, movie.library, language]);
+                            logger.INFO(`Saving subtitle for ${movieName} in library ${movie.library}. Language: ${subtitleInfo.language}`);
+                            await db.none('INSERT INTO subtitle (path, movie_id, library_id, language, synced, extracted) VALUES ($1, $2, $3, $4, $5, $6)',[path,
+                                movie.id,
+                                movie.library,
+                                subtitleInfo.language,
+                                subtitleInfo.synced,
+                                subtitleInfo.extracted]);
+                            subtitleInserted = true;
                         }
                     }
-    
                 }
                 // If we didn't find a matching movie by the subtitle name, try with the folderName
-                if (movies.length === 0) {
-                        console.log(`Couldn't find any matching movies for subtitle ${path}`);
+                if (!subtitleInserted && !alreadyAdded) {
+                        logger.DEBUG(`Couldn't find any matching movies for subtitle ${path}. Subtitle will be saved if/when a movie is found`);
+                        this.addToAwaitingSubtitles(movieName, path, parentFolder);
                         reject();
                 } else {
                     resolve();
@@ -166,16 +227,28 @@ class MovieLibrary extends Library {
             possibleReleaseYear = result.possibleReleaseYear;
         } catch(e) {
             if (e.name === 'UnsupportedFormat') {
-                console.log("\x1b[33m", `> ${path} is not a supported format.`, "\x1b[0m");
+                logger.WARNING(`${path} is not a supported format.`);
             } else {
-                console.log(e);
+                logger.ERROR(`Unknown error: ${e}`);
             }
             return;
         }
+
+        if (this.isFileTrailer(movieName)) {
+            return;
+        }
+
         let t = this;
 	    lock.enter(async function (token) {
             if (type === 'MOVIE') {
-                t.addMovieIfNotSaved(movieName, path, possibleReleaseYear).then(() => {
+                t.addMovieIfNotSaved(movieName, path, possibleReleaseYear).then(async (added) => {
+                    if (added) {
+                        let awaitingSubtitles = t.getAwaitingSubtitles(movieName);
+                        for (let sub of awaitingSubtitles) {
+                            await t.addSubtitleIfNotSaved(sub.movieName, sub.path, sub.parentFolder);
+                        }
+                        t.removeFromAwaitingSubtitles(movieName);
+                    }
                     lock.leave(token);
                 });
             } else if (type === 'SUBTITLE') {
@@ -198,13 +271,13 @@ class MovieLibrary extends Library {
             db.any('SELECT * FROM movie WHERE path = $1 AND library = $2', [path, this.id])
             .then(result => {
                 if (result.length > 0) {
-                    console.log(` > Removing movie ${result[0].name} from '${this.name}'`);
+                    logger.INFO(`Removing movie ${result[0].name} from '${this.name}'`);
                     db.none('DELETE FROM movie WHERE path = $1 AND library = $2', [path, this.id]);
                 }
                 db.any('SELECT * FROM subtitle WHERE path = $1 AND library_id = $2', [path, this.id])
                 .then(result => {
                     if (result.length > 0) {
-                        console.log(` > Removing a subtitle for Movie ID ${result[0].id} from '${this.name}'`);
+                        logger.INFO(`Removing a subtitle for Movie ID ${result[0].id} from '${this.name}'`);
                         db.none('DELETE FROM subtitle WHERE path = $1 AND library_id = $2', [path, this.id]);
                     }
                     lock.leave(token);

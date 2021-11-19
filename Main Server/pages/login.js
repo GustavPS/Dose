@@ -38,9 +38,9 @@ login(e) {
         statusElement.innerHTML = data.message;
         // Show login error
       } else if (data && data.status === 'success') {
-        cookie.set('token', data.token, {expires: 2});
-        cookie.set('refreshToken', data.refreshToken, {expires: 2});
-        cookie.set('validTo', data.validTo, {expires: 2});
+        cookie.set('token', data.token, {expires: 7});
+        cookie.set('refreshToken', data.refreshToken, {expires: 7});
+        cookie.set('validTo', data.validTo, {expires: 7});
         Router.push('/');
       }
     });

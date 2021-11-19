@@ -1,14 +1,24 @@
-const { createServer } = require('http')
+const http = require('http')
 const { parse } = require('url')
 const next = require('next')
 const Watcher = require('./lib/watcher');
 const MovieLibrary = require('./lib/library/movieLibrary');
+const MovieMetadata = require('./lib/metadata/movieMetadata');
+const Transcoding = require('./lib/hls/transcoding');
+const HlsManager = require('./lib/hls/HlsManager');
 const fs = require("fs");
+const fsExtra = require('fs-extra');
 
-
+const port = parseInt(process.env.PORT || '3001', 10);
 const dev = process.env.NODE_ENV !== 'production'
-const app = next({ dev })
-const handle = app.getRequestHandler();
+const nextApp = next({ dev })
+const nextHandler = nextApp.getRequestHandler();
+const Logger = require('./lib/logger');
+const logger = new Logger().getInstance();
+
+const sockets = require('./sockets');
+const express = require('express');
+
 var crypto = require('crypto');
 
 console.log(`######                       
@@ -21,46 +31,74 @@ console.log(`######
 console.log("\n\n");
 
 if (dev) {
-  console.log("\x1b[33m", 'Server running in development mode');
-  console.log("\x1b[0m", "")
+  logger.WARNING("Server running in development mode");
 }
 
 
 function startWebServer() {
-    //const httpsOptions = {
-    //    key: fs.readFileSync("./certs/localhost.key"),
-    //    cert: fs.readFileSync("./certs/localhost.crt"),
-    //};
-    app.prepare().then(() => {
-        createServer((req, res) => {
-          // Be sure to pass `true` as the second argument to `url.parse`.
-          // This tells it to parse the query portion of the URL.
-          const parsedUrl = parse(req.url, true)
-          const { pathname, query } = parsedUrl
-      
-          if (pathname === '/a') {
-            app.render(req, res, '/b', query)
-          } else if (pathname === '/b') {
-            app.render(req, res, '/a', query)
-          } else {
-            handle(req, res, parsedUrl)
-          }
-        }).listen(3001, err => {
-          if (err) throw err
-          console.log('> Ready on http://localhost:4000')
-        })
-      })
+  nextApp.prepare().then(async() => {
+    const expressApp = express();
+    const server = http.createServer(expressApp);
+    sockets.connect(server);
+
+    expressApp.all('*', (req, res) => nextHandler(req, res));
+
+    server.listen(port, () => {
+      logger.INFO(`Ready on port ${port}`);
+
+      updateMovies();
+      setInterval(updateMovies, 43200000); // 12 hours
+      setInterval(stopTranscodings, 2000); // 15 seconds
+    });
+  });
+}
+
+// Setup timer for getting popular movies
+const updateMovies = () => {
+  const metadataObj = new MovieMetadata();
+  metadataObj.getBadImages()
+  .then(async (movies) => {
+    logger.INFO(`Updating movie images`);
+    for (let movie of movies) {
+      await metadataObj.updateImages(
+              movie.title,
+              movie.movie_id,
+              movie.tmdb_id,
+              !movie.found_good_poster,
+              !movie.found_good_backdrop,
+              !movie.found_food_logo);
+    }
+  });
+
+  metadataObj.getPopularMovies()
+  .then(movies => {
+    logger.INFO(`Updating popular movies`);
+    logger.INFO(`Found ${movies.length} popular movie(s)`);
+    metadataObj.updatePopularMovies(movies);
+  });
+};
+
+
+const removeTempFolder = () => {
+  fsExtra.emptyDirSync(Transcoding.TEMP_FOLDER);
+}
+removeTempFolder();
+
+// Setup timer for stopping old transcoding jobs
+const stopTranscodings = () => {
+  const hlsManager = new HlsManager();
+  hlsManager.stopOldTranscodings();
 }
 
 
 const watcher = new Watcher();
 
 // Generate webtoken secret
-console.log("Generating token before starting..");
+logger.DEBUG(`Generating token before starting..`);
 crypto.randomBytes(256, function(ex, buf) {
   if (ex) throw ex;
   process.env.SECRET = buf;
-  console.log(" > Done\n");
+  logger.DEBUG("Done");
 
   watcher.init(() => {
     watcher.startWatcher();

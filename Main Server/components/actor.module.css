@@ -1,0 +1,26 @@
+.actorImage {
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 200px;
+    height: 300px;
+    border-radius: 15px;
+}
+
+.actorBox {
+    display: inline-table;
+    text-align: center;
+    width: 200px;
+    margin: 10px;
+
+}
+
+.actorBox h2 {
+    font-weight: bold;
+    font-size: 20px;
+    margin-bottom: 0;
+}
+
+.actorBox p {
+    font-size: 14px;
+}
