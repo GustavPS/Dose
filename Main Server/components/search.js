@@ -3,10 +3,10 @@ import Form from 'react-bootstrap/Form';
 import fetch from 'node-fetch'
 import validateServerAccess from '../lib/validateServerAccess';
 import didYouMean from 'didyoumean';
+import { Component } from 'react';
 didYouMean.threshold = 0.1;
 
-
-export default class Search extends React.Component {
+export default class Search extends Component {
     constructor(props) {
         super(props);
         this.server = props.server;

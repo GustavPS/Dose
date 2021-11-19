@@ -1,14 +1,27 @@
-import Movie from '../../../../../../../lib/media/Movie';
-import Episode from '../../../../../../../lib/media/Episode';
-import HlsManager from '../../../../../../../lib/hls/HlsManager';
-import Transcoding from '../../../../../../../lib/hls/transcoding'
+/**
+ * NOTE:
+ *  This API endpoint is NOT using NextJS. It is using regular expressJS to serve the segments (see server.js for the routing).
+ *  This is because NextJS will remove support for API-endpoints with more than 4MB responses in the future. We need to send
+ *  more data than 4MB to the client since this is where we are serving video segments.
+ */
+
 const Logger = require('../../../../../../../lib/logger');
-import getBrowser from "../../../../../../../lib/browsers/util";
-import { useUserAgent } from 'next-useragent'
 const logger = new Logger().getInstance();
 const pathLib = require('path');
 const db = require('../../../../../../../lib/db');
 const fs = require('fs');
+
+const Movie = require('../../../../../../../lib/media/Movie');
+const Episode = require('../../../../../../../lib/media/Episode');
+const HlsManager = require('../../../../../../../lib/hls/HlsManager');
+const Transcoding = require('../../../../../../../lib/hls/transcoding');
+const getBrowser = require('../../../../../../../lib/browsers/util');
+const useUserAgent = require('next-useragent');
+
+
+
+var express = require('express');
+var router = express.Router();
 
 const waitUntilFileExists = (filePath, requestedSegment, hlsManager, group) => {
     return new Promise((resolve, reject) => {
@@ -43,23 +56,27 @@ const isSegmentFinished = (requestedSegment, hlsManager, group) => {
         requestedSegment < hlsManager.getVideoTranscodingSegment(group) + 2;
 };
 
-export default async (req, res) => {
+//export default async (req, res) => {
+const getSegment = async (req, res) => {
     const hlsManager = new HlsManager();
-    const { id, quality, group, audioStream, type } = req.query;
+    // req.params = the GET parameters from the folder structure
+    const { id, quality, segment } = req.params;
+    // req.query = the GET parameters from the URL (after the ? in the URL)
+    const { group, audioStream, type } = req.query;
     let resolved = false;
     hlsManager.setLastRequestedTime(group);
 
     const content = type == "movie" ? new Movie(id) : new Episode(id);
 
     //const movie = new Movie(id);    
-    const userAgent = useUserAgent(req.headers['user-agent']);
+    const userAgent = useUserAgent.useUserAgent(req.headers['user-agent']);
     const browser   = getBrowser(userAgent);
 
     //const codecInfo = await movie.getAudioCodecByStreamIndex(audioStream);
     const codecInfo = await content.getAudioCodecByStreamIndex(audioStream);
 
     return new Promise(async (resolve) => {
-        const segmentText = req.query.segment; //<segment>.ts
+        const segmentText = req.params.segment; //<segment>.ts
         const segmentsText = req.query.segments; // segments in text format
         const segments = parseInt(segmentsText); // segments in int
         const segment = parseInt(segmentText); //<segment>
@@ -128,10 +145,6 @@ export default async (req, res) => {
 
         });
     });
-}
+};
 
-export const config = {
-    api: {
-      externalResolver: true,
-    },
-  }
+module.exports = getSegment;

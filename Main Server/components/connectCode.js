@@ -1,6 +1,7 @@
 import style from './connectCode.module.css';
+import { Component } from 'react';
 
-export default class ConnectCode extends React.Component {
+export default class ConnectCode extends Component {
     constructor(props) {
         super(props);
         this.code = props.code;

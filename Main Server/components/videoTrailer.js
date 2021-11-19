@@ -1,7 +1,8 @@
+import { Component } from 'react';
 import Iframe from 'react-iframe'
 import Styles from './videoTrailer.module.css';
 
-export default class VideoTrailer extends React.Component {
+export default class VideoTrailer extends Component {
     constructor(props) {
         super(props);
         this.state = {
