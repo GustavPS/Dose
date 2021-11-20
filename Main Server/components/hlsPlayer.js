@@ -327,7 +327,8 @@ export default class HlsPlayer extends Component {
      * Setup the video player and listeners
      */
     setupHls() {
-        this.hls = new Hls({maxMaxBufferLength: 60});
+        const useDebug = localStorage.getItem("HLS_DEBUG") === "true";
+        this.hls = new Hls({maxMaxBufferLength: 60, debug: useDebug});
         this.hls.loadSource(this.getSrc());
         this.hls.attachMedia(this.videoNode);
         this.videoNode.volume = 1;
