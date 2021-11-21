@@ -142,7 +142,7 @@ const prepareDirectplay = (metadata) => {
                     metadata.setDirectplayReady(file.id);
                     const content = isMovie ? new Movie(file.id) : new Episode(file.id);
                     const m3u8Path = await content.getM3u8Path();
-                    fs.renameSync(file.hlsFile, m3u8Path); // Move the m3u8 file to the content folder
+                    fs.copyFileSync(file.hlsFile, m3u8Path); // Move the m3u8 file to the content folder
                     fs.rmSync(file.output, {recursive: true, force: true}); // Remove the output folder (the transcoding)
                 }
                 logger.DEBUG(`Finished preparing ${files.length} file(s) for directplay, ${candidates.length} file(s) left`);
