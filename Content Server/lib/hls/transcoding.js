@@ -157,6 +157,7 @@ class Transcoding {
             const inputOptions = [
                 '-copyts',
                 '-threads 8',
+                '-fflags +genpts', // Fixes AVI issues
                 '-ss 0'
             ];
 
