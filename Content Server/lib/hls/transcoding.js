@@ -172,6 +172,7 @@ class Transcoding {
                 resolve(this.output);
             })
             .on('error', (err, stdout, stderr) => {
+                logger.ERROR(`Transcoding error for file: ${this.filePath}`);
                 logger.ERROR(`Cannot process video: ${err.message}`);
                 logger.ERROR(`ffmpeg stderr: ${stderr}`);
                 reject();
