@@ -29,17 +29,15 @@ class HlsManager {
     }
 
     prepareDirectplay(content) {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             content.getFilePath()
             .then(async (filePath) => {
                 const quality = "DIRECTPLAY";
                 const hash = this.getUniqueTranscodingHash();
                 const output = Transcoding.createTempDir();
-                const resolutions = await content.getResolutions();
-                const codec = resolutions.codec;
 
                 const fastTranscoding = new Transcoding(filePath, content.id, 0, hash, hash, true);
-                fastTranscoding.prepareDirectplay(output, codec)
+                fastTranscoding.prepareDirectplay(output)
                 .then(hlsFile => {
                     resolve({
                         id: content.id,
@@ -47,6 +45,9 @@ class HlsManager {
                         output: output
                     });
                 })
+                .catch(() => {
+                    reject();
+                });
             });
         });
     }

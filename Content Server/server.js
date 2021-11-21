@@ -135,17 +135,21 @@ const prepareDirectplay = (metadata) => {
                     const content = isMovie ? new Movie(dbObject.movie_id) : new Episode(dbObject.episode_id);
                     promises.push(hlsManager.prepareDirectplay(content));
                 }
-                const files = await Promise.all(promises);
-    
-                // Save that we have prepared the files and move the m3u8 file to the correct folder
-                for (let file of files) {
-                    metadata.setDirectplayReady(file.id);
-                    const content = isMovie ? new Movie(file.id) : new Episode(file.id);
-                    const m3u8Path = await content.getM3u8Path();
-                    fs.copyFileSync(file.hlsFile, m3u8Path); // Move the m3u8 file to the content folder
-                    fs.rmSync(file.output, {recursive: true, force: true}); // Remove the output folder (the transcoding)
+                try {
+                    const files = await Promise.all(promises);
+
+                    // Save that we have prepared the files and move the m3u8 file to the correct folder
+                    for (let file of files) {
+                        metadata.setDirectplayReady(file.id);
+                        const content = isMovie ? new Movie(file.id) : new Episode(file.id);
+                        const m3u8Path = await content.getM3u8Path();
+                        fs.copyFileSync(file.hlsFile, m3u8Path); // Move the m3u8 file to the content folder
+                        fs.rmSync(file.output, {recursive: true, force: true}); // Remove the output folder (the transcoding)
+                    }
+                    logger.DEBUG(`Finished preparing ${files.length} file(s) for directplay, ${candidates.length} file(s) left`);
+                } catch (err) {
+                    logger.ERROR(`Error preparing file(s) for directplay. Will ignore and continue with next one.`);
                 }
-                logger.DEBUG(`Finished preparing ${files.length} file(s) for directplay, ${candidates.length} file(s) left`);
             }
             logger.INFO(`Finished preparing all files for directplay`);
             resolve();
