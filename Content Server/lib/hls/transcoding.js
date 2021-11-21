@@ -150,11 +150,15 @@ class Transcoding {
         ];
     }
 
-    prepareDirectplay(output) {
+    prepareDirectplay(output, codec) {
         return new Promise((resolve, reject) => {
+            if (codec == "mpeg4") { // Mpeg4 = h264
+                codec = "h264";
+            }
             this.output = path.join(output, 'result.m3u8');
             const outputOptions = this.getOutputOptions();
             const inputOptions = [
+                `-f ${codec}`,
                 '-copyts',
                 '-threads 8',
                 '-fflags +genpts', // Fixes AVI issues
