@@ -31,13 +31,15 @@ class HlsManager {
     prepareDirectplay(content) {
         return new Promise(resolve => {
             content.getFilePath()
-            .then(filePath => {
+            .then(async (filePath) => {
                 const quality = "DIRECTPLAY";
                 const hash = this.getUniqueTranscodingHash();
                 const output = Transcoding.createTempDir();
+                const resolutions = await content.getResolutions();
+                const codec = resolutions.codec;
 
                 const fastTranscoding = new Transcoding(filePath, content.id, 0, hash, hash, true);
-                fastTranscoding.prepareDirectplay(output)
+                fastTranscoding.prepareDirectplay(output, codec)
                 .then(hlsFile => {
                     resolve({
                         id: content.id,
