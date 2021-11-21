@@ -7,6 +7,7 @@ const logger = new Logger().getInstance();
 class Transcoding {
     static TEMP_FOLDER = process.env.TEMP_DIRECTORY;
     static SEGMENT_DURATION = 4;
+    static SIMULTANEOUS_DIRECTPLAY_PREPARE_LIMIT = 1;
     static TIMEOUT_TIME = 20000; // 20 seconds in milliseconds
     static FAST_START_SEGMENTS = 50;
     static FAST_START_TIME = Transcoding.SEGMENT_DURATION * Transcoding.FAST_START_SEGMENTS;
@@ -57,28 +58,28 @@ class Transcoding {
         let parameter;
         switch (quality) {
             case "240P":
-                parameter = '-vf scale=trunc(oh*a/2)*2:240';
+                parameter = '-vf scale=320:-2';
                 break;
             case "360P":
-                parameter = '-vf scale=trunc(oh*a/2)*2:360';
+                parameter = '-vf scale=480:-2';
                 break;
             case "480P":
-                parameter = '-vf scale=trunc(oh*a/2)*2:480';
+                parameter = '-vf scale=854:-2';
                 break;
             case "720P":
-                parameter = '-vf scale=trunc(oh*a/2)*2:720';
+                parameter = '-vf scale=1280:-2';
                 break;
             case "1080P":
-                parameter = '-vf scale=trunc(oh*a/2)*2:1080';
+                parameter = '-vf scale=1920:-2';
                 break;
             case "1440P":
-                parameter = '-vf scale=trunc(oh*a/2)*2:1440';
+                parameter = '-vf scale=2560:-2';
                 break;
             case "4K":
-                parameter = '-vf scale=trunc(oh*a/2)*2:2160';
+                parameter = '-vf scale=3840:-2';
                 break;
             case "8K":
-                parameter = '-vf scale=trunc(oh*a/2)*2:4320';
+                parameter = '-vf scale=7680:-2';
                 break;
             default:
                 throw `${quality} is not a valid quality selector (transcoding.js)`
@@ -124,6 +125,75 @@ class Transcoding {
         return dir;
     }
 
+    getOutputOptions() {
+        return [
+            '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
+            //`-c:v ${this.getVideoCodec()}`,
+
+            //'-movflags frag_keyframe+empty_moov+faststart',
+            //'-pix_fmt yuv420p',
+            //`-c:a aac`,
+            '-map 0',
+            '-map -v',
+            '-map 0:V',
+            //'-map -a',
+            //`-map 0:${audioStreamIndex}`,
+            '-g 52',
+            `-crf ${this.CRF_SETTING}`,
+            '-sn',
+            '-deadline realtime',
+            '-preset:v ultrafast',
+            '-lag-in-frames 0',
+            '-static-thresh 0',
+            '-frame-parallel 1',
+            '-f hls',
+            '-ac 2', // Set two audio channels. Fixes audio issues
+            `-hls_time ${Transcoding.SEGMENT_DURATION}`,
+            '-force_key_frames expr:gte(t,n_forced*2)',
+            '-hls_playlist_type vod',
+            `-start_number ${this.startSegment}`,
+            '-strict -2', // ?
+            '-level 4.1' // Might fix chromecast issues?
+        ];
+    }
+
+    getAudioOutputOptions(audioStreamIndex) {
+        return [
+            '-map -a',
+            `-map 0:${audioStreamIndex}`
+        ]
+    }
+
+    prepareDirectplay(output) {
+        return new Promise((resolve, reject) => {
+            this.output = path.join(output, 'result.m3u8');
+            const outputOptions = this.getOutputOptions();
+            const inputOptions = [
+                '-copyts',
+                '-threads 8',
+                '-ss 0'
+            ];
+
+            this.ffmpegProc = ffmpeg(this.filePath)
+            .withVideoCodec("copy")
+            .withAudioCodec("copy")
+            .withVideoBitrate(4000)
+            .inputOptions(inputOptions)
+            .outputOptions(outputOptions)
+            .on('end', () =>{
+                delete this.ffmpegProc;
+                resolve(this.output);
+            })
+            .on('error', (err, stdout, stderr) => {
+                logger.ERROR(`Cannot process video: ${err.message}`);
+                logger.ERROR(`ffmpeg stderr: ${stderr}`);
+                reject();
+            })
+            .output(this.output);
+            this.ffmpegProc.run();
+        });
+    }
+
     start(quality, output, audioStreamIndex, audioSupported) {
         this.quality = quality;
         return new Promise(resolve => {
@@ -136,7 +206,7 @@ class Transcoding {
                 //`-c:v ${this.getVideoCodec()}`,
 
                 //'-movflags frag_keyframe+empty_moov+faststart',
-                //'-pix_fmt yuv420p',
+                '-pix_fmt yuv420p',
                 //`-c:a aac`,
                 '-map 0',
                 '-map -v',
@@ -148,20 +218,23 @@ class Transcoding {
                 '-sn',
                 '-deadline realtime',
                 '-preset:v ultrafast',
-                '-lag-in-frames 0',
-                '-static-thresh 0',
-                '-frame-parallel 1',
+                //'-lag-in-frames 0',
+                //'-static-thresh 0',
+                //'-frame-parallel 1',
                 '-f hls',
-                '-ac 2', // Set two audio channels. Fixes audio issues
                 `-hls_time ${Transcoding.SEGMENT_DURATION}`,
                 '-force_key_frames expr:gte(t,n_forced*2)',
                 '-hls_playlist_type vod',
                 `-start_number ${this.startSegment}`,
                 '-strict -2', // ?
-                '-level 4.1' // Might fix chromecast issues?
+                '-level 4.1', // Might fix chromecast issues?
+                '-ac 2', // Set two audio channels. Fixes audio issues
+                '-b:v 1024k',
+                '-b:a 192k',
             ]
             if (!directplay) {
                 outputOptions.push(this.getQualityParameter(quality));
+                //outputOptions.push("-s 1920x1080");
             }
 
             let inputOptions = [
@@ -180,7 +253,7 @@ class Transcoding {
             this.ffmpegProc = ffmpeg(this.filePath)
             .withVideoCodec(this.getVideoCodec(directplay))
             .withAudioCodec(audioCodec)
-            .withVideoBitrate(4000)
+            //.withVideoBitrate(4000)
             .inputOptions(inputOptions)
             .outputOptions(outputOptions)
             .on('end', () => {
