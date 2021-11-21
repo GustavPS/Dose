@@ -128,40 +128,26 @@ class Transcoding {
     getOutputOptions() {
         return [
             '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
-            //`-c:v ${this.getVideoCodec()}`,
-
-            //'-movflags frag_keyframe+empty_moov+faststart',
-            //'-pix_fmt yuv420p',
-            //`-c:a aac`,
+            '-pix_fmt yuv420p',
             '-map 0',
             '-map -v',
             '-map 0:V',
-            //'-map -a',
-            //`-map 0:${audioStreamIndex}`,
             '-g 52',
             `-crf ${this.CRF_SETTING}`,
             '-sn',
             '-deadline realtime',
             '-preset:v ultrafast',
-            '-lag-in-frames 0',
-            '-static-thresh 0',
-            '-frame-parallel 1',
             '-f hls',
-            '-ac 2', // Set two audio channels. Fixes audio issues
             `-hls_time ${Transcoding.SEGMENT_DURATION}`,
             '-force_key_frames expr:gte(t,n_forced*2)',
             '-hls_playlist_type vod',
             `-start_number ${this.startSegment}`,
             '-strict -2', // ?
-            '-level 4.1' // Might fix chromecast issues?
+            '-level 4.1', // Might fix chromecast issues?
+            '-ac 2', // Set two audio channels. Fixes audio issues
+            '-b:v 1024k',
+            '-b:a 192k',
         ];
-    }
-
-    getAudioOutputOptions(audioStreamIndex) {
-        return [
-            '-map -a',
-            `-map 0:${audioStreamIndex}`
-        ]
     }
 
     prepareDirectplay(output) {
@@ -201,40 +187,12 @@ class Transcoding {
             const directplay = quality === "DIRECTPLAY";
             const audioCodec = audioSupported ? "copy" : "aac";
 
-            let outputOptions = [
-                '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
-                //`-c:v ${this.getVideoCodec()}`,
+            let outputOptions = this.getOutputOptions();
+            outputOptions.push('-map -a');
+            outputOptions.push(`-map 0:${audioStreamIndex}`);
 
-                //'-movflags frag_keyframe+empty_moov+faststart',
-                '-pix_fmt yuv420p',
-                //`-c:a aac`,
-                '-map 0',
-                '-map -v',
-                '-map 0:V',
-                '-map -a',
-                `-map 0:${audioStreamIndex}`,
-                '-g 52',
-                `-crf ${this.CRF_SETTING}`,
-                '-sn',
-                '-deadline realtime',
-                '-preset:v ultrafast',
-                //'-lag-in-frames 0',
-                //'-static-thresh 0',
-                //'-frame-parallel 1',
-                '-f hls',
-                `-hls_time ${Transcoding.SEGMENT_DURATION}`,
-                '-force_key_frames expr:gte(t,n_forced*2)',
-                '-hls_playlist_type vod',
-                `-start_number ${this.startSegment}`,
-                '-strict -2', // ?
-                '-level 4.1', // Might fix chromecast issues?
-                '-ac 2', // Set two audio channels. Fixes audio issues
-                '-b:v 1024k',
-                '-b:a 192k',
-            ]
             if (!directplay) {
                 outputOptions.push(this.getQualityParameter(quality));
-                //outputOptions.push("-s 1920x1080");
             }
 
             let inputOptions = [
@@ -253,7 +211,6 @@ class Transcoding {
             this.ffmpegProc = ffmpeg(this.filePath)
             .withVideoCodec(this.getVideoCodec(directplay))
             .withAudioCodec(audioCodec)
-            //.withVideoBitrate(4000)
             .inputOptions(inputOptions)
             .outputOptions(outputOptions)
             .on('end', () => {

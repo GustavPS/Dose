@@ -2,6 +2,7 @@ const db = require('../db');
 const Content = require('./Content');
 const Logger = require('../logger');
 const logger = new Logger().getInstance();
+const path = require('path');
 
 class Episode extends Content {
     #episodeId;
@@ -68,6 +69,38 @@ class Episode extends Content {
                 logger.ERROR(`Error getting episode codec ${streamIndex}: ${error}`);
             });
         });
+    }
+
+    getInfoFromInternalEpisodeId() {
+        return new Promise((resolve, reject) => {
+            db.one('SELECT serie_id, episode, season_number FROM serie_episode WHERE id = $1', [this.#episodeId]).then(result => {
+                resolve(result);
+            }).catch(error => {
+                logger.ERROR(`Error getting episode info: ${error}`);
+                reject();
+            });
+        });
+    }
+
+    isDirectplayReady() {
+        return new Promise((resolve, reject) => {
+            this.getInfoFromInternalEpisodeId().then(result => {
+                db.one("SELECT directplay_ready FROM serie_episode_metadata WHERE episode_number = $1 AND season_number = $2 AND serie_id = $3", [result.episode, result.season_number, result.serie_id]).then(result => {
+                    resolve(result.directplay_ready);
+                }).catch(error => {
+                    logger.ERROR(`Error getting directplay status: ${error}`);
+                    reject();
+                });
+            });
+        });
+    }
+
+    async getM3u8Path() {
+        const videoPath = await this.getFilePath();
+        const videoFolder = path.parse(videoPath).dir;
+        const fileName = path.parse(videoPath).name + '.m3u8';
+        const m3u8Path = path.join(videoFolder, fileName);
+        return m3u8Path;
     }
 }
 

@@ -50,6 +50,29 @@ class MovieMetadata extends Metadata {
 
     /** PUBLIC FUNCTIONS **/
 
+    
+    getType() {
+        return "movie";
+    }
+
+    setDirectplayReady(movieID) {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                t.none("UPDATE movie_metadata SET directplay_ready = TRUE WHERE movie_id = $1", [movieID])
+                .then(() => resolve());
+            });
+        });
+    }
+
+    getDirectplayHandlingNeeded() {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                t.any("SELECT title, movie_id, tmdb_id, directplay_ready FROM movie_metadata WHERE directplay_ready = FALSE")
+                .then(movies => resolve(movies));
+            });
+        });
+    }
+
     /**
      * Get a list of movies with bad images
      * 

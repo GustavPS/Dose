@@ -10,6 +10,7 @@ const logger = new Logger().getInstance();
 
 
 class Watcher {
+    static IGNORED_FILE_ENDINGS = ['.m3u8'];
     /**
      * Initialize the watcher object
      * 
@@ -163,11 +164,14 @@ class Watcher {
           ignoreInitial: false
         })
         .on('add', async (filePath, event) => {
-            filePath = this.cleanPath(filePath, relativePath);
-            if (library.getType() === 'SERIES') {
-                await library.newEntry(filePath);
-            } else {
-                library.newEntry(filePath);
+            const extension = path.extname(filePath);
+            if (!Watcher.IGNORED_FILE_ENDINGS.includes(extension)) {
+                filePath = this.cleanPath(filePath, relativePath);
+                if (library.getType() === 'SERIES') {
+                    await library.newEntry(filePath);
+                } else {
+                    library.newEntry(filePath);
+                }
             }
         })
         .on('unlink', (filePath) => {

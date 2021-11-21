@@ -2,6 +2,7 @@ const db = require('../db');
 const Content = require('./Content');
 const Logger = require('../logger');
 const logger = new Logger().getInstance();
+const path = require('path');
 
 class Movie extends Content {
     #movieId;
@@ -298,6 +299,25 @@ class Movie extends Content {
             });
         });
     }
+
+    isDirectplayReady() {
+        return new Promise((resolve, reject) => {
+            db.one("SELECT directplay_ready FROM movie_metadata WHERE movie_id = $1", [this.#movieId]).then(result => {
+                resolve(result.directplay_ready);
+            }).catch(error => {
+                logger.ERROR(`Error getting directplay status: ${error}`);
+                reject();
+            });
+        });
+    }
+
+    async getM3u8Path() {
+        const videoPath = await this.getFilePath();
+        const videoFolder = path.parse(videoPath).dir;
+        const m3u8Path = path.join(videoFolder, `index.m3u8`);
+        return m3u8Path;
+    }
+
 }
 
 module.exports = Movie;

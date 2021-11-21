@@ -6,6 +6,10 @@ class Metadata {
         this.API_KEY = "19065a8218d4c104a51afcc3e2a9b971";
     }
 
+    getType() {
+        throw('getType must be implemented');
+    }
+
     /**
      * Returns the API url
      * 
