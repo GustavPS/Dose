@@ -83,6 +83,10 @@ alter table movie_image owner to postgres;
 
 create table if not exists movie_metadata
 (
+	found_good_poster boolean default false,
+	found_good_backdrop boolean default false,
+	found_good_logo boolean default false,
+	directplay_ready boolean default false,
 	id bigserial
 		constraint movie_metadata_pkey
 			primary key,
@@ -156,6 +160,7 @@ alter table serie_episode owner to postgres;
 
 create table if not exists serie_episode_metadata
 (
+	directplay_ready boolean default false,
 	air_date text not null,
 	name text not null,
 	overview text not null,

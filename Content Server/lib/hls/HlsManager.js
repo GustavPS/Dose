@@ -28,6 +28,27 @@ class HlsManager {
         return hash;
     }
 
+    prepareDirectplay(content) {
+        return new Promise(resolve => {
+            content.getFilePath()
+            .then(filePath => {
+                const quality = "DIRECTPLAY";
+                const hash = this.getUniqueTranscodingHash();
+                const output = Transcoding.createTempDir();
+
+                const fastTranscoding = new Transcoding(filePath, content.id, 0, hash, hash, true);
+                fastTranscoding.prepareDirectplay(output)
+                .then(hlsFile => {
+                    resolve({
+                        id: content.id,
+                        hlsFile: hlsFile,
+                        output: output
+                    });
+                })
+            });
+        });
+    }
+
     startTranscoding(content, quality, startSegment, groupHash, audioStreamIndex, audioTranscoding) {
         return new Promise(resolve => {
             content.getFilePath()

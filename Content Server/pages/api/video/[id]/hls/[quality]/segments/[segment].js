@@ -115,9 +115,6 @@ const getSegment = async (req, res) => {
                         logger.DEBUG(`[HLS] Seeking inside the fast seeking range (current segment: ${latestSegment}, requested segment: ${segment}). Restarting at ${startSegment}`);
                         restartTranscoding = true;
                     }
-
-
-                    // segment = 5, latestSegment =  7
     
                     if (restartTranscoding) {
                         hlsManager.stopAllVideoTranscodings(group);

@@ -3,6 +3,8 @@ import HlsManager from "../../../../../lib/hls/HlsManager";
 import getBrowser from "../../../../../lib/browsers/util";
 import { useUserAgent } from 'next-useragent'
 import Episode from "../../../../../lib/media/Episode";
+const Logger = require('../../../../../lib/logger');
+const logger = new Logger().getInstance();
 
 const LANGUAGES_LIST = require('../../../../../lib/languages');
 
@@ -109,9 +111,14 @@ export default async (req, res) => {
     const path = await content.getFilePath()
     const resolutions = await content.getResolutions();
     const subtitles = await content.getSubtitles();
-    let directPlay = browser.videoCodecSupported(resolutions["codec"]) && !isChromecast;
+    const isDirectplayReady = await content.isDirectplayReady();
+    let directPlay = browser.videoCodecSupported(resolutions["codec"]) && !isChromecast && isDirectplayReady;
     const hlsManager = new HlsManager();
     const met = await getMetadata(path);
+
+    if (!isDirectplayReady) {
+        logger.INFO(`Directplay is not ready for ${id}, forcing transcodings`);
+    }
 
     let duration = met.format.duration;
     let fps = met.streams[0].r_frame_rate;
