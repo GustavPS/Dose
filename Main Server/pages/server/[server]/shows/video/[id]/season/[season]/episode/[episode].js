@@ -196,7 +196,7 @@ export default function Home(props) {
       getEpisodeInformation().then(() => {
         const src = `${server.server_ip}/api/video/${currentEpisode.internalID}/hls/master`;
         console.log(`Switching to next episode, src: ${src}`);
-        videoRef.current.setSrc(src), currentEpisode.internalID;
+        videoRef.current.setSrc(src, currentEpisode.internalID);
         getNextEpisodeID();
       });
     }

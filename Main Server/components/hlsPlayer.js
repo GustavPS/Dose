@@ -31,7 +31,8 @@ export default class HlsPlayer extends Component {
             activeLanguageStreamIndex: null, // -1 = Not selected yet
             activeResolutionLevel: 0, // The index of the active resolution, 0 == higheest, i.e state.resolutions[0]
             activeSubtitleId: -1, // -1 = no subtitle selected
-            importGCastAPI: false
+            importGCastAPI: false,
+            nativeHlsSupported: false
         }
 
         this.updateCurrentTimeInterval = undefined;
@@ -81,6 +82,10 @@ export default class HlsPlayer extends Component {
         });
     }
 
+    supportsHls() {
+        return Boolean(this.videoNode.canPlayType('application/vnd.apple.mpegurl') || this.videoNode.canPlayType('audio/mpegurl'));
+    }
+
     /**
      * Called when chromecast progress is updated
      * 
@@ -117,16 +122,23 @@ export default class HlsPlayer extends Component {
         this.src = src;
         this.id = id;
         this.notified = false;
-        this.chromecastHandler.setSrc(this.getSrc());
-        this.chromecastHandler.setInitialSeek(0);
-        this.hls.loadSource(this.getSrc());
-        this.hls.attachMedia(this.videoNode);
-
-        if (this.chromecastHandler.isCasting()) {
-            this.chromecastHandler.reloadSource();
-        } else {
-            this.videoNode.play();
-        }
+        this.getLanguages()
+        .then(() => {
+            this.chromecastHandler.setSrc(this.getSrc());
+            this.chromecastHandler.setInitialSeek(0);
+    
+            if (this.state.nativeHlsSupported) {
+                this.videoNode.src = this.getSrc();
+            } else {
+                this.hls.loadSource(this.getSrc());
+                this.hls.attachMedia(this.videoNode);
+            }
+            if (this.chromecastHandler.isCasting()) {
+                this.chromecastHandler.reloadSource();
+            } else {
+                this.videoNode.play();
+            }
+        });
     }
 
 
@@ -203,11 +215,12 @@ export default class HlsPlayer extends Component {
         this.videoNode.ontimeupdate = this.onVideoTimeUpdate;
         this.videoNode.onpause = this.onPause;
         this.videoNode.onplay = this.onPlay;
-        this.soundBar.oninput = this.updateVolume;
 
-    
-        this.hls.on(Hls.Events.MANIFEST_PARSED, this.onManifestParsed);
-        this.hls.on(Hls.Events.MANIFEST_LOADED, this.onManifestLoaded);
+        if (!this.state.nativeHlsSupported) {
+            this.hls.on(Hls.Events.MANIFEST_PARSED, this.onManifestParsed);
+            this.hls.on(Hls.Events.MANIFEST_LOADED, this.onManifestLoaded);
+            this.soundBar.oninput = this.updateVolume;
+        }
     }
 
     /**
@@ -327,13 +340,39 @@ export default class HlsPlayer extends Component {
      * Setup the video player and listeners
      */
     setupHls() {
-        const useDebug = localStorage.getItem("HLS_DEBUG") === "true";
-        this.hls = new Hls({maxMaxBufferLength: 60, debug: useDebug});
-        this.hls.loadSource(this.getSrc());
-        this.hls.attachMedia(this.videoNode);
-        this.videoNode.volume = 1;
+        const nativeHlsSupported = this.supportsHls();
+        this.setState({nativeHlsSupported: nativeHlsSupported}, () => {
+            // This needs to be in a callback because setupListeners uses this state
+            const useDebug = localStorage.getItem("HLS_DEBUG") === "true";
 
-        this.setupListeners();
+            if (nativeHlsSupported) {
+                this.videoNode.src = this.getSrc();
+            } else {
+                this.hls = new Hls({maxMaxBufferLength: 60, debug: useDebug});
+                this.hls.loadSource(this.getSrc());
+                this.hls.attachMedia(this.videoNode);
+                this.videoNode.volume = 1;
+            }
+            this.setupListeners();
+        });
+    }
+
+    /**
+     * Stop the video and unsubscripe/remove listeners and clear intervals
+     */
+    unsubscribeFromAllEvents() {
+        if (this._ismounted) {
+            this.videoNode.pause();
+            this.videoNode.removeAttribute("src");
+            if (!this.state.nativeHlsSupported) {
+                this.hls.destroy();
+            }
+            clearInterval(this.updateCurrentTimeInterval);
+            clearInterval(this.pingInterval);
+            if (this.chromecastHandler.isCasting()) {
+                this.chromecastHandler.stopCast();
+            }
+        }
     }
 
     componentDidMount() {
@@ -343,6 +382,12 @@ export default class HlsPlayer extends Component {
             this.setState({importGCastAPI: true});
             window["gCastIncluded"] = true;
         }
+
+        // When the user goes back, we need to unsubscribe from all events
+        Router.beforePopState(({url, as, options}) => {
+            this.unsubscribeFromAllEvents();
+            return true;
+        });
 
         this._ismounted = true;
         // If we have found the language, we can setup HLS. If not we will wait for the language to be found
@@ -355,14 +400,8 @@ export default class HlsPlayer extends Component {
     }
 
     componentWillUnmount() {
+        this.unsubscribeFromAllEvents();
         this._ismounted = false;
-        this.videoNode.pause();
-        this.hls.destroy();
-        clearInterval(this.updateCurrentTimeInterval);
-        clearInterval(this.pingInterval);
-        if (this.chromecastHandler.isCasting()) {
-            this.chromecastHandler.stopCast();
-        }
     }
 
     /**
@@ -480,7 +519,7 @@ export default class HlsPlayer extends Component {
      */
     onVideoTimeUpdate() {
         if (!this.seeking && this._ismounted) {
-            if (!this.chromecastHandler.isCasting()) {
+            if (!this.chromecastHandler.isCasting() && !this.state.nativeHlsSupported) {
                 this.updateSeekTime();
             }
             this.notifyParentIfNeeded(this.videoNode.currentTime, this.videoNode.duration);
@@ -592,77 +631,83 @@ export default class HlsPlayer extends Component {
                 }
             </Head>
                 <div className={Styles.videoContainer} ref={node => this.videoContainer = node} onDoubleClick={this.toggleFullscreen}>
-                    <video ref={node => this.videoNode = node} playsInline className={Styles.videoPlayer} onClick={this.togglePlay} />
+                    <video ref={node => this.videoNode = node} playsInline className={Styles.videoPlayer} onClick={this.togglePlay} controls={this.state.nativeHlsSupported} />
                     {this.props.children}
-                    <div className={Styles.topControls}>
-                        <div className={Styles.backImage}  onClick={() => Router.back()}></div>
-                    </div>
 
-                    <div className={Styles.videoControls}>
-                        <div className={Styles.seekWrapper}>
-                            <div className={Styles.seekTime} id="seekTime" ref={node => this.seekBarLabel = node}></div>
-                            <input className={Styles.seekbar} type="range" id="seekbar" name="seekbar" ref={node => this.seekBar = node}
-                            min="0" max="100" step="0.01" className={Styles.seekbar} onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime}/>
-                        </div>
-
-                        <div className={Styles.lowerControls}>
-                            <div className={Styles.lowerLeftControls}>
-                                {this.state.videoPaused &&
-                                    <div className={`${Styles.playButton} ${Styles.playPause} ${Styles.button}`} onClick={this.togglePlay}></div>
-                                }
-                                {!this.state.videoPaused && 
-                                    <div className={`${Styles.pauseButton} ${Styles.playPause} ${Styles.button}`} onClick={this.togglePlay}></div>
-                                }
-
-                                <div className={Styles.soundContainer}>
-                                    <div className={`${Styles.soundImage} ${Styles.button}`}></div>
-                                    <div className={Styles.soundbarContainer}>
-                                        <input className={Styles.soundbar} type="range" id="soundbar" name="soundbar" ref={node => this.soundBar = node} />
-                                    </div>
-                                </div>
+                    {!this.state.nativeHlsSupported &&
+                        <>
+                            <div className={Styles.topControls}>
+                                <div className={Styles.backImage}  onClick={() => Router.back()}></div>
                             </div>
-                            <div className={Styles.lowerMiddleControls}>
-                                <h5 className={Styles.title}>{this.state.title}</h5>
-                                <h6 className={Styles.infoText}>{this.state.infoText}</h6>
-                            </div>
-                            <div className={Styles.lowerRightControls}>
-                                <div className={`${Styles.fullscreenImage} ${Styles.button}`} onClick={this.toggleFullscreen}></div>
-                                <div className={`${Styles.chromecast} ${Styles.button}`} onClick={() => this.chromecastHandler.requestChromecastSession(this.videoNode.currentTime)}>
-                                    <google-cast-launcher></google-cast-launcher>
-                                </div>
-                                {this.state.subtitles.length > 0 &&
-                                    <div className={Styles.subtitleContainer}>
-                                        <div className={`${Styles.subtitles} ${Styles.button}`}></div>
 
-                                        <div className={Styles.subtitlesList}>
-                                            <ul>
-                                                {this.state.subtitles.map((subtitle, index) => {
-                                                    return (
-                                                        <li key={index} className={subtitle.id == this.state.activeSubtitleId ? `${Styles.activeSubtitle}` : ''} onClick={() => this.setSubtitle(subtitle)}>{subtitle.name}</li>
-                                                    )
-                                                })}
-                                            </ul>
+
+                            <div className={Styles.videoControls}>
+                                <div className={Styles.seekWrapper}>
+                                    <div className={Styles.seekTime} id="seekTime" ref={node => this.seekBarLabel = node}></div>
+                                    <input className={Styles.seekbar} type="range" id="seekbar" name="seekbar" ref={node => this.seekBar = node}
+                                    min="0" max="100" step="0.01" className={Styles.seekbar} onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime}/>
+                                </div>
+
+                                <div className={Styles.lowerControls}>
+                                    <div className={Styles.lowerLeftControls}>
+                                        {this.state.videoPaused &&
+                                            <div className={`${Styles.playButton} ${Styles.playPause} ${Styles.button}`} onClick={this.togglePlay}></div>
+                                        }
+                                        {!this.state.videoPaused && 
+                                            <div className={`${Styles.pauseButton} ${Styles.playPause} ${Styles.button}`} onClick={this.togglePlay}></div>
+                                        }
+
+                                        <div className={Styles.soundContainer}>
+                                            <div className={`${Styles.soundImage} ${Styles.button}`}></div>
+                                            <div className={Styles.soundbarContainer}>
+                                                <input className={Styles.soundbar} type="range" id="soundbar" name="soundbar" ref={node => this.soundBar = node} />
+                                            </div>
                                         </div>
-                                    </div>                                
-                                }
+                                    </div>
+                                    <div className={Styles.lowerMiddleControls}>
+                                        <h5 className={Styles.title}>{this.state.title}</h5>
+                                        <h6 className={Styles.infoText}>{this.state.infoText}</h6>
+                                    </div>
+                                    <div className={Styles.lowerRightControls}>
+                                        <div className={`${Styles.fullscreenImage} ${Styles.button}`} onClick={this.toggleFullscreen}></div>
+                                        <div className={`${Styles.chromecast} ${Styles.button}`} onClick={() => this.chromecastHandler.requestChromecastSession(this.videoNode.currentTime)}>
+                                            <google-cast-launcher></google-cast-launcher>
+                                        </div>
+                                        {this.state.subtitles.length > 0 &&
+                                            <div className={Styles.subtitleContainer}>
+                                                <div className={`${Styles.subtitles} ${Styles.button}`}></div>
+
+                                                <div className={Styles.subtitlesList}>
+                                                    <ul>
+                                                        {this.state.subtitles.map((subtitle, index) => {
+                                                            return (
+                                                                <li key={index} className={subtitle.id == this.state.activeSubtitleId ? `${Styles.activeSubtitle}` : ''} onClick={() => this.setSubtitle(subtitle)}>{subtitle.name}</li>
+                                                            )
+                                                        })}
+                                                    </ul>
+                                                </div>
+                                            </div>                                
+                                        }
 
 
-                                <div className={Styles.resolutionContainer}>
-                                    <div className={`${Styles.resolutionImage} ${Styles.button}`}></div>
+                                        <div className={Styles.resolutionContainer}>
+                                            <div className={`${Styles.resolutionImage} ${Styles.button}`}></div>
 
-                                    <div className={Styles.resolutionList}>
-                                        <ul>
-                                            {this.state.resolutions.map((resolution, index) => {
-                                                return (
-                                                    <li key={index} className={resolution.level == this.state.activeResolutionLevel ? `${Styles.activeResolution}` : ''} onClick={() => this.setResolution(resolution)}>{resolution.name}</li>
-                                                )
-                                            })}
-                                        </ul>
+                                            <div className={Styles.resolutionList}>
+                                                <ul>
+                                                    {this.state.resolutions.map((resolution, index) => {
+                                                        return (
+                                                            <li key={index} className={resolution.level == this.state.activeResolutionLevel ? `${Styles.activeResolution}` : ''} onClick={() => this.setResolution(resolution)}>{resolution.name}</li>
+                                                        )
+                                                    })}
+                                                </ul>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </>
+                    }
                 </div>
           </>
         );
