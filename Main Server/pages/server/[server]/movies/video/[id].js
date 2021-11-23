@@ -402,58 +402,50 @@ export default function Home(props) {
         </div>
         <div className={Styles.actions}>
           {metadata.currentTimeSeconds > 0 &&
-          <div style={{marginRight: "15px"}}>
+          <div style={{marginRight: "15px"}} className={Styles.actionButton}>
             <div className={Styles.playButton} onClick={() => videoRef.current.show(metadata.currentTimeSeconds)}></div>
             <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
           </div>
           }
-          <div style={{marginRight: "15px"}}>
+          <div style={{marginRight: "15px"}} className={Styles.actionButton}>
             <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
             <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
           </div>
-          <div>
+          <div className={`${Styles.actionButton} ${Styles.buttonHiddenForMobile}`}>
             <div className={Styles.playButton} onClick={() => setViewTrailer(true)}></div>
             <p style={{marginTop: "5px", fontSize: '14px'}}>Visa trailer</p>
           </div>
           {watched &&
-          <>
-              <div style={{marginLeft: "15px"}}>
+              <div style={{marginLeft: "15px"}} className={Styles.actionButton}>
               <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => markAsNotWatched()}></div>
               <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som osedd</p>
               </div>
-          </>
           }
           {!watched &&
-          <>
-            <div style={{marginLeft: "15px"}}>
+            <div style={{marginLeft: "15px"}} className={Styles.actionButton}>
               <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
               <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
             </div>
-          </>
           }
           {inWatchList &&
-          <>
-              <div style={{marginLeft: "15px"}}>
+              <div style={{marginLeft: "15px"}} className={Styles.actionButton}>
               <div id="inWatchList" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => removeFromWatchList()}></div>
               <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Ta bort från watchlist</p>
               </div>
-          </>
           }
           {!inWatchList &&
-          <>
-            <div style={{marginLeft: "15px"}}>
+            <div style={{marginLeft: "15px"}} className={Styles.actionButton}>
               <div id="inWatchList" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => addToWatchList()}></div>
               <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Lägg till i watchlist</p>
             </div>
-          </>
           }
-          <div>
+          <div className={`${Styles.actionButton} ${Styles.buttonHiddenForMobile}`}>
             <div style={{marginLeft: "15px", backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/search.svg')`}} className={Styles.playButton} onClick={() => setMetadataBox(true)}></div>
             <p style={{marginLeft: "15px", marginTop: "5px", fontSize: '14px'}}>Uppdatera metadata</p>
           </div>
 
-          <ChangeImages id={id} server={server} serverToken={serverToken} type="movies"></ChangeImages>
-
+          <ChangeImages  id={id} server={server} serverToken={serverToken} type="movies"></ChangeImages>
+          <div style={{clear: 'both'}}></div>
         </div>
       </div>
     </div>

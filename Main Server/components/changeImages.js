@@ -111,7 +111,7 @@ export default function ChangeImages(props) {
 
     return (
         <>
-            <div style={{marginLeft: "27px"}}>
+            <div style={{marginLeft: "27px"}} className={Styles.actionButton}>
                 <div style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/search.svg')`}} className={Styles.playButton} onClick={() => getImages()}></div>
                 <p style={{marginTop: "5px", fontSize: '14px'}}>Välj bild</p>
             </div>

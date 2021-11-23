@@ -216,7 +216,6 @@
   .ldio div { box-sizing: content-box; }
 
   .actors {
-
       width: 100%;
       position: relative;
   }
@@ -269,3 +268,45 @@
   .bottom {
       z-index: 1;
   }
+
+/* Mobile */
+@media only screen and (max-width: 768px) {
+    .actors {
+        width: 100%;
+    }
+
+    .scrollButton {
+        display: none;
+    }
+
+    .actions {
+        height: auto;
+        display: block;
+    }
+
+    .description {
+        padding: 0;
+    }
+
+    .actionButton {
+        float: left;
+        margin: 10px !important;
+    }
+
+    .actionButton p {
+        margin: 0 !important;
+        font-size: 10px !important;
+    }
+
+    .buttonHiddenForMobile {
+        display: none;;
+    }
+
+    .playButton {
+        margin: 0;
+    }
+
+    .poster {
+        display: none;
+    }
+}

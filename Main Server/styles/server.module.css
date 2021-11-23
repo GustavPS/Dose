@@ -219,3 +219,22 @@
     transform: translate(40px, 0);
     transition: all 2000ms ease-in;
 }
+
+
+
+
+/* Mobile */
+@media only screen and (max-width: 768px) {
+    .recommended {
+      display: none;
+    }
+
+    /* Header have 100px height */
+    .contentRows {
+      top: 100px;
+    }
+
+    .scrollButton {
+      display: none;
+  }
+}

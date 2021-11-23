@@ -24,3 +24,18 @@
 .actorBox p {
     font-size: 14px;
 }
+
+@media only screen and (max-width: 768px) {
+    .actorBox, .actorImage {
+        width: 100px;
+        height: 180px;
+    }
+
+    .actorBox h2 {
+        font-size: 14px;
+    }
+
+    .actorBox p {
+        font-size: 10px;
+    }
+}

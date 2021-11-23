@@ -9,6 +9,12 @@
     background-size: 30px;
     background-color: rgba(85, 85, 85, 0.08);
     border-radius: 10px;
-    width: 140px;
+    width: 120px;
     height: 70px;
+}
+
+@media only screen and (max-width: 768px) {
+    .actionButton {
+        display: none;
+    }
 }
