@@ -180,6 +180,5 @@ export default async (req, res) => {
     }
 
     m3u8 += getM3u8Streams(resolutions, fps, id, duration, groupHash, audioStream, directPlay, type, isIos, subtitles.length > 0);
-    console.log(m3u8);
     res.status(200).send(m3u8);
 }

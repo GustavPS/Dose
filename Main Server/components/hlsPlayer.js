@@ -83,7 +83,9 @@ export default class HlsPlayer extends Component {
     }
 
     supportsHls() {
-        return Boolean(this.videoNode.canPlayType('application/vnd.apple.mpegurl') || this.videoNode.canPlayType('audio/mpegurl'));
+        const ua = navigator.userAgent;
+        const isIos = (/iPad|iPhone|iPod/.test(ua)) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        return Boolean(this.videoNode.canPlayType('application/vnd.apple.mpegurl') || this.videoNode.canPlayType('audio/mpegurl')) && isIos;
     }
 
     /**
