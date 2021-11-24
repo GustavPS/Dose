@@ -67,7 +67,7 @@ function startWebServer() {
             setInterval(stopTranscodings, 2000); // 15 seconds
 
             startDirectplayPreparation();
-            setInterval(startDirectplayPreparation, 600000) // 10 minutes   600000
+            setInterval(startDirectplayPreparation, 1800000) // 30 minutes
         });
     });
 }
