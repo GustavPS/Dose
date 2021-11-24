@@ -175,6 +175,9 @@ class Transcoding {
                 logger.ERROR(`Transcoding error for file: ${this.filePath}`);
                 logger.ERROR(`Cannot process video: ${err.message}`);
                 logger.ERROR(`ffmpeg stderr: ${stderr}`);
+                delete this.ffmpegProc;
+                // Remove the output folder (the transcoding) since the transcoding failed
+                fs.rmSync(output, {recursive: true, force: true});
                 reject();
             })
             .output(this.output);
