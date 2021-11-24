@@ -65,8 +65,6 @@ function startWebServer() {
             updateMovies();
             setInterval(updateMovies, 43200000); // 12 hours
             setInterval(stopTranscodings, 2000); // 15 seconds
-
-            startDirectplayPreparation();
             setInterval(startDirectplayPreparation, 1800000) // 30 minutes
         });
     });
