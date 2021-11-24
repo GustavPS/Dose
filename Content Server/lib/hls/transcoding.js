@@ -177,7 +177,12 @@ class Transcoding {
                 logger.ERROR(`ffmpeg stderr: ${stderr}`);
                 delete this.ffmpegProc;
                 // Remove the output folder (the transcoding) since the transcoding failed
-                fs.rmSync(output, {recursive: true, force: true});
+                fs.rm(output, {recursive: true, force: true}, (err) => {
+                    if (err) {
+                        logger.ERROR(`Error removing directplay preparation temp-path`);
+                        logger.ERROR(err);
+                    }
+                });
                 reject();
             })
             .output(this.output);
