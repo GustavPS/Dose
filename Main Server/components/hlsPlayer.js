@@ -374,6 +374,7 @@ export default class HlsPlayer extends Component {
             if (this.chromecastHandler.isCasting()) {
                 this.chromecastHandler.stopCast();
             }
+            this.stopTranscoding();
         }
     }
 
@@ -413,6 +414,17 @@ export default class HlsPlayer extends Component {
         validateServerAccess(this.server, (serverToken) => {
             if (this.group != undefined) {
                 fetch(`${this.server.server_ip}/api/video/${this.id}/hls/ping?group=${this.group}&serverToken=${serverToken}`);
+            }
+        });
+    }
+
+    /**
+     * Tell the server that we don't need the video anymore
+     */
+    stopTranscoding() {
+        validateServerAccess(this.server, (serverToken) => {
+            if (this.group != undefined) {
+                fetch(`${this.server.server_ip}/api/video/${this.id}/hls/stop?group=${this.group}&serverToken=${serverToken}`);
             }
         });
     }

@@ -235,6 +235,7 @@ class Library {
         return new Promise(async (resolve) => {
             let shouldDownload = true;
             // Don't download if we have already downloaded the trailer
+            // TODO: Shouldn't be sync
             fs.readdirSync(fullPath).forEach(file => {
                 if (file.includes("_downloaded_trailer") && file.includes(".mp4")) {
                     shouldDownload = false;
