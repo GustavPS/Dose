@@ -26,6 +26,11 @@ var router = express.Router();
 const waitUntilFileExists = (filePath, requestedSegment, hlsManager, group) => {
     return new Promise((resolve, reject) => {
         const interval = setInterval(() => {
+            // Stop checking if the transcoding stopped
+            if (!hlsManager.isAnyVideoTranscodingActive(group)) {
+                clearInterval(interval);
+                reject();
+            }
             fs.access(filePath, fs.constants.F_OK, (err) => {
                 if (!err && isSegmentFinished(requestedSegment, hlsManager, group)) {
                     clearInterval(interval);
@@ -83,6 +88,7 @@ const getSegment = async (req, res) => {
         const startSegment = Math.max(segment - 1, 0);
         let path;
 
+        // Should be lock per group somehow
         HlsManager.lock.enter(async function (token) {
             let promises = [];
 
@@ -135,6 +141,12 @@ const getSegment = async (req, res) => {
                     res.setHeader('Access-Control-Allow-Headers', "*");
                     res.status(200).sendFile(path);
                     resolved = true;
+                    resolve();
+                })
+                .catch(() => {
+                    // Transcoding was stopped
+                    logger.DEBUG(`[HLS] Transcoding was stopped for group ${group}, not waiting for segment anymore`);
+                    res.status(404).send();
                     resolve();
                 });
                 HlsManager.lock.leave(token);
