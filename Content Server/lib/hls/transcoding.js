@@ -257,7 +257,12 @@ class Transcoding {
 
     removeTempFolder() {
         logger.DEBUG("[HLS] Removing temp folder");
-        fs.rmdirSync(this.output, {recursive: true});
+        fs.rm(this.output, {recursive: true, force: true}, (err) => {
+            if (err) {
+                logger.ERROR(`Error removing transcoding temp output`);
+                logger.ERROR(err);
+            }
+        });
     }
 }
 
