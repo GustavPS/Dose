@@ -251,10 +251,12 @@ export default class HlsPlayer extends Component {
      */
     onManifestLoaded(event, data) {
         const subs = data.subtitles;
-        subs.push({
-            id: -1,
-            name: "Off"
-        });
+        if (data.subtitles.length > 0) {
+            subs.push({
+                id: -1,
+                name: "Off"
+            });
+        }
         this.setState({
             subtitles: data.subtitles
         });
