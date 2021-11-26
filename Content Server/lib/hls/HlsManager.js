@@ -46,7 +46,9 @@ class HlsManager {
                     });
                 })
                 .catch(() => {
-                    reject();
+                    reject({
+                        id: content.id
+                    });
                 });
             });
         });
