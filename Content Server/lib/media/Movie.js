@@ -2,6 +2,8 @@ const db = require('../db');
 const Content = require('./Content');
 const Logger = require('../logger');
 const logger = new Logger().getInstance();
+const pgp = require('pg-promise')();
+
 const path = require('path');
 
 class Movie extends Content {
@@ -75,10 +77,13 @@ class Movie extends Content {
      */
     insertImages(images, type, conn=db) {
         return conn.tx(async t => {
+            let queries = [];
             for (let image of images) {
                 const imageId = await this.#insertToImageTable(image.file_path, t);
-                this.#insertToMovieImageTable(imageId, image.active, type, t);
+                queries.push(this.#insertToMovieImageTable(imageId, image.active, type, t));
+                //this.#insertToMovieImageTable(imageId, image.active, type, t);
             }
+            return t.batch(queries);
         });
     }
 
@@ -178,9 +183,11 @@ class Movie extends Content {
                 .then(res => res.length !== 0)
                 .then(async actorExist => {
                     if (!actorExist) {
-                        await t.none('INSERT INTO actor (id, name, image) VALUES ($1, $2, $3)', [actor.id, actor.name, actor.profile_path]);
+                        const q2 = pgp.as.format('INSERT INTO actor (id, name, image) VALUES ($1, $2, $3)', [actor.id, actor.name, actor.profile_path]);
+                        await t.none(q2);
                     }
-                    return t.none("INSERT INTO movie_actor (actor_id, movie_id, character_name, order_in_credit) VALUES ($1, $2, $3, $4)", [actor.id, this.#movieId, actor.character, actor.order]);
+                    const q = pgp.as.format("INSERT INTO movie_actor (actor_id, movie_id, character_name, order_in_credit) VALUES ($1, $2, $3, $4)", [actor.id, parseInt(this.#movieId), actor.character, actor.order]);
+                    return t.none(q);
                 });
                 queries.push(q);
             }
@@ -203,7 +210,7 @@ class Movie extends Content {
                 queries.push(t.none("INSERT INTO movie_recommended (movie_id_1, movie_id_2, priority) VALUES ($1, $2, $3)", [this.#movieId, movie.movie_id, i]));
                 i++;
             }
-            t.batch(queries);
+            return t.batch(queries);
         });
     }
 

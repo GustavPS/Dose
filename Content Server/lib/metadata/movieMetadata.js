@@ -543,15 +543,17 @@ class MovieMetadata extends Metadata {
 
             db.tx(t => {
                 let queries = [];
-                queries.push(movie.addMovieGenres(metadata.genres, t));
+                queries.push(movie.addMovieGenres(metadata.genres));
                 queries.push(movie.insertMetadata(metadata.title, metadata.overview, metadata.poster_path, metadata.release_date,
                     metadata.runtime, metadata.popularity, metadata.backdrop_path, trailer, metadata.id,
                     images.posters.foundPrefferedLanguage, images.backdrops.foundPrefferedLanguage, images.logos.foundPrefferedLanguage, t));
-                queries.push(movie.addMovieActors(actors, t));
-                queries.push(movie.addRecommendations(recommendations, t));
-                queries.push(movie.insertImages(images.backdrops.list, 'BACKDROP', t));
-                queries.push(movie.insertImages(images.posters.list, 'POSTER', t));
-                queries.push(movie.insertImages(images.logos.list, 'LOGO', t));
+                queries.push(movie.addMovieActors(actors));
+                if (recommendations.length > 0) {
+                    queries.push(movie.addRecommendations(recommendations));
+                }
+                queries.push(movie.insertImages(images.backdrops.list, 'BACKDROP'));
+                queries.push(movie.insertImages(images.posters.list, 'POSTER'));
+                queries.push(movie.insertImages(images.logos.list, 'LOGO'));
                 return t.batch(queries);
             })
             .then(() => resolve())
