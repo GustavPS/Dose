@@ -44,6 +44,19 @@ class TvMetadata extends Metadata {
             fetch(encodeURI(`${this.getAPIUrl()}/tv/${serieID}/images?api_key=${this.getAPIKey()}&language=en-US&include_image_language=en,null`))
             .then(res => res.json())
             .then(images => {
+                // If the show don't have a image, push one. All the shows need to have a image.
+                if (images.backdrops.length === 0) {
+                    images.backdrops.push({
+                        file_path: 'no_image',
+                        active: true
+                    });
+                }
+                if (images.posters.length === 0) {
+                    images.posters.push({
+                        file_path: 'no_image',
+                        active: true
+                    })
+                }
                 resolve(images);
             })
         });
@@ -128,19 +141,6 @@ class TvMetadata extends Metadata {
 
 
             // SAVE IMAGES
-            // If the movie don't have a image, push one. All the movies need to have a image.
-            if (images.backdrops.length === 0) {
-                images.backdrops.push({
-                    file_path: 'no_image',
-                    active: true
-                });
-            }
-            if (images.posters.length === 0) {
-                images.posters.push({
-                    file_path: 'no_image',
-                    active: true
-                })
-            }
             // TODO: This will push "no_name" to image even if it already exist. That is not needed
             await db.tx(async t => {
                 for (let backdrop of images.backdrops) {
