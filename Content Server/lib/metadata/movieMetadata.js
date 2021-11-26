@@ -64,10 +64,19 @@ class MovieMetadata extends Metadata {
         });
     }
 
+    setDirectplayFailed(movieID) {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                t.none("UPDATE movie_metadata SET directplay_ready = FALSE, directplay_failed = TRUE WHERE movie_id = $1", [movieID])
+                .then(() => resolve());
+            });
+        });
+    }
+
     getDirectplayHandlingNeeded() {
         return new Promise(resolve => {
             db.tx(async t => {
-                t.any("SELECT title, movie_id, tmdb_id, directplay_ready FROM movie_metadata WHERE directplay_ready = FALSE")
+                t.any("SELECT title, movie_id, tmdb_id, directplay_ready FROM movie_metadata WHERE directplay_ready = FALSE AND directplay_failed = FALSE")
                 .then(movies => resolve(movies));
             });
         });
