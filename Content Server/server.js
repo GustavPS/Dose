@@ -41,7 +41,6 @@ if (dev) {
     logger.WARNING("Server running in development mode");
 }
 
-
 function startWebServer() {
     nextApp.prepare().then(async () => {
         const expressApp = express();
@@ -145,8 +144,9 @@ const prepareDirectplay = (metadata) => {
                         fs.rmSync(file.output, {recursive: true, force: true}); // Remove the output folder (the transcoding)
                     }
                     logger.DEBUG(`Finished preparing ${files.length} file(s) for directplay, ${candidates.length} file(s) left`);
-                } catch (err) {
-                    logger.ERROR(`Error preparing file(s) for directplay. Will ignore and continue with next one.`);
+                } catch (failedFile) {
+                    metadata.setDirectplayFailed(failedFile.id);
+                    logger.ERROR(`Error preparing file(s) for directplay. Will mark as failed and continue with next one.`);
                 }
             }
             logger.INFO(`Finished preparing all files for directplay`);
