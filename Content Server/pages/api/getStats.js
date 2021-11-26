@@ -19,9 +19,12 @@ export default (req, res) => {
         db.one(`SELECT COUNT(*) FROM movie`).then(movies => {
             response.movieCount = movies.count;
             db.one(`SELECT COUNT(*) FROM serie`).then(series => {
-                response.showCount = series.count;
-                res.status(200).json(response);
-                resolve();
+                db.one(`SELECT COUNT(*) FROM serie_episode`).then(episodes => {
+                    response.showCount = series.count;
+                    response.episodeCount = episodes.count;
+                    res.status(200).json(response);
+                    resolve();
+                });
             });
         });
     });
