@@ -250,6 +250,11 @@ export default class HlsPlayer extends Component {
      * @param {*} data 
      */
     onManifestLoaded(event, data) {
+        const subs = data.subtitles;
+        subs.push({
+            id: -1,
+            name: "Off"
+        });
         this.setState({
             subtitles: data.subtitles
         });
@@ -599,8 +604,8 @@ export default class HlsPlayer extends Component {
      * @param {object} subtitle - The subtitle object
      */
     setSubtitle(subtitle) {
-        console.log(`[HLS] Change subtitle to ${subtitle.name} (id: ${subtitle.id})`)
-        if (this.chromecastHandler.isCasting()) {
+        console.log(`[HLS] Change subtitle to ${subtitle.name} (id: ${subtitle.id})`);
+        if (this.chromecastHandler.isCasting() && subtitle.id != -1) {
             this.chromecastHandler.setSubtitle(subtitle.name);
         } else {
             this.hls.subtitleTrack = subtitle.id;

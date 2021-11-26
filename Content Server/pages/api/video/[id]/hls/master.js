@@ -126,7 +126,7 @@ const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, direc
 
 const getSubtitleStreams = (id, subtitles, type) => {
     let m3u8 = "";
-    let autoselect = "YES";
+    let autoselect = "NO";
     for (let subtitle of subtitles) {
         m3u8 += `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${subtitle.language}",NAME="${subtitle.language}",FORCED=NO,AUTOSELECT=${autoselect},DEFAULT=${autoselect},URI="/api/video/${id}/hls/subtitles/${subtitle.id}?type=${type}"\n`;
         autoselect = "NO";
