@@ -64,6 +64,7 @@ function startWebServer() {
             updateMovies();
             setInterval(updateMovies, 43200000); // 12 hours
             setInterval(stopTranscodings, 2000); // 15 seconds
+            startDirectplayPreparation();
             setInterval(startDirectplayPreparation, 1800000) // 30 minutes
         });
     });
@@ -140,8 +141,19 @@ const prepareDirectplay = (metadata) => {
                         metadata.setDirectplayReady(file.id);
                         const content = isMovie ? new Movie(file.id) : new Episode(file.id);
                         const m3u8Path = await content.getM3u8Path();
-                        fs.copyFileSync(file.hlsFile, m3u8Path); // Move the m3u8 file to the content folder
-                        fs.rmSync(file.output, {recursive: true, force: true}); // Remove the output folder (the transcoding)
+
+                        fs.copyFile(file.hlsFile, m3u8Path, (err) => {
+                            if (err) {
+                                logger.ERROR(`Error while moving m3u8 file: ${err}`);
+                            } else {
+                                fs.rm(file.output, {recursive: true, force: true}, (err) => {
+                                    if (err) {
+                                        logger.ERROR(`Error removing directplay preparation temp-path`);
+                                        logger.ERROR(err);
+                                    }
+                                });
+                            }
+                        });
                     }
                     logger.DEBUG(`Finished preparing ${files.length} file(s) for directplay, ${candidates.length} file(s) left`);
                 } catch (failedFile) {
@@ -163,9 +175,13 @@ crypto.randomBytes(256, function (ex, buf) {
     if (ex) throw ex;
     process.env.SECRET = buf;
     logger.DEBUG("Done");
+    
+    start();
+});
 
+const start = () => {
     watcher.init(() => {
         watcher.startWatcher();
         startWebServer();
     })
-});
+}
