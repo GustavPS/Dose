@@ -32,6 +32,8 @@ const waitUntilFileExists = (filePath, requestedSegment, hlsManager, group) => {
                 reject();
             }
             fs.access(filePath, fs.constants.F_OK, (err) => {
+                // If isSegmentFinished returned false because the transcoding isn't running we will
+                // stop the loop at the next interval (isAnyVideoTranscodingActive will be false)
                 if (!err && isSegmentFinished(requestedSegment, hlsManager, group)) {
                     clearInterval(interval);
                     resolve();
@@ -56,6 +58,11 @@ const checkIfFileExists = (filePath) => {
 const isSegmentFinished = (requestedSegment, hlsManager, group) => {
     if (hlsManager.isTranscodingFinished(group)) {
         return true;
+    }
+    const startSegment = hlsManager.getTranscodingStartSegment(group);
+    if (startSegment == -1) {
+        // No transcoding was found, return false
+        return false;
     }
     return requestedSegment >= hlsManager.getTranscodingStartSegment(group) &&
         requestedSegment < hlsManager.getVideoTranscodingSegment(group) + 2;
