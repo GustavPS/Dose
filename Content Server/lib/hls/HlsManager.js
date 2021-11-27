@@ -136,8 +136,15 @@ class HlsManager {
         return transcoding.getOutput();
     }
 
+    /**
+     * Get the start segment of the transcoding for the given hash.
+     * 
+     * @param {string} hash - The hash of the group of transcodings 
+     * @returns {number} - The start segment of the transcoding OR -1 if no transcoding is active for the given hash
+     */
     getTranscodingStartSegment(hash) {
         const transcoding = global.transcodings.find(transcoding => transcoding.groupHash === hash);
+        if (transcoding == undefined) return -1;
         return transcoding.startSegment;
     }
 
