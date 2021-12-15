@@ -146,7 +146,7 @@ export default class Register extends Component {
 
 export async function getServerSideProps(context) {
     let host = context.req.headers.host;
-    if (context.req.secure) {
+    if (context.req.rawHeaders.includes('https')) {
         host = `https://${host}`;
     } else {
         host = `http://${host}`;
