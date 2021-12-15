@@ -1,9 +1,9 @@
 const Metadata = require('./metadata');
 const fetch = require('node-fetch');
 const db = require('../db');
-const Movie = require('../media/Movie');
+const Movie = require('../media/Movie.js');
 const Logger = require('../logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 
 class MovieMetadata extends Metadata {

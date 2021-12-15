@@ -4,7 +4,7 @@ const fs = require('fs');
 import Transcoding from '../../../../../../../lib/hls/transcoding'
 const db = require('../../../../../../../lib/db');
 const Logger = require('../../../../../../../lib/logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 
 export default async (req, res) => {
@@ -76,8 +76,7 @@ const getMovieSubtitlePath = (subtitleID) => {
         INNER JOIN subtitle
         ON subtitle.library_id = library.id AND subtitle.id = $1`, [subtitleID])
         .then(result => {
-            let path = result.library_path + result.subtitle_path;
-            resolve(path);
+            resolve(path.join(result.library_path, result.subtitle_path));
         }).catch(error => {
             logger.ERROR(error);
             reject(404);
@@ -92,8 +91,7 @@ const getEpisodeSubtitlePath = (subtitleID) => {
                 ON serie_episode_subtitle.library_id = library.id AND serie_episode_subtitle.id = $1
         `, [subtitleID])
         .then(result => {
-            let path = result.library_path + result.subtitle_path;
-            resolve(path);
+            resolve(path.join(result.library_path, result.subtitle_path));
         }).catch(error => {
             reject(404);
         })

@@ -21,6 +21,18 @@ class Content {
     getAudioCodecByStreamIndex(streamIndex) {
         throw new Error('Not implemented');
     }
+
+    getName() {
+        throw new Error('Not implemented');
+    }
+
+    getType() {
+        throw new Error('Not implemented');
+    }
+
+    getBackdrop() {
+        throw new Error('Not implemented');
+    }
 }
 
 module.exports = Content;

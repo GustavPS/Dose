@@ -74,11 +74,15 @@ export default class HlsPlayer extends Component {
 
         this.getLanguages()
         .then(() => {
-            this.chromecastHandler.setSrc(this.getSrc());
-            // If the page got mounted before we got here, we have to setup the player
-            if (this._ismounted) {
-                this.setupHls();
-            }
+            this.getSrc()
+            .then(src => {
+                this.chromecastHandler.setSrc(src);
+                // If the page got mounted before we got here, we have to setup the player
+                if (this._ismounted) {
+                    this.setupHls();
+                } 
+            });
+
         });
     }
 
@@ -106,12 +110,18 @@ export default class HlsPlayer extends Component {
      * @returns The src for the video
      */
     getSrc() {
-        if (this.state.activeLanguageStreamIndex == null) {
-            console.log(`[HLS] WARNING: Calling getSrc() when activelanguageStreamIndex is null`);
-            return `${this.src}?audioStream=0&type=${this.type}`;
-        } else {
-            return `${this.src}?audioStream=${this.state.activeLanguageStreamIndex}&type=${this.type}`;
-        }
+        return new Promise(resolve => {
+            validateServerAccess(this.server, (serverToken) => {
+                let src;
+                if (this.state.activeLanguageStreamIndex == null) {
+                    console.log(`[HLS] WARNING: Calling getSrc() when activelanguageStreamIndex is null`);
+                    src = `${this.src}?audioStream=0&type=${this.type}&token=${serverToken}`;
+                } else {
+                    src = `${this.src}?audioStream=${this.state.activeLanguageStreamIndex}&type=${this.type}&token=${serverToken}`;
+                }
+                resolve(src);
+            });
+        });
     }
 
     /**
@@ -124,22 +134,28 @@ export default class HlsPlayer extends Component {
         this.src = src;
         this.id = id;
         this.notified = false;
+
         this.getLanguages()
         .then(() => {
-            this.chromecastHandler.setSrc(this.getSrc());
-            this.chromecastHandler.setInitialSeek(0);
-    
-            if (this.state.nativeHlsSupported) {
-                this.videoNode.src = this.getSrc();
-            } else {
-                this.hls.loadSource(this.getSrc());
-                this.hls.attachMedia(this.videoNode);
-            }
-            if (this.chromecastHandler.isCasting()) {
-                this.chromecastHandler.reloadSource();
-            } else {
-                this.videoNode.play();
-            }
+            // getSrc needs to be called after getLanguages
+            this.getSrc()
+            .then(videoSrc => {
+                this.chromecastHandler.setSrc(videoSrc);
+                this.chromecastHandler.setInitialSeek(0);
+        
+                if (this.state.nativeHlsSupported) {
+                    this.videoNode.src = videoSrc;
+                } else {
+                    this.hls.loadSource(videoSrc);
+                    this.hls.attachMedia(this.videoNode);
+                }
+                if (this.chromecastHandler.isCasting()) {
+                    this.chromecastHandler.reloadSource();
+                } else {
+                    this.videoNode.play();
+                }
+            });
+
         });
     }
 
@@ -353,16 +369,20 @@ export default class HlsPlayer extends Component {
         this.setState({nativeHlsSupported: nativeHlsSupported}, () => {
             // This needs to be in a callback because setupListeners uses this state
             const useDebug = localStorage.getItem("HLS_DEBUG") === "true";
+            this.getSrc()
+            .then(src => {
+                if (nativeHlsSupported) {
+                    this.videoNode.src = src;
+                } else {
+                    this.hls = new Hls({maxMaxBufferLength: 60, debug: useDebug});
+                    this.hls.loadSource(src);
+                    this.hls.attachMedia(this.videoNode);
+                    this.videoNode.volume = 1;
+                }
+                this.setupListeners();
+            });
 
-            if (nativeHlsSupported) {
-                this.videoNode.src = this.getSrc();
-            } else {
-                this.hls = new Hls({maxMaxBufferLength: 60, debug: useDebug});
-                this.hls.loadSource(this.getSrc());
-                this.hls.attachMedia(this.videoNode);
-                this.videoNode.volume = 1;
-            }
-            this.setupListeners();
+
         });
     }
 
@@ -529,7 +549,7 @@ export default class HlsPlayer extends Component {
             const currentTime = this.getCurrentTime();
             const videoDuration = this.getVideoDuration();
             if (!isNaN(currentTime) && !isNaN(videoDuration)) {
-                fetch(`${this.server.server_ip}/api/video/${this.id}/currenttime/set?type=${this.type}&time=${currentTime}&videoDuration=${videoDuration}&token=${serverToken}`);
+                fetch(`${this.server.server_ip}/api/video/${this.id}/currenttime/set?type=${this.type}&time=${currentTime}&videoDuration=${videoDuration}&token=${serverToken}&group=${this.group}`);
             }
         });
     }

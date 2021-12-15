@@ -1,9 +1,10 @@
 const db = require('../db');
 const Movie = require('../media/Movie');
-const Transcoding = require('./transcoding');
-var AsyncLock = require('node-async-locks').AsyncLock;
+const Transcoding = require('./transcoding.js');
+const TranscodingGroup = require('./TranscodingGroup.js');
+const AsyncLock = require('node-async-locks').AsyncLock;
 const Logger = require('../logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 // A singleton class managing HLS Transcodings
 class HlsManager {
@@ -20,6 +21,7 @@ class HlsManager {
         return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     }
 
+    /*
     getUniqueTranscodingHash() {
         let hash = this.generateHash();
         while (global.transcodings.some(transcoding => transcoding.hash === hash)) {
@@ -27,16 +29,16 @@ class HlsManager {
         }
         return hash;
     }
+    */
 
     prepareDirectplay(content) {
         return new Promise((resolve, reject) => {
             content.getFilePath()
             .then(async (filePath) => {
-                const quality = "DIRECTPLAY";
-                const hash = this.getUniqueTranscodingHash();
                 const output = Transcoding.createTempDir();
+                const startSegment = 0;
 
-                const fastTranscoding = new Transcoding(filePath, content.id, 0, hash, hash, true);
+                const fastTranscoding = new Transcoding(filePath, startSegment, true);
                 fastTranscoding.prepareDirectplay(output)
                 .then(hlsFile => {
                     resolve({
@@ -54,25 +56,26 @@ class HlsManager {
         });
     }
 
-    startTranscoding(content, quality, startSegment, groupHash, audioStreamIndex, audioTranscoding) {
+    startTranscoding(content, quality, startSegment, groupHash, audioStreamIndex, audioTranscoding, user) {
         return new Promise(resolve => {
             content.getFilePath()
             .then(filePath => {
                 const isDirectplay = quality == "DIRECTPLAY";
-                const hash = this.getUniqueTranscodingHash();
+                //const hash = this.getUniqueTranscodingHash();
                 const output = Transcoding.createTempDir();
-                let promises = [];
 
-                const fastTranscoding = new Transcoding(filePath, content.id, startSegment, hash, groupHash, true); // Fast transcoding
-                global.transcodings.push(fastTranscoding);
-                promises.push(fastTranscoding.start(quality, output, audioStreamIndex, audioTranscoding));
+                const fastTranscoding = new Transcoding(filePath, startSegment, true); // Fast transcoding
+                const transcodingGroup = new TranscodingGroup(user, content, groupHash, fastTranscoding);
+
                 // If we're using directplay, we don't need the slow transcoding
                 if (!isDirectplay) {
                     const slowTranscodingStartSegment = startSegment + (Transcoding.FAST_START_TIME / Transcoding.SEGMENT_DURATION)
-                    const slowTranscoding = new Transcoding(filePath, content.id, slowTranscodingStartSegment, hash, groupHash, false); // Slow transcoding
-                    global.transcodings.push(slowTranscoding);
-                    promises.push(slowTranscoding.start(quality, output, audioStreamIndex, audioTranscoding));
+                    const slowTranscoding = new Transcoding(filePath, slowTranscodingStartSegment, false); // Slow transcoding
+                    transcodingGroup.addSlowTranscoding(slowTranscoding);
                 }
+                global.transcodings.push(transcodingGroup);
+                const promises = transcodingGroup.start(quality, output, audioStreamIndex, audioTranscoding);
+
                 Promise.all(promises).then(() => {
                     resolve();
                 });
@@ -80,12 +83,12 @@ class HlsManager {
         });
     }
 
-    stopOtherVideoTranscodings(hash, quality) {
+    stopOtherVideoTranscodings(group, quality) {
         let i = global.transcodings.length;
         let anythingStopped = false;
         while (i--) {
-            if (global.transcodings[i].groupHash == hash &&
-                global.transcodings[i].quality !== quality) {
+            if (global.transcodings[i].group == group &&
+                global.transcodings[i].getQuality() !== quality) {
                     global.transcodings[i].stop();
                     global.transcodings.splice(i, 1);
                     anythingStopped = true;
@@ -94,20 +97,25 @@ class HlsManager {
         return anythingStopped;
     }
 
-    stopAllVideoTranscodings(hash) {
+    stopAllVideoTranscodings(group) {
         let i = global.transcodings.length;
+        let stopped = 0;
         while (i--) {
-            if (global.transcodings[i].groupHash == hash) {
+            if (global.transcodings[i].group == group) {
                     global.transcodings[i].stop();
                     global.transcodings.splice(i, 1);
+                    stopped++;
+                    if (stopped > 1) {
+                        logger.WARNING(`[HLS] Stopped ${stopped} transcoding groups, should only be 1`);
+                    }
             }
         }
     }
 
-    setLastRequestedTime(hash) {
+    setLastRequestedTime(group) {
         for (let i = 0; i < global.transcodings.length; i++) {
-            if (global.transcodings[i].groupHash === hash) {
-                global.transcodings[i].lastRequestedTime = Date.now();
+            if (global.transcodings[i].group === group) {
+                global.transcodings[i].updateLastRequestedTime(Date.now());
             }
         }
     }
@@ -118,22 +126,21 @@ class HlsManager {
         while (i--) {
             const timeoutDate = new Date(global.transcodings[i].lastRequestedTime + Transcoding.TIMEOUT_TIME);
             if (timeoutDate <= now) {
-                logger.DEBUG(`[HLS] Stopping old transcoding, group: ${global.transcodings[i].groupHash}`);
+                logger.DEBUG(`[HLS] Stopping old transcoding, group: ${global.transcodings[i].group}`);
                 global.transcodings[i].stop();
                 global.transcodings.splice(i, 1);
             }
         }
     }
 
-    getVideoTranscodingSegment(hash) {
-        // If we are directplaying, there will only be a fast transcoding and no slow transcoding
-        const transcoding = global.transcodings.find(transcoding => transcoding.groupHash === hash && (!transcoding.fastStart || transcoding.quality == "DIRECTPLAY"));
-        return transcoding.latestSegment;
+    getVideoTranscodingSegment(group) {
+        const transcoding = global.transcodings.find(transcoding => transcoding.group === group);
+        return transcoding.getLatestSegment();
     }
 
-    getVideoTranscodingOutputPath(hash) {
-        const transcoding = global.transcodings.find(transcoding => transcoding.groupHash === hash);
-        return transcoding.getOutput();
+    getVideoTranscodingOutputPath(group) {
+        const transcoding = global.transcodings.find(transcoding => transcoding.group === group);
+        return transcoding.getOutputFolder();
     }
 
     /**
@@ -142,24 +149,37 @@ class HlsManager {
      * @param {string} hash - The hash of the group of transcodings 
      * @returns {number} - The start segment of the transcoding OR -1 if no transcoding is active for the given hash
      */
-    getTranscodingStartSegment(hash) {
-        const transcoding = global.transcodings.find(transcoding => transcoding.groupHash === hash);
+    getTranscodingStartSegment(group) {
+        const transcoding = global.transcodings.find(transcoding => transcoding.group === group);
         if (transcoding == undefined) return -1;
-        return transcoding.startSegment;
+        return transcoding.getStartSegment();
     }
 
-    isTranscodingFinished(hash) {
-        const transcoding = global.transcodings.find(transcoding => transcoding.groupHash === hash);
+    isTranscodingFinished(group) {
+        const transcoding = global.transcodings.find(transcoding => transcoding.group === group);
         if (transcoding == undefined) return false;
-        return transcoding.finished;
+        return transcoding.isTranscodingFinished();
     }
 
-    isAnyVideoTranscodingActive(hash) {
-        return global.transcodings.some(transcoding => transcoding.groupHash === hash);
+    isAnyVideoTranscodingActive(group) {
+        return global.transcodings.some(transcoding => transcoding.group === group);
     }
 
-    isFastSeekingRunning(hash) {
-        return global.transcodings.some(transcoding => transcoding.groupHash === hash && transcoding.fastStart && !transcoding.finished);
+    isFastSeekingRunning(group) {
+        return global.transcodings.some(transcoding => transcoding.group === group && transcoding.isFastStartRunning());
+    }
+
+    updateProgress(group, progress) {
+        const transcoding = global.transcodings.find(transcoding => transcoding.group === group);
+        if (transcoding == undefined) return;
+        transcoding.updateProgress(progress);
+    }
+
+    /**
+     * Get all active transcodings
+     */
+    getActiveTranscodings() {
+        return global.transcodings;
     }
 }
 

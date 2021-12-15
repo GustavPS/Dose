@@ -1,0 +1,39 @@
+.directoryList {
+    overflow-y: scroll;
+    height: 400px;
+}
+
+.directoryItem {
+    cursor: pointer;
+}
+
+.openButton {
+    padding: 6px 20px;
+    background-color: white;
+    border: 0;
+    border-right: 1px solid gray;
+    transition: padding 0.1s;
+}
+
+.openButton:hover {
+    background-color: rgb(214, 214, 214);
+    padding: 6px 25px;
+}
+
+.typeDropdown {
+    padding: 5px;
+    background-color: white;
+    border: 0;
+}
+
+.clearIcon {
+    position: relative;
+    cursor: pointer;
+    display: inline;
+    margin-left: 5px;
+}
+
+.name {
+    width: 130px;
+    margin: 10px;
+}

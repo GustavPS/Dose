@@ -3,9 +3,9 @@ const pathLib = require('path');
 const SerieMetadata = require('../metadata/tvMetadata');
 const db = require('../db');
 const lock = require('../globalLock');
-const sockets = require('../../sockets');
+const sockets = require('../../sockets.js');
 const Logger = require('../logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 
 const MOVIE_FORMATS = [

@@ -8,7 +8,7 @@ const ytdl = require('ytdl-core');
 var ffmpeg = require('fluent-ffmpeg');
 const eol = require("eol")
 const Logger = require('../logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 
 

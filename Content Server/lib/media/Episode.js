@@ -1,8 +1,9 @@
 const db = require('../db');
 const Content = require('./Content');
 const Logger = require('../logger');
-const logger = new Logger().getInstance();
 const path = require('path');
+
+const logger = new Logger();
 
 class Episode extends Content {
     #episodeId;
@@ -16,6 +17,40 @@ class Episode extends Content {
         return this.#episodeId;
     }
 
+    /**
+     * Returns the presented name of the episode
+     */
+    getName() {
+        return new Promise((resolve, reject) => {
+            this.getInfoFromInternalEpisodeId().then(result => {
+                db.one('SELECT title FROM serie_metadata WHERE serie_id = $1', [result.serie_id]).then(show => {
+                    resolve(`${show.title} - S${result.season_number}E${result.episode}`);
+                }).catch(error => {
+                    logger.ERROR(`Error getting show name: ${error}`);
+                    reject();
+                });
+            })
+            .catch(() => {
+                reject();
+            })
+        });
+    }
+
+    getBackdrop() {
+        return new Promise((resolve, reject) => {
+            db.one(`SELECT serie_id FROM serie_episode WHERE id = $1`, [this.#episodeId]).then(result => {
+                db.one(`SELECT path FROM image
+                INNER JOIN serie_image
+                ON image.id = serie_image.image_id
+                WHERE serie_image.serie_id = $1 AND serie_image.active = true AND serie_image.type = 'BACKDROP'`, [result.serie_id]).then(result => {
+                    resolve(result.path);
+                }).catch(error => {
+                    logger.ERROR(`Error getting backdrop: ${error}`);
+                    reject();
+                });
+            });
+        });
+    }
 
     getFilePath() {
         return new Promise((resolve, reject) => {
@@ -28,10 +63,10 @@ class Episode extends Content {
 
             WHERE serie_episode.id = $1`, [this.#episodeId])
             .then(result => {
-                resolve(`${result.basepath}${result.subpath}`);
+                resolve(path.join(result.basepath, result.subpath));
             })
             .catch(error => {
-                console.log(error);
+                logger.ERROR(error);
                 reject()
             })
         });
@@ -93,6 +128,10 @@ class Episode extends Content {
                 });
             });
         });
+    }
+
+    getType() {
+        return 'show';
     }
 
     async getM3u8Path() {

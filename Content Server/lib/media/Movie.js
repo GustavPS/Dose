@@ -1,10 +1,11 @@
+const path = require('path');
 const db = require('../db');
 const Content = require('./Content');
 const Logger = require('../logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 const pgp = require('pg-promise')();
 
-const path = require('path');
+
 
 class Movie extends Content {
     #movieId;
@@ -22,6 +23,17 @@ class Movie extends Content {
 
     get id() {
         return this.#movieId;
+    }
+
+    getName() {
+        return new Promise((resolve, reject) => {
+            db.one(`SELECT title FROM movie_metadata WHERE movie_id = $1`, [this.#movieId]).then((result) => {
+                resolve(result.title);
+            }).catch(error => {
+                logger.ERROR(`Could not get movie name for movie id ${this.#movieId}`);
+                reject();
+            });
+        });
     }
 
     /** PRIVATE FUNCTIONS **/
@@ -259,7 +271,7 @@ class Movie extends Content {
                     INNER JOIN movie
                     ON movie.library = library.id AND movie.id = $1
                   `, [this.#movieId]).then((result) => {
-                    resolve(`${result.basepath}${result.subpath}`)
+                    resolve(path.join(result.basepath, result.subpath))
             }).catch(error => {
               reject();
             });
@@ -316,6 +328,25 @@ class Movie extends Content {
                 reject();
             });
         });
+    }
+
+    getBackdrop() {
+        return new Promise((resolve, reject) => {
+            db.one(
+                `SELECT path FROM image
+                INNER JOIN movie_image ON movie_image.image_id = image.id
+                WHERE movie_image.movie_id = $1 AND movie_image.type = 'BACKDROP' AND movie_image.active = true
+            `, [this.#movieId]).then(result => {
+                resolve(result.path);
+            }).catch(error => {
+                logger.ERROR(`Error getting backdrop: ${error}`);
+                reject();
+            });
+        });
+    }
+
+    getType() {
+        return 'movie';
     }
 
     async getM3u8Path() {

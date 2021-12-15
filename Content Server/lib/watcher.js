@@ -1,12 +1,12 @@
 const chokidar = require('chokidar');
-const db = require('./db');
+const db = require('./db.js');
 const path = require('path');
 const pathExists = require('path-exists');
 const MovieLibrary = require('./library/movieLibrary');
 const TvLibrary = require('./library/tvLibrary');
 const readline = require('readline');
 const Logger = require('./logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 
 class Watcher {
@@ -62,7 +62,9 @@ class Watcher {
             }
             index++;
         }
-        process.stdout.write("\n");
+        if (libLenght > 0) {
+            process.stdout.write("\n");
+        }
 
         const movies = await db.any("SELECT movie.path AS movie_path, movie.name AS movie_name, movie.id AS movie_id, library.path AS library_path, library.id AS library_id FROM movie, library WHERE movie.library = library.id");
         const movieLenght = movies.length;
@@ -73,14 +75,17 @@ class Watcher {
             if (movie.movie_name === null) {
                 movie.movie_name = "";
             }
-            let exist = await pathExists(movie.library_path + movie.movie_path);
+            let exist = await pathExists(path.join(movie.library_path, movie.movie_path));
             if (!exist) {
                 logger.INFO(`Can't find ${movie.movie_name} (${movie.library_path + movie.movie_path}), removing from the database.`);
                 await db.none('DELETE FROM movie WHERE id = $1', [movie.movie_id]);
             }
             index++;
         }
-        process.stdout.write("\n");
+
+        if (movieLenght > 0) {
+            process.stdout.write("\n");
+        }
 
         // Check if all the tv show paths are still present in the filesystem
         const shows = await db.any("SELECT serie.path AS serie_path, serie.name AS serie_name, serie.id AS serie_id, library.path AS library_path, library.id AS library_id FROM serie, library WHERE serie.library = library.id");
@@ -93,7 +98,7 @@ class Watcher {
                 show.serie_name = "";
             }
 
-            let exist = await pathExists(show.library_path + show.serie_path);
+            let exist = await pathExists(path.join(show.library_path, show.serie_path));
 
             if (!exist) {
                 logger.INFO(`Can't find ${show.serie_name} (${show.library_path + show.serie_path}), removing from the database.`);
@@ -101,7 +106,10 @@ class Watcher {
             }
             index++;
         }
-        process.stdout.write("\n");
+
+        if (showLength > 0) {
+            process.stdout.write("\n");
+        }
 
 
         const subtitles = await db.any("SELECT subtitle.id AS subtitle_id, subtitle.path AS subtitle_path, subtitle.movie_id AS movie_id, subtitle.library_id AS library_id, library.path AS library_path, library.name AS library_name FROM subtitle, library WHERE subtitle.library_id = library.id");
@@ -110,7 +118,7 @@ class Watcher {
         for (const subtitle of subtitles) {
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(`\x1b[36m > Checking Subtitle ${index}/${subLength}\x1b[0m`);
-            let exist = await pathExists(subtitle.library_path + subtitle.subtitle_path);
+            let exist = await pathExists(path.join(subtitle.library_path, subtitle.subtitle_path));
             if (!exist) {
                 logger.INFO(`Can't find ${subtitle.subtitle_path} in library ${subtitle.library_name}, removing from the databse (${subtitle.library_path + subtitle.subtitle_path})`);
                 await db.none('DELETE FROM subtitle WHERE id = $1', [subtitle.subtitle_id]);
@@ -118,20 +126,27 @@ class Watcher {
             index++;
 
         }
-        process.stdout.write("\n");
-        logger.INFO("Done syncing database!\n");
+
+        if (subLength > 0) {
+            process.stdout.write("\n");
+        }
+        logger.INFO("Done syncing database!");
     }
 
     /**
      * Get all the libraries that is saved in the database and save it in the libraries variable
      */
-    async fetchLibraries() {
+    async fetchLibraries(print=true) {
         const movieLibraries = await db.any("SELECT * FROM library WHERE type = 'MOVIES'");
         const tvLibraries = await db.any("SELECT * FROM library WHERE type = 'SERIES'");
-        logger.INFO('Movie libraries:')
-        console.table(movieLibraries);
-        logger.INFO('TV lirbaries:')
-        console.table(tvLibraries);
+        if (print && (movieLibraries.length > 0 || tvLibraries.length > 0)) {
+            logger.INFO('Movie libraries:');
+            console.table(movieLibraries);
+            logger.INFO('TV libraries:');
+            console.table(tvLibraries);
+        } else if (print) {
+            logger.INFO('No libraries found!');
+        }
 
         movieLibraries.forEach(library => {
             this.libraries.push(new MovieLibrary(library.name, library.path, library.id));
@@ -139,7 +154,15 @@ class Watcher {
         tvLibraries.forEach(library => {
             this.libraries.push(new TvLibrary(library.name, library.path, library.id));
         });
-        
+    }
+
+    /**
+     * Add a new library to the watcher instance
+     * 
+     * @param {Library} library - The library to add (MovieLibrary or TvLibrary) 
+     */
+    addLibrary(library) {
+        this.libraries.push(library);
     }
 
 
@@ -193,7 +216,9 @@ class Watcher {
      */
     startWatcher() {
         if (!this.isInitialized()) throw ('Class is not initialized.');
-        logger.DEBUG("Starting file watcher..");
+        if (this.libraries.length > 0) {
+            logger.DEBUG("Starting file watcher..");
+        }
         this.libraries.forEach(library => {
             this.watch(library);
         });

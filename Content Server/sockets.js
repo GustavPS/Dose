@@ -1,8 +1,7 @@
-var socketIO = require('socket.io');
+const socketIO = require('socket.io');
 var io = null;
 
 module.exports = {
-
     connect: function(server) {
         io = socketIO(server, { cors: { origin: '*' } });
     },

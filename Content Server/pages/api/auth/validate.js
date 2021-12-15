@@ -1,13 +1,18 @@
 const fetch = require('node-fetch');
 const jwt = require('jsonwebtoken');
-
+const path = require('path');
+const fs = require('fs');
 const cors = require('../../../lib/cors');
 const db = require('../.././../lib/db');
+
+// TODO: Investigate if it's OK to use sync here. I think this only runs once.
+const configPath = path.join(process.env.TEMP_DIRECTORY, 'config.json');
+const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
 export default async (req, res) => {
     return new Promise(async (resolve) => {
     res = cors(res);
-        await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/validate`, {
+        await fetch(`${config.mainServer}/api/auth/validate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

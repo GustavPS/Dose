@@ -1,7 +1,9 @@
+import HlsManager from '../../../../../lib/hls/HlsManager';
+
 const db = require('../../../../../lib/db');
 const cors = require('../../../../../lib/cors');
 const Logger = require('../../../../../lib/logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 const ORDERBY = [
   'id',
   'added_date',
@@ -15,10 +17,12 @@ export default (req, res) => {
     return new Promise((resolve) => {
         res.setHeader('Access-Control-Allow-Origin', "*");
         res.setHeader('Access-Control-Allow-Headers', "*");
+        const hlsManager = new HlsManager();
     
         // TODO: Error handling
-        let contentId = req.query.id;
-        // TODO: FELHANTERING
+        const contentId = req.query.id;
+        const group = req.query.group;
+
         let time = Math.floor(parseInt(req.query.time));
         let videoDuration = Math.floor(parseInt(req.query.videoDuration));
         let token = req.query.token;
@@ -29,6 +33,12 @@ export default (req, res) => {
             res.status(403).end();
             resolve();
             return;
+        }
+
+        // Protect against old streaming clients
+        if (group != undefined) {
+            const progress = time / videoDuration * 100;
+            hlsManager.updateProgress(group, progress);
         }
     
         let user_id = decoded.user_id;

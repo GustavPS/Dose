@@ -1,0 +1,14 @@
+body {
+    min-height: 100%;
+    height: 100%;
+    background-color: #020608 !important;
+}
+
+html {
+    min-height: 100%;
+    height: 100%;
+}
+
+#__next {
+    height: 100%;
+}

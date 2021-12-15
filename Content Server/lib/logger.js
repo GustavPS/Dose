@@ -23,7 +23,7 @@ const COLOR = {
 
 class Logger {
     constructor() {
-        this.logLevel = LEVEL.ERROR;
+        this.logLevel = LEVEL.DEBUG;
         this.createWriteStreams();
     }
 
@@ -46,7 +46,9 @@ class Logger {
 
     getTime() {
         const d = new Date();
-        return `${d.getHours()}:${d.getMinutes()}`;
+        const minutes = ('0'+d.getMinutes()).slice(-2);
+        const hours = ('0'+d.getHours()).slice(-2);
+        return `${hours}:${minutes}`;
     }
 
     writeToFile(message, logLevel) {
@@ -109,4 +111,4 @@ class Singleton {
     }
 }
 
-module.exports = Singleton;
+module.exports = Logger;

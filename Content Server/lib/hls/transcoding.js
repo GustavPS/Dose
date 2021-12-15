@@ -2,31 +2,29 @@ const ffmpeg = require('fluent-ffmpeg');
 const path = require('path');
 const fs = require('fs');
 const Logger = require('../logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 class Transcoding {
-    static TEMP_FOLDER = process.env.TEMP_DIRECTORY;
+    static TEMP_FOLDER = path.join(process.env.TEMP_DIRECTORY, 'temp');
     static SEGMENT_DURATION = 4;
     static SIMULTANEOUS_DIRECTPLAY_PREPARE_LIMIT = 1;
     static TIMEOUT_TIME = 20000; // 20 seconds in milliseconds
     static FAST_START_SEGMENTS = 50;
     static FAST_START_TIME = Transcoding.SEGMENT_DURATION * Transcoding.FAST_START_SEGMENTS;
 
-    constructor(filePath, contentId, startSegment, hash, groupHash=hash, fastStart=false) {
+    constructor(filePath, startSegment, fastStart=false) {
         this.CRF_SETTING = 22;
         this.filePath = filePath;
         this.startSegment = startSegment;
         this.latestSegment = startSegment;
         this.output = "";
         this.ffmpegProc;
-        this.type;
         
         this.fastStart = fastStart;
-        this.contentId = contentId;
-        this.hash = hash;
-        this.groupHash = groupHash;
+        //this.hash = hash;
+        //this.groupHash = groupHash;
         this.finished = false;
-        this.lastRequestedTime = Date.now();
+        //this.lastRequestedTime = Date.now();
     }
 
     getOutput() {
@@ -95,9 +93,11 @@ class Transcoding {
         this.type = type;
     }
 
+    /*
     generateHash() {
         return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + '/';
     }
+    */
 
     timestampToSeconds(timestamp) {
         let time = timestamp.split(':');
@@ -256,7 +256,6 @@ class Transcoding {
     }
 
     removeTempFolder() {
-        logger.DEBUG("[HLS] Removing temp folder");
         fs.rm(this.output, {recursive: true, force: true}, (err) => {
             if (err) {
                 logger.ERROR(`Error removing transcoding temp output`);

@@ -3,7 +3,7 @@ const LANGUAGES_LIST = require('../../../../lib/languages');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
 const Logger = require('../../../../lib/logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 const ORDERBY = [
   'id',
   'added_date',
