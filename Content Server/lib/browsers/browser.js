@@ -1,5 +1,5 @@
 const Logger = require('../logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 
 // Abstract class

@@ -5,10 +5,10 @@ const pathLib = require('path');
 var ffmpeg = require('fluent-ffmpeg');
 var AsyncLock = require('async-lock');
 const lock = require('../globalLock');
-const sockets = require('../../sockets');
+const sockets = require('../../sockets.js');
 const Logger = require('../logger');
 const result = require('node-async-locks/lib/async-wrapper');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 class MovieLibrary extends Library {
 

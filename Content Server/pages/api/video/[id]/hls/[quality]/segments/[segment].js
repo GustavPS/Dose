@@ -6,7 +6,7 @@
  */
 
 const Logger = require('../../../../../../../lib/logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 const pathLib = require('path');
 const db = require('../../../../../../../lib/db');
 const fs = require('fs');
@@ -16,6 +16,7 @@ const Episode = require('../../../../../../../lib/media/Episode');
 const HlsManager = require('../../../../../../../lib/hls/HlsManager');
 const Transcoding = require('../../../../../../../lib/hls/transcoding');
 const getBrowser = require('../../../../../../../lib/browsers/util');
+const validateUser = require('../../../../../../../lib/validateUser');
 const useUserAgent = require('next-useragent');
 
 
@@ -74,7 +75,18 @@ const getSegment = async (req, res) => {
     // req.params = the GET parameters from the folder structure
     const { id, quality, segment } = req.params;
     // req.query = the GET parameters from the URL (after the ? in the URL)
-    const { group, audioStream, type } = req.query;
+    const { group, audioStream, type, token } = req.query;
+
+    let user = validateUser(token, process.env.SECRET, 10800); // 3 hours
+    if (!user) {
+        res.status(403).end();
+        return;
+    }
+    // Remove exp from the user object
+    user = {
+        username: user.username,
+        id: user.user_id,
+    }
     let resolved = false;
     hlsManager.setLastRequestedTime(group);
 
@@ -101,12 +113,12 @@ const getSegment = async (req, res) => {
 
             if (!hlsManager.isAnyVideoTranscodingActive(group)) {
                 const audioSupported = browser.audioCodecSupported(codecInfo.codec);
-                promises.push(hlsManager.startTranscoding(content, quality, startSegment, group, audioStream, audioSupported));
+                promises.push(hlsManager.startTranscoding(content, quality, startSegment, group, audioStream, audioSupported, user));
             } else {
                 if (hlsManager.stopOtherVideoTranscodings(group, quality)) { // Stop other transcodings (other qualities) if they are running
                     logger.DEBUG(`[HLS] Changing quality to ${quality} for group ${group}`)
                     const audioSupported = browser.audioCodecSupported(codecInfo.codec);
-                    promises.push(hlsManager.startTranscoding(content, quality, startSegment, group, audioStream, audioSupported));
+                    promises.push(hlsManager.startTranscoding(content, quality, startSegment, group, audioStream, audioSupported, user));
                 } else {
                     const path = pathLib.join(hlsManager.getVideoTranscodingOutputPath(group), segmentText);
                     const segmentExists = await checkIfFileExists(path);
@@ -123,7 +135,7 @@ const getSegment = async (req, res) => {
                         logger.DEBUG(`[HLS] Seeking in the past for a segment that doesn't exist (current segment: ${latestSegment}, requested segment: ${segment}). Restarting at ${startSegment}`)
                         restartTranscoding = true;
                     }
-                    else if ((segment + (Transcoding.FAST_START_SEGMENTS / 4)) > latestSegment && !hlsManager.isFastSeekingRunning(group)) {
+                    else if ((segment + (Transcoding.FAST_START_SEGMENTS / 4)) > latestSegment && !hlsManager.isFastSeekingRunning(group) && !hlsManager.isTranscodingFinished(group)) {
                         // If we are seeking inside the fast seeking range and fast seek is not running, restart transcoding
                         logger.DEBUG(`[HLS] Seeking inside the fast seeking range (current segment: ${latestSegment}, requested segment: ${segment}). Restarting at ${startSegment}`);
                         restartTranscoding = true;
@@ -132,7 +144,7 @@ const getSegment = async (req, res) => {
                     if (restartTranscoding) {
                         hlsManager.stopAllVideoTranscodings(group);
                         const audioSupported = browser.audioCodecSupported(codecInfo.codec);
-                        promises.push(hlsManager.startTranscoding(content, quality, startSegment, group, audioStream, audioSupported));
+                        promises.push(hlsManager.startTranscoding(content, quality, startSegment, group, audioStream, audioSupported, user));
                     }
                 }
             }

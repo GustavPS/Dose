@@ -1,7 +1,5 @@
 
 import HlsManager from '../../../../../lib/hls/HlsManager';
-const Logger = require('../../../../../lib/logger');
-const logger = new Logger().getInstance();
 
 export default async (req, res) => {
     const { id, group } = req.query;

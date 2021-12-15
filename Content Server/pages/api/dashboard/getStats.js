@@ -1,14 +1,14 @@
-const db = require('../../lib/db');
-const cors = require('../../lib/cors');
+const db = require('../../../lib/db');
+const cors = require('../../../lib/cors');
+const validateUser = require('../../../lib/validateUser');
 
 export default (req, res) => {
     return new Promise(resolve => {
         res = cors(res);
 
-        let token = req.query.token;
-        if (token != "THISSTRINGISHARDTOBREAK") {
+        const token = req.query.token;
+        if (!validateUser(token, process.env.DASHBOARD_SECRET)) {
             res.status(403).end();
-            resolve();
             return;
         }
 

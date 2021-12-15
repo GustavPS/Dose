@@ -3,13 +3,12 @@ import HlsManager from "../../../../../lib/hls/HlsManager";
 import getBrowser from "../../../../../lib/browsers/util";
 import { useUserAgent } from 'next-useragent'
 import Episode from "../../../../../lib/media/Episode";
-const Logger = require('../../../../../lib/logger');
-const logger = new Logger().getInstance();
-
-const LANGUAGES_LIST = require('../../../../../lib/languages');
 
 const db = require('../../../../../lib/db');
-
+const validateUser = require('../../../../../lib/validateUser');
+const Logger = require('../../../../../lib/logger');
+const logger = new Logger();
+const LANGUAGES_LIST = require('../../../../../lib/languages');
 const ffmpeg = require('fluent-ffmpeg');
 
 const getMetadata = async(file) => {
@@ -56,35 +55,35 @@ const getPixels = (quality) => {
  * @param {*} isIos - If the user is using an iOS device
  * @returns 
  */
-const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, directplay, type, isIos, hasSubtitles) => {
+const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, directplay, type, isIos, hasSubtitles, token) => {
     let m3u8 = "";
     let bw = 4000;
     const subtitleString = hasSubtitles ? ',SUBTITLES="subs"' : '';
     if (directplay) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=4500,AVERAGE-BANDWIDTH=4500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",FRAME-RATE=${fps},NAME="Directplay"${subtitleString}\n`;
-        m3u8 += `/api/video/${id}/hls/DIRECTPLAY?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
+        m3u8 += `/api/video/${id}/hls/DIRECTPLAY?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
         if (isIos) {
             return m3u8;
         }
     }
     if (resolution["8k"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=6000,AVERAGE-BANDWIDTH=6000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('8k')},FRAME-RATE=${fps},NAME="8K"${subtitleString}\n`;
-        m3u8 += `/api/video/${id}/hls/8K?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
+        m3u8 += `/api/video/${id}/hls/8K?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
     }
     bw -= 500;
     if (resolution["4k"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=5500,AVERAGE-BANDWIDTH=5500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('4k')},FRAME-RATE=${fps},NAME="4K"${subtitleString}\n`;
-        m3u8 += `/api/video/${id}/hls/4K?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
+        m3u8 += `/api/video/${id}/hls/4K?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
     }
     bw -= 500;
     if (resolution["1440p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=5000,AVERAGE-BANDWIDTH=5000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('1440p')},FRAME-RATE=${fps},NAME="1440P"${subtitleString}\n`;
-        m3u8 += `/api/video/${id}/hls/1440P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
+        m3u8 += `/api/video/${id}/hls/1440P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
     }
     bw -= 500;
     if (resolution["1080p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=1000,AVERAGE-BANDWIDTH=1000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('1080p')},FRAME-RATE=${fps},NAME="1080P"${subtitleString}\n`;
-        m3u8 += `/api/video/${id}/hls/1080P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
+        m3u8 += `/api/video/${id}/hls/1080P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
         if (isIos) {
             return m3u8;
         }
@@ -92,7 +91,7 @@ const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, direc
     bw -= 500;
     if (resolution["720p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=800,AVERAGE-BANDWIDTH=800,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('720p')},FRAME-RATE=${fps},NAME="720P"${subtitleString}\n`;
-        m3u8 += `/api/video/${id}/hls/720P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
+        m3u8 += `/api/video/${id}/hls/720P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
         if (isIos) {
             return m3u8;
         }
@@ -100,7 +99,7 @@ const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, direc
     bw -= 500;
     if (resolution["480p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=600,AVERAGE-BANDWIDTH=600,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('480p')},FRAME-RATE=${fps},NAME="480P"${subtitleString}\n`;
-        m3u8 += `/api/video/${id}/hls/480P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
+        m3u8 += `/api/video/${id}/hls/480P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
         if (isIos) {
             return m3u8;
         }
@@ -108,7 +107,7 @@ const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, direc
     bw -= 500;
     if (resolution["360p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=500,AVERAGE-BANDWIDTH=500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('360p')},FRAME-RATE=${fps},NAME="360P"${subtitleString}\n`;
-        m3u8 += `/api/video/${id}/hls/360P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
+        m3u8 += `/api/video/${id}/hls/360P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
         if (isIos) {
             return m3u8;
         }
@@ -116,7 +115,7 @@ const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, direc
     bw -= 500;
     if (resolution["240p"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=300,AVERAGE-BANDWIDTH=300,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('240p')},FRAME-RATE=${fps},NAME="240P"${subtitleString}\n`;
-        m3u8 += `/api/video/${id}/hls/240P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}\n`
+        m3u8 += `/api/video/${id}/hls/240P?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
         if (isIos) {
             return m3u8;
         }
@@ -124,18 +123,25 @@ const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, direc
     return m3u8;
 }
 
-const getSubtitleStreams = (id, subtitles, type) => {
+const getSubtitleStreams = (id, subtitles, type, token) => {
     let m3u8 = "";
     let autoselect = "NO";
     for (let subtitle of subtitles) {
-        m3u8 += `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${subtitle.language}",NAME="${subtitle.language}",FORCED=NO,AUTOSELECT=${autoselect},DEFAULT=${autoselect},URI="/api/video/${id}/hls/subtitles/${subtitle.id}?type=${type}"\n`;
+        m3u8 += `#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="${subtitle.language}",NAME="${subtitle.language}",FORCED=NO,AUTOSELECT=${autoselect},DEFAULT=${autoselect},URI="/api/video/${id}/hls/subtitles/${subtitle.id}?type=${type}&token=${token}"\n`;
         autoselect = "NO";
     }
     return m3u8;
 }
 
 export default async (req, res) => {
-    const { id, audioStream, type } = req.query;
+    const { id, audioStream, type, token } = req.query;
+    
+    if (!validateUser(token)) {
+        res.status(403).end();
+        return;
+    }
+
+
     const content = type == "movie" ? new Movie(id) : new Episode(id);
     //const movie = new Movie(id);
     const userAgent = useUserAgent(req.headers['user-agent']);
@@ -176,9 +182,9 @@ export default async (req, res) => {
 #EXT-X-INDEPENDENT-SEGMENTS
 `;
     if (subtitles.length > 0) {
-        m3u8 += getSubtitleStreams(id, subtitles, type);
+        m3u8 += getSubtitleStreams(id, subtitles, type, token);
     }
 
-    m3u8 += getM3u8Streams(resolutions, fps, id, duration, groupHash, audioStream, directPlay, type, isIos, subtitles.length > 0);
+    m3u8 += getM3u8Streams(resolutions, fps, id, duration, groupHash, audioStream, directPlay, type, isIos, subtitles.length > 0, token);
     res.status(200).send(m3u8);
 }

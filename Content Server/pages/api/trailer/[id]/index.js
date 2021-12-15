@@ -2,8 +2,9 @@ const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
 const fs = require('fs');
+const path = require('path');
 const Logger = require('../../../../lib/logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 export default (req, res) => {
     return new Promise(async (resolve, reject) => {
@@ -75,7 +76,7 @@ function getMovieTrailerPath(movieID) {
               INNER JOIN movie
               ON movie.library = library.id AND movie.id = $1
             `, [movieID]).then((result) => {
-              resolve(`${result.basepath}${result.subpath}`)
+              resolve(path.join(result.basepath, result.subpath));
       }).catch(error => {
         reject(false);
       });

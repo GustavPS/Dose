@@ -3,14 +3,21 @@ import Transcoding from '../../../../../../lib/hls/transcoding';
 import Movie from '../../../../../../lib/media/Movie';
 import fs from 'fs';
 import Episode from '../../../../../../lib/media/Episode';
+const validateUser = require('../../../../../../lib/validateUser');
 const Logger = require('../../../../../../lib/logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 const segmentDur = Transcoding.SEGMENT_DURATION; //  Controls the duration (in seconds) that the file will be chopped into.
 
 export default async (req, res) => {
     return new Promise(async (resolve) => {
-        const { id, quality, duration, group, audioStream, type } = req.query;
+        const { id, quality, duration, group, audioStream, type, token } = req.query;
+
+        if (!validateUser(token, process.env.SECRET, 10800)) {
+            res.status(403).end();
+            resolve();
+            return;
+        }
 
         res.set({
             "Content-Disposition": "attachment; filename=\"m3u8.m3u8\"",
@@ -35,7 +42,7 @@ export default async (req, res) => {
                         return;
                     }
                     const reg = /result(\d+).ts/g;
-                    const replace = `/api/video/${id}/hls/${quality}/segments/$1.ts?segments=${splits}&group=${group}&audioStream=${audioStream}&type=${type}`
+                    const replace = `/api/video/${id}/hls/${quality}/segments/$1.ts?segments=${splits}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}`;
                     const result = data.replace(reg, replace);
                     res.send(result);
                     resolve();
@@ -57,7 +64,7 @@ export default async (req, res) => {
     
             for (let i = 0; i < splits; i++) {
                 //out += "#EXT-X-DISCONTINUITY\n"
-                out += `#EXTINF:${segmentDur}, nodesc\n/api/video/${id}/hls/${quality}/segments/${i}.ts?segments=${splits}&group=${group}&audioStream=${audioStream}&type=${type}\n`;
+                out += `#EXTINF:${segmentDur}, nodesc\n/api/video/${id}/hls/${quality}/segments/${i}.ts?segments=${splits}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`;
             }
             out += '#EXT-X-ENDLIST\n';
             res.send(out);
