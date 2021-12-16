@@ -48,7 +48,8 @@ MyApp.getInitialProps = async (appContext) => {
         }
 
         // If access token has expired or is about to expire
-        const req = await fetch(`${host}/api/dashboard/auth/refresh`, {
+        // TODO: Make it possible to use other port
+        const req = await fetch(`http://localhost:3001/api/dashboard/auth/refresh`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

@@ -15,11 +15,7 @@ export default class Register extends Component {
             password: '',
             statusMessage: ''
         }
-
-        console.log(props)
-
         this.login = this.login.bind(this);
-        console.log("lmao")
     }
 
     login(e) {
