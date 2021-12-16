@@ -32,15 +32,14 @@ export default async function handle(req, res) {
                         }
 
                         const expiresIn = parseInt(process.env.ACCESS_TOKEN_VALID_TIME);
-                        let newToken = jwt.sign(
+                        const newToken = jwt.sign(
                             {
                                 userId: user.userId,
-                                email: user.email,
                                 username: user.username
                             },
                             process.env.DASHBOARD_SECRET,
                             {
-                                expiresIn: expiresIn, // 1h
+                                expiresIn: expiresIn,
                             },
                         );
 
