@@ -12,11 +12,14 @@ export default async function handle(req, res) {
         let refreshToken = req.body.refreshToken;
         let user;
 
+        let encryptedRefreshToken = hash.getHashWithoutSalt(refreshToken);
+        let encryptedAccessToken  = hash.getHashWithoutSalt(token);
+
         hash.decodeJWT(token, true, process.env.DASHBOARD_SECRET)
             .then(user => {
-                db.one('SELECT * FROM admin_access_token WHERE admin_id = $1 AND access_token = $2 AND refresh_token = $3', [user.userId, encryptedToken, encryptedRefreshToken]).then(result => {
+                db.one('SELECT * FROM admin_access_token WHERE admin_id = $1 AND access_token = $2 AND refresh_token = $3', [user.userId, encryptedAccessToken, encryptedRefreshToken]).then(result => {
 
-                    db.none('DELETE FROM admin_access_token WHERE admin_id = $1 AND access_token = $2 AND refresh_token = $3', [user.userId, encryptedToken, encryptedRefreshToken]).then(result => {
+                    db.none('DELETE FROM admin_access_token WHERE admin_id = $1 AND access_token = $2 AND refresh_token = $3', [user.userId, encryptedAccessToken, encryptedRefreshToken]).then(result => {
 
                         // Check if refresh token has expired
                         const refreshTokenValidTo = user.exp * 1000;
@@ -46,10 +49,10 @@ export default async function handle(req, res) {
                         const validTo = Math.round((Date.now() / 1000) + expiresIn);
 
                         refreshToken = hash.generateRefreshToken();
-                        encryptedToken = hash.getHashWithoutSalt(newToken);
+                        encryptedAccessToken = hash.getHashWithoutSalt(newToken);
                         encryptedRefreshToken = hash.getHashWithoutSalt(refreshToken);
 
-                        db.none('INSERT into admin_access_token (admin_id, access_token, refresh_token) VALUES($1, $2, $3)', [user.userId, encryptedToken, encryptedRefreshToken]).then(() => {
+                        db.none('INSERT into admin_access_token (admin_id, access_token, refresh_token) VALUES($1, $2, $3)', [user.userId, encryptedAccessToken, encryptedRefreshToken]).then(() => {
                             res.status(200).json({
                                 status: 'success',
                                 message: 'success',
@@ -82,9 +85,5 @@ export default async function handle(req, res) {
                     return;
                 }
             });
-        let encryptedToken = hash.getHashWithoutSalt(token);
-        let encryptedRefreshToken = hash.getHashWithoutSalt(refreshToken);
-
-
     });
 }; 
