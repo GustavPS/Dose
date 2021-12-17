@@ -43,8 +43,11 @@ export default class Register extends Component {
                     </a>
                     {/* nav */}
                     <nav>
-                        <Link href="/">
+                        <Link href="/dashboard">
                             <a className="block py-2.5 px-4 rounded hover:bg-blue-700 transition duration-200 hover:text-white">Home</a>
+                        </Link>
+                        <Link href="/dashboard/admins">
+                            <a className="block py-2.5 px-4 rounded hover:bg-blue-700 transition duration-200 hover:text-white">Admin accounts</a>
                         </Link>
                         <Link href="/">
                             <a className="block py-2.5 px-4 rounded hover:bg-blue-700 transition duration-200 hover:text-white">Transcoding</a>

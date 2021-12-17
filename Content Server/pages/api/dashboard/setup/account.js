@@ -6,8 +6,19 @@ const CommonEvent = require('../../../../lib/events/CommonEvent');
 
 const logger = new Logger();
 
-export default (req, res) => {
+export default async (req, res) => {
     const { username, password, mainServerUrl } = req.body;
+    const config = new Config();
+    const setupDone = await config.isSetupDone();
+
+    if (setupDone) {
+        res.status(400).json({
+            success: false,
+            error: 'Setup already done'
+        });
+        return;
+    }
+
     return new Promise(resolve => {
         console.log(mainServerUrl);
         fetch(`${mainServerUrl}/api/ping`).then(result => {
@@ -15,7 +26,6 @@ export default (req, res) => {
             const hashed = hash.getHash(password, salt);
             db.none('INSERT INTO admin (username, password, salt) VALUES ($1, $2, $3)', [username, hashed, salt])
                 .then(() => {
-                    const config = new Config();
                     config.getConfig()
                         .then(info => {
                             info.setup.admin = true;
