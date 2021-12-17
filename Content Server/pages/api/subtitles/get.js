@@ -11,7 +11,7 @@ const validateUser = require('../../../lib/validateUser');
 var ffmpeg = require('fluent-ffmpeg');
 var crypto = require("crypto");
 const Logger = require('../../../lib/logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 
 
 export default (req, res) => {

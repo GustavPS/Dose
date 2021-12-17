@@ -3,7 +3,7 @@ const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
 const getBrowser = require('../../../../lib/browsers/util');
 const Logger = require('../../../../lib/logger');
-const logger = new Logger().getInstance();
+const logger = new Logger();
 import { useUserAgent } from 'next-useragent'
 
 export default async(req, res) => {
