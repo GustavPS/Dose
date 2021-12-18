@@ -1,11 +1,18 @@
 const db = require('../../../../lib/db');
 const hash = require('../../../../lib/hash');
+const validateUser = require('../../../../lib/validateUser');
 const Logger = require('../../../../lib/logger');
 const logger = new Logger();
 
 export default (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
+    const { username, password, token } = req.body;
+    if (!validateUser(token, process.env.DASHBOARD_SECRET)) {
+        res.status(403).json({
+            success: false,
+            error: 'Invalid token'
+        });
+        return;
+    } else if (!username || !password) {
         res.status(400).json({
             success: false,
             error: 'Missing username or password'
