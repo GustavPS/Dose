@@ -38,14 +38,15 @@ export default class Register extends Component {
 
     createAdmin() {
         validateDashboardAccess().then(token => {
-            fetch(`${this.host}/api/dashboard/admin/create?token=${token}`, {
+            fetch(`${this.host}/api/dashboard/admin/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     username: this.state.username,
-                    password: this.state.password
+                    password: this.state.password,
+                    token: token
                 })
             }).then(res => res.json()).then(res => {
                 if (res.success) {
