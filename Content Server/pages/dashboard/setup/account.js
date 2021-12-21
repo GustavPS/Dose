@@ -17,7 +17,9 @@ export default class Register extends Component {
             repeatedPassword: '',
             username: '',
             mainServerUrl: '',
-            statusMessage: ''
+            statusMessage: '',
+            contentServerName: '',
+            contentServerIp: this.host
         }
         this.createAdminAccount = this.createAdminAccount.bind(this);
     }
@@ -70,6 +72,8 @@ export default class Register extends Component {
         e.preventDefault();
         if (this.state.password !== this.state.repeatedPassword) {
             this.setState({statusMessage: "Passwords don't match"});
+        } else if (this.state.contentServerName === '') {
+            this.setState({statusMessage: "You have to provide a name to the server"});
         } else {
             this.setState({statusMessage: ""});
             fetch(`${this.host}/api/dashboard/setup/account`, {
@@ -80,7 +84,9 @@ export default class Register extends Component {
                 body: JSON.stringify({
                     username: this.state.username,
                     password: this.state.password,
-                    mainServerUrl: this.state.mainServerUrl
+                    mainServerUrl: this.state.mainServerUrl,
+                    contentServerName: this.state.contentServerName,
+                    contentServerIp: this.state.contentServerIp
                 })
             })
             .then((r) => r.json())
@@ -131,6 +137,18 @@ export default class Register extends Component {
                             <Form.Label>Url/IP</Form.Label>
                             <Form.Control type="text" placeholder="127.0.0.1:3001" onChange={(e) => this.setState({ mainServerUrl: e.target.value })} />
                         </Form.Group>
+                        <br/>
+
+                        <h2 className={Styles.header}>Content Server</h2>
+                        <Form.Group controlId="formBasicName">
+                            <Form.Label>Name</Form.Label>
+                            <Form.Control type="text" placeholder="Content server name" onChange={(e) => this.setState({ contentServerName: e.target.value })} />
+                        </Form.Group>
+                        <Form.Group controlId="formBasicName">
+                            <Form.Label>Content server IP</Form.Label>
+                            <Form.Control type="text" value={this.host} onChange={(e) => this.setState({ contentServerIp: e.target.value })} />
+                        </Form.Group>
+
                         <br/>
                         <Button variant="primary" onClick={this.createAdminAccount}>
                             Submit

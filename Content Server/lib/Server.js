@@ -170,6 +170,7 @@ class Server {
         this.expressApp.all('/api/dashboard/libraries/*', (req, res) => this.nextHandler(req, res));
         this.expressApp.all('/dashboard/setup/*', (req, res) => this.nextHandler(req, res));
         this.expressApp.all('/_next/*', (req, res) => this.nextHandler(req, res));
+        this.expressApp.all('/api/requests/*', (req, res) => this.nextHandler(req, res));
         this.expressApp.all('/', (req, res) => res.redirect('/dashboard/setup/database'));
         this.expressApp.all('/dashboard', (req, res) => res.redirect('/dashboard/setup/database'));
     }
