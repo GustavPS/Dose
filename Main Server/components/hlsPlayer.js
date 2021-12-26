@@ -213,7 +213,7 @@ export default class HlsPlayer extends Component {
      */
     getGroupIdFromManifest(data) {
         if (data.levels.length > 0 && data.levels[0].url.length > 0) {
-            const regex = /group=(.+)&/i;
+            const regex = /group=([^&]+)/i;
             try {
                 return data.levels[0].url[0].match(regex)[1];
             } catch (e) {
