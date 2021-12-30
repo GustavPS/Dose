@@ -245,6 +245,10 @@ export default function Home(props) {
         });
     }
 
+    const goToShowPage = () => {
+        router.push(`/server/${server.server_id}/shows/video/${id}`);
+    };
+
     return (
         <>
             <Head>
@@ -325,6 +329,12 @@ export default function Home(props) {
                                             <p id="markAsWatchedText" style={{ marginTop: "5px", fontSize: '14px' }}>Markera som sedd</p>
                                         </div>
                                     }
+
+                                    <div className={Styles.actionButton} style={{marginLeft: "15px"}}>
+                                        <div id="goToShow" style={{ backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/television.svg')` }} className={Styles.playButton} onClick={goToShowPage} ></div>
+                                        <p id="markAsWatchedText" style={{ marginTop: "5px", fontSize: '14px' }}>Gå till serien</p>
+
+                                    </div>
                                 </div>
                             </div>
                         </div>
