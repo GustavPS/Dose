@@ -29,7 +29,8 @@ export default async (req, res) => {
         '-f segment',
         '-segment_time 14400',
         '-segment_format webvtt',
-        '-scodec webvtt'
+        '-scodec webvtt',
+        '-muxdelay 0'
     ];
 
     return new Promise(async (resolve) => {
