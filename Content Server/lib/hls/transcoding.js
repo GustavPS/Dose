@@ -147,6 +147,7 @@ class Transcoding {
             '-ac 2', // Set two audio channels. Fixes audio issues
             '-b:v 1024k',
             '-b:a 192k',
+            '-muxdelay 0'
         ];
     }
 
