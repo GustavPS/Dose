@@ -2,9 +2,11 @@ const Browser = require('./browser');
 
 class AndroidTV extends Browser {
     constructor(version) {
-        let supportedVideoCodecs = ["h263", "h264", "avc", "mpeg", "mpeg-4", "mpeg-4 sp"];
+        //let supportedVideoCodecs = ["h263", "h264", "avc", "mpeg", "mpeg-4", "mpeg-4 sp"];
+        let supportedVideoCodecs = [];
         let supportedAudioCodecs = ["aac", "amr", "mp3", "midi", "pcm", "wave", "vorbis"];
 
+        /*
         // Video codecs
         if (version >= 2.3) {
             supportedVideoCodecs.push("vp8")
@@ -29,6 +31,8 @@ class AndroidTV extends Browser {
         if (version >= 9) {
             supportedAudioCodecs.push("xhe-aac");
         }
+
+        */
 
         super(version, supportedVideoCodecs, supportedAudioCodecs, "AndroidTV");
     }
