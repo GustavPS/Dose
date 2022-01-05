@@ -72,13 +72,9 @@ export default (req, res) => {
                         
                         WHERE user_id = $2
                     `, [serie.id, user.user_id]);
-                    console.log(user.user_id);
-                    console.log(serie.id);
-                    console.log(episodeProgress)
                     result[i].nextEpisodeForUser = nextEpisode.length > 0 ? nextEpisode[0] : null;
                     result[i].episodeProgress = episodeProgress.length > 0 ? episodeProgress[0] : null;
                 }
-
 
                 let response = {
                     result: result,

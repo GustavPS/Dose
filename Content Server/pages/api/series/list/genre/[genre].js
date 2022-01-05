@@ -3,31 +3,33 @@ const cors = require('../../../../../lib/cors');
 const validateUser = require('../../../../../lib/validateUser');
 
 const ORDERBY = [
-  'id',
-  'added_date',
-  'release_date',
-  'popularity'
+    'id',
+    'added_date',
+    'release_date',
+    'popularity'
 ];
 
 export default (req, res) => {
-  return new Promise(resolve => {
-      res = cors(res);
-      let orderBy = req.query.orderby ? req.query.orderby : 'id';
-      let offset = req.query.offset ? req.query.offset : '0';
-      let limit = req.query.limit ? req.query.limit : '20';
+    return new Promise(resolve => {
+        res = cors(res);
+        let orderBy = req.query.orderby ? req.query.orderby : 'id';
+        let offset = req.query.offset ? req.query.offset : '0';
+        let limit = req.query.limit ? req.query.limit : '20';
 
-      let token = req.query.token;
-      if (!validateUser(token)) {
-          res.status(403).end();
-          resolve();
-          return;
-      }
+        let token = req.query.token;
+        const user = validateUser(token);
+        if (!user) {
+            res.status(403).end();
+            resolve();
+            return;
+        }
 
-      // k.path || ' ' || j.active
-      if (!ORDERBY.includes(orderBy)) {
-          res.status(400).end();
-      } else {
-          db.any(`
+
+        // k.path || ' ' || j.active
+        if (!ORDERBY.includes(orderBy)) {
+            res.status(400).end();
+        } else {
+            db.any(`
           SELECT * FROM (
           SELECT i.serie_id AS id, i.title, i.overview, i.first_air_date, i.popularity, i.added_date, i.trailer, array_agg(DISTINCT t.name) AS genres, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images
           FROM serie_metadata i
@@ -54,15 +56,36 @@ export default (req, res) => {
           ORDER BY ${orderBy}
           OFFSET $2
           LIMIT $3
-          `, [req.query.genre, offset, limit]).then(result => {
-            let response = {
-              result: result,
-              next: `/api/movies/list?orderby=${orderBy}&limit=${limit}&offset=${parseInt(offset)+parseInt(limit)}`
-            }
-            res.status(200).json(response);
-            resolve();
-          });
-    }
-  });
+          `, [req.query.genre, offset, limit]).then(async (result) => {
+                for (let i = 0; i < result.length; i++) {
+                    const serie = result[i];
+                    const nextEpisode = await db.any(`
+                  SELECT episode_id, season_number, episode FROM user_next_episode
+
+                  INNER JOIN serie_episode e
+                  ON e.id = user_next_episode.episode_id AND e.serie_id = $1
+                  
+                  WHERE user_id = $2
+              `, [serie.id, user.user_id]);
+                    const episodeProgress = await db.any(`
+                  SELECT episode_id, time, season_number, episode FROM user_episode_progress
+
+                  INNER JOIN serie_episode e
+                  ON e.id = user_episode_progress.episode_id AND e.serie_id = $1
+                  
+                  WHERE user_id = $2
+              `, [serie.id, user.user_id]);
+                    result[i].nextEpisodeForUser = nextEpisode.length > 0 ? nextEpisode[0] : null;
+                    result[i].episodeProgress = episodeProgress.length > 0 ? episodeProgress[0] : null;
+                }
+
+                let response = {
+                    result: result,
+                    next: `/api/movies/list?orderby=${orderBy}&limit=${limit}&offset=${parseInt(offset) + parseInt(limit)}`
+                }
+                res.status(200).json(response);
+                resolve();
+            });
+        }
+    });
 }
-  
