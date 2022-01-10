@@ -18,6 +18,9 @@ A complete library solution for movies and TV Shows. Display and view your purch
 ### Dev build
 If you want the latest features use the [Dev branch](https://github.com/GustavPS/Dose/tree/dev)
 
+### Android TV
+The android TV app is available [here](https://github.com/GustavPS/DoseReactNative)
+
 ## Setup
 DOSE is made up of two parts, the main server and then one or multiple movie servers. Each movie server connects to a main server. A movie request looks like this:
 Client -> MainServer -> Client -> MovieServer -> Client
