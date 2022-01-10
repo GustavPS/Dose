@@ -665,12 +665,14 @@ export default class HlsPlayer extends Component {
 
     showControls() {
         this.setState({ controlsVisible: true });
-
+        document.body.style.cursor = 'default';
+        
         if (this.hideControlsTimeout != undefined) {
             clearTimeout(this.hideControlsTimeout);
         }
         this.hideControlsTimeout = setTimeout(() => {
             this.setState({ controlsVisible: false });
+            document.body.style.cursor = 'none';
         }, 5000);
 
     }
