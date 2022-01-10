@@ -34,14 +34,9 @@
     opacity: 0;
 }
 
-.videoContainer:hover > .videoControls {
-    visibility: visible;
-    opacity: 1;
-}
-
-.videoContainer:hover > .topControls {
-    visibility: visible;
-    opacity: 1;
+.visible {
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .seekTime {

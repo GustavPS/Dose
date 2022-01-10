@@ -32,7 +32,8 @@ export default class HlsPlayer extends Component {
             activeResolutionLevel: 0, // The index of the active resolution, 0 == higheest, i.e state.resolutions[0]
             activeSubtitleId: -1, // -1 = no subtitle selected
             importGCastAPI: false,
-            nativeHlsSupported: false
+            nativeHlsSupported: false,
+            controlsVisible: true,
         }
 
         this.updateCurrentTimeInterval = undefined;
@@ -66,6 +67,7 @@ export default class HlsPlayer extends Component {
         this.chromecastDisconnect = this.chromecastDisconnect.bind(this);
         this.updateVideoProgress = this.updateVideoProgress.bind(this);
         this.chromecastProgressUpdate = this.chromecastProgressUpdate.bind(this);
+        this.showControls = this.showControls.bind(this);
 
         let runningOnClient = typeof window !== "undefined";
         if (runningOnClient) {
@@ -73,17 +75,17 @@ export default class HlsPlayer extends Component {
         }
 
         this.getLanguages()
-        .then(() => {
-            this.getSrc()
-            .then(src => {
-                this.chromecastHandler.setSrc(src);
-                // If the page got mounted before we got here, we have to setup the player
-                if (this._ismounted) {
-                    this.setupHls();
-                } 
-            });
+            .then(() => {
+                this.getSrc()
+                    .then(src => {
+                        this.chromecastHandler.setSrc(src);
+                        // If the page got mounted before we got here, we have to setup the player
+                        if (this._ismounted) {
+                            this.setupHls();
+                        }
+                    });
 
-        });
+            });
     }
 
     supportsHls() {
@@ -136,27 +138,27 @@ export default class HlsPlayer extends Component {
         this.notified = false;
 
         this.getLanguages()
-        .then(() => {
-            // getSrc needs to be called after getLanguages
-            this.getSrc()
-            .then(videoSrc => {
-                this.chromecastHandler.setSrc(videoSrc);
-                this.chromecastHandler.setInitialSeek(0);
-        
-                if (this.state.nativeHlsSupported) {
-                    this.videoNode.src = videoSrc;
-                } else {
-                    this.hls.loadSource(videoSrc);
-                    this.hls.attachMedia(this.videoNode);
-                }
-                if (this.chromecastHandler.isCasting()) {
-                    this.chromecastHandler.reloadSource();
-                } else {
-                    this.videoNode.play();
-                }
-            });
+            .then(() => {
+                // getSrc needs to be called after getLanguages
+                this.getSrc()
+                    .then(videoSrc => {
+                        this.chromecastHandler.setSrc(videoSrc);
+                        this.chromecastHandler.setInitialSeek(0);
 
-        });
+                        if (this.state.nativeHlsSupported) {
+                            this.videoNode.src = videoSrc;
+                        } else {
+                            this.hls.loadSource(videoSrc);
+                            this.hls.attachMedia(this.videoNode);
+                        }
+                        if (this.chromecastHandler.isCasting()) {
+                            this.chromecastHandler.reloadSource();
+                        } else {
+                            this.videoNode.play();
+                        }
+                    });
+
+            });
     }
 
 
@@ -167,16 +169,16 @@ export default class HlsPlayer extends Component {
         return new Promise(resolve => {
             validateServerAccess(this.server, (serverToken) => {
                 fetch(`${this.server.server_ip}/api/video/${this.id}/getLanguages?type=${this.type}&token=${serverToken}`)
-                .then(response => response.json())
-                .then(data => {
-                    const defaultLanguage = this.getDefaultLanguage(data);
-                    this.setState({
-                        audioLanguages: data,
-                        activeLanguageStreamIndex: defaultLanguage != null ? defaultLanguage.stream_index : 0
-                    }, () => {
-                        resolve();
+                    .then(response => response.json())
+                    .then(data => {
+                        const defaultLanguage = this.getDefaultLanguage(data);
+                        this.setState({
+                            audioLanguages: data,
+                            activeLanguageStreamIndex: defaultLanguage != null ? defaultLanguage.stream_index : 0
+                        }, () => {
+                            resolve();
+                        });
                     });
-                });
             });
         });
 
@@ -256,7 +258,7 @@ export default class HlsPlayer extends Component {
         }
         this.setState({
             resolutions: resolutions,
-            activeResolutionLevel: this.hls.levels.length-1
+            activeResolutionLevel: this.hls.levels.length - 1
         })
     }
 
@@ -296,7 +298,7 @@ export default class HlsPlayer extends Component {
      * @param {string} title - The title of the video 
      */
     setTitle(title) {
-        this.setState({title: title})
+        this.setState({ title: title })
     }
 
     /**
@@ -305,21 +307,21 @@ export default class HlsPlayer extends Component {
      * @param {string} text - The text to display
      */
     setInfoText(text) {
-        this.setState({infoText: text});
+        this.setState({ infoText: text });
     }
 
     /**
      * Called when the video plays
      */
     onPlay() {
-        this.setState({videoPaused: false});
+        this.setState({ videoPaused: false });
     }
 
     /**
      * Called when the video pauses
      */
     onPause() {
-        this.setState({videoPaused: true});
+        this.setState({ videoPaused: true });
     }
 
     /**
@@ -349,7 +351,7 @@ export default class HlsPlayer extends Component {
      * 
      * @param {number} startTime - The time in seconds to start the video at 
      */
-    show(startTime=0) {
+    show(startTime = 0) {
         this.videoContainer.style.display = 'block';
         this.videoNode.currentTime = startTime;
         this.togglePlay();
@@ -366,21 +368,21 @@ export default class HlsPlayer extends Component {
      */
     setupHls() {
         const nativeHlsSupported = this.supportsHls();
-        this.setState({nativeHlsSupported: nativeHlsSupported}, () => {
+        this.setState({ nativeHlsSupported: nativeHlsSupported }, () => {
             // This needs to be in a callback because setupListeners uses this state
             const useDebug = localStorage.getItem("HLS_DEBUG") === "true";
             this.getSrc()
-            .then(src => {
-                if (nativeHlsSupported) {
-                    this.videoNode.src = src;
-                } else {
-                    this.hls = new Hls({maxMaxBufferLength: 60, debug: useDebug});
-                    this.hls.loadSource(src);
-                    this.hls.attachMedia(this.videoNode);
-                    this.videoNode.volume = 1;
-                }
-                this.setupListeners();
-            });
+                .then(src => {
+                    if (nativeHlsSupported) {
+                        this.videoNode.src = src;
+                    } else {
+                        this.hls = new Hls({ maxMaxBufferLength: 60, debug: useDebug });
+                        this.hls.loadSource(src);
+                        this.hls.attachMedia(this.videoNode);
+                        this.videoNode.volume = 1;
+                    }
+                    this.setupListeners();
+                });
 
 
         });
@@ -409,12 +411,12 @@ export default class HlsPlayer extends Component {
         // Check the localStorage if the chromecast API has already been loaded, if not, load it
         let runningOnClient = typeof window !== "undefined";
         if (runningOnClient && window["gCastIncluded"] == null) {
-            this.setState({importGCastAPI: true});
+            this.setState({ importGCastAPI: true });
             window["gCastIncluded"] = true;
         }
 
         // When the user goes back, we need to unsubscribe from all events
-        Router.beforePopState(({url, as, options}) => {
+        Router.beforePopState(({ url, as, options }) => {
             this.unsubscribeFromAllEvents();
             return true;
         });
@@ -462,7 +464,7 @@ export default class HlsPlayer extends Component {
      * @param {number} currentTime - The current time of the video
      * @param {number} duration - The duration of the video
      */
-    updateSeekTime(currentTime=this.videoNode.currentTime, duration=this.videoNode.duration) {
+    updateSeekTime(currentTime = this.videoNode.currentTime, duration = this.videoNode.duration) {
         if (this.chromecastHandler.isCasting() && currentTime != 0) {
             this.chromecastSeekValue = currentTime;
             this.chromecastDuration = duration;
@@ -475,7 +477,7 @@ export default class HlsPlayer extends Component {
 
         let seconds = Math.floor(scrubbed % 60);
         let minutes = Math.floor(scrubbed / 60 % 60);
-        let hours   = Math.floor(scrubbed / 3600);
+        let hours = Math.floor(scrubbed / 3600);
 
         seconds = seconds >= 10 ? seconds : `0${seconds}`;
         minutes = minutes >= 10 ? minutes : `0${minutes}`;
@@ -580,14 +582,14 @@ export default class HlsPlayer extends Component {
             this.timeUpdate(currentTime, duration); // Call the parent function
         }
         if (this.notifyAt != undefined &&
-            duration - currentTime <= this.notifyAt && 
+            duration - currentTime <= this.notifyAt &&
             !this.notified) {
-                this.notified = true;
-                this.notify();
+            this.notified = true;
+            this.notify();
         }
     }
 
-    
+
     /**
      * Toggle fullscreen mode
      */
@@ -606,16 +608,16 @@ export default class HlsPlayer extends Component {
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
-                  } else if (document.mozCancelFullScreen) { /* Firefox */
+                } else if (document.mozCancelFullScreen) { /* Firefox */
                     document.mozCancelFullScreen();
-                  } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+                } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
                     document.webkitExitFullscreen();
-                  } else if (document.msExitFullscreen) { /* IE/Edge */
+                } else if (document.msExitFullscreen) { /* IE/Edge */
                     document.msExitFullscreen();
-                  }
+                }
             }
             this.fullscreen = !this.fullscreen;
-        } catch(e) {
+        } catch (e) {
             console.log(e)
         }
     }
@@ -632,7 +634,7 @@ export default class HlsPlayer extends Component {
         } else {
             this.hls.subtitleTrack = subtitle.id;
         }
-        this.setState({activeSubtitleId: subtitle.id});
+        this.setState({ activeSubtitleId: subtitle.id });
     }
 
     /**
@@ -647,7 +649,7 @@ export default class HlsPlayer extends Component {
         } else {
             this.hls.nextLevel = resolution.level;
         }
-        this.setState({activeResolutionLevel: resolution.level});
+        this.setState({ activeResolutionLevel: resolution.level });
     }
 
     /**
@@ -660,33 +662,45 @@ export default class HlsPlayer extends Component {
             this.togglePlay();
         }
     }
-    
-    
+
+    showControls() {
+        this.setState({ controlsVisible: true });
+
+        if (this.hideControlsTimeout != undefined) {
+            clearTimeout(this.hideControlsTimeout);
+        }
+        this.hideControlsTimeout = setTimeout(() => {
+            this.setState({ controlsVisible: false });
+        }, 5000);
+
+    }
+
+
     // TODO: Shouldn't include chromecast api from cdn, should be included in the main server and use import statement
     render() {
         return (
             <>
-            <Head>
-                {this.state.importGCastAPI &&
-                    <script src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" strategy="beforeInteractive"></script>
-                }
-            </Head>
-                <div className={Styles.videoContainer} ref={node => this.videoContainer = node} onDoubleClick={this.toggleFullscreen}>
+                <Head>
+                    {this.state.importGCastAPI &&
+                        <script src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" strategy="beforeInteractive"></script>
+                    }
+                </Head>
+                <div onMouseMove={this.showControls} className={Styles.videoContainer} ref={node => this.videoContainer = node} onDoubleClick={this.toggleFullscreen}>
                     <video ref={node => this.videoNode = node} playsInline className={Styles.videoPlayer} onClick={this.togglePlay} controls={this.state.nativeHlsSupported} />
                     {this.props.children}
 
                     {!this.state.nativeHlsSupported &&
                         <>
-                            <div className={Styles.topControls}>
-                                <div className={Styles.backImage}  onClick={() => Router.back()}></div>
+                            <div className={`${Styles.topControls} ${this.state.controlsVisible ? Styles.visible : ""}`}>
+                                <div className={Styles.backImage} onClick={() => Router.back()}></div>
                             </div>
 
 
-                            <div className={Styles.videoControls}>
+                            <div className={`${Styles.videoControls} ${this.state.controlsVisible ? Styles.visible : ""}`}>
                                 <div className={Styles.seekWrapper}>
                                     <div className={Styles.seekTime} id="seekTime" ref={node => this.seekBarLabel = node}></div>
                                     <input className={Styles.seekbar} type="range" id="seekbar" name="seekbar" ref={node => this.seekBar = node}
-                                    min="0" max="100" step="0.01" className={Styles.seekbar} onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime}/>
+                                        min="0" max="100" step="0.01" className={Styles.seekbar} onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime} />
                                 </div>
 
                                 <div className={Styles.lowerControls}>
@@ -694,7 +708,7 @@ export default class HlsPlayer extends Component {
                                         {this.state.videoPaused &&
                                             <div className={`${Styles.playButton} ${Styles.playPause} ${Styles.button}`} onClick={this.togglePlay}></div>
                                         }
-                                        {!this.state.videoPaused && 
+                                        {!this.state.videoPaused &&
                                             <div className={`${Styles.pauseButton} ${Styles.playPause} ${Styles.button}`} onClick={this.togglePlay}></div>
                                         }
 
@@ -727,7 +741,7 @@ export default class HlsPlayer extends Component {
                                                         })}
                                                     </ul>
                                                 </div>
-                                            </div>                                
+                                            </div>
                                         }
 
 
@@ -750,7 +764,7 @@ export default class HlsPlayer extends Component {
                         </>
                     }
                 </div>
-          </>
+            </>
         );
     }
 }
