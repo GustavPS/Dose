@@ -23,7 +23,7 @@ const COLOR = {
 
 class Logger {
     constructor() {
-        this.logLevel = LEVEL.DEBUG;
+        this.logLevel = LEVEL.ERROR;
         this.createWriteStreams();
     }
 
