@@ -22,7 +22,12 @@ class DirectplayPreparationJob extends Job {
             metadata.getDirectplayHandlingNeeded()
             .then(async candidates => {
                 const hlsManager = new HlsManager();
-                logger.INFO(`Preparing ${candidates.length} file(s) for directplay (type: ${metadata.getType()})`);
+                const gotCandidates = candidates.length > 0;
+                if (gotCandidates) {
+                    logger.INFO(`Preparing ${candidates.length} file(s) for directplay (type: ${metadata.getType()})`);
+                } else {
+                    logger.DEBUG(`No files to prepare for directplay (type: ${metadata.getType()})`);
+                }
                 while (candidates.length > 0) {
                     const promises = [];
                     // Create m3u8 files for each candidate, max SIMULTANEOUS_DIRECTPLAY_PREPARE_LIMIT at a time
@@ -59,7 +64,9 @@ class DirectplayPreparationJob extends Job {
                         logger.ERROR(`Error preparing file(s) for directplay. Will mark as failed and continue with next one.`);
                     }
                 }
-                logger.INFO(`Finished preparing all files for directplay`);
+                if (gotCandidates) {
+                    logger.INFO(`Finished preparing all files for directplay`);
+                }
                 resolve();
             });
         });
