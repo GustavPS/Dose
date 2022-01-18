@@ -25,6 +25,8 @@ const getPixels = (quality) => {
             return "7680x4320";
         case '4k':
             return "3840x2160"
+        case '1440p':
+            return "2560x1440"
         case '1080p':
             return "1920x1080";
         case '720p':
