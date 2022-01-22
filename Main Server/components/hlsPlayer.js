@@ -36,6 +36,9 @@ export default class HlsPlayer extends Component {
             nativeHlsSupported: false,
             controlsVisible: true,
             timeAtResolutionChange: 0,
+            volume: 1,
+            oldVolume: 1,
+            muted: false,
         }
 
         this.updateCurrentTimeInterval = undefined;
@@ -62,6 +65,7 @@ export default class HlsPlayer extends Component {
         this.startSeek = this.startSeek.bind(this);
         this.onPause = this.onPause.bind(this);
         this.onPlay = this.onPlay.bind(this);
+        this.toggleMute = this.toggleMute.bind(this);
         this.ping = this.ping.bind(this);
         this.seek = this.seek.bind(this);
         this.togglePlay = this.togglePlay.bind(this);
@@ -72,6 +76,7 @@ export default class HlsPlayer extends Component {
         this.updateVideoProgress = this.updateVideoProgress.bind(this);
         this.chromecastProgressUpdate = this.chromecastProgressUpdate.bind(this);
         this.showControls = this.showControls.bind(this);
+        this.handleKeyPress = this.handleKeyPress.bind(this);
 
         let runningOnClient = typeof window !== "undefined";
         if (runningOnClient) {
@@ -294,12 +299,13 @@ export default class HlsPlayer extends Component {
         this.videoNode.ontimeupdate = this.onVideoTimeUpdate;
         this.videoNode.onpause = this.onPause;
         this.videoNode.onplay = this.onPlay;
-
         if (!this.state.nativeHlsSupported) {
             this.hls.on(Hls.Events.MANIFEST_PARSED, this.onManifestParsed);
             this.hls.on(Hls.Events.MANIFEST_LOADED, this.onManifestLoaded);
             this.soundBar.oninput = this.updateVolume;
         }
+
+        document.addEventListener("keydown", this.handleKeyPress);
     }
 
     /**
@@ -395,11 +401,64 @@ export default class HlsPlayer extends Component {
      * Set the volume of the video based on the volume bar value
      */
     updateVolume() {
-        const volume = this.soundBar.value / 100;
+        this.state.volume = this.soundBar.value / 100;
         if (this.chromecastHandler.isCasting()) {
-            this.chromecastHandler.setVolume(volume);
+            this.chromecastHandler.setVolume(this.state.volume);
         } else {
-            this.videoNode.volume = volume;
+            this.videoNode.volume = this.state.volume;
+        }
+        
+        console.log("Volume", this.state.volume);
+        if(this.state.volume <= 0.1) {
+            this.setState({muted: true});
+        } else {
+            this.setState({muted: false});
+        }
+    }
+
+    /**
+     * Set volume when using the keyboard
+     * @param {number} amount - the value to increase or decrease the volume by 
+     */
+    setVolume(amount) {
+        this.state.volume += amount / 100;
+        if (this.state.volume <= 0) {
+            this.state.volume = 0;
+            this.setState({muted: true});
+        } else if (this.state.volume > 1) {
+            this.state.volume = 1;
+            this.setState({muted: false});
+        } else {
+            this.setState({muted: false});
+        }
+
+        this.soundBar.value = this.state.volume * 100;
+        if (this.chromecastHandler.isCasting()) {
+            this.chromecastHandler.setVolume(this.state.volume);
+        } else {
+            this.videoNode.volume = this.state.volume;
+        }
+    }
+
+    /**
+     * toggles mute and remembers the old volume
+     */
+    toggleMute() {
+        if (this.state.volume > 0) {
+            this.state.oldVolume = this.state.volume;
+            this.state.volume = 0;
+            this.soundBar.value = 0;
+            this.setState({muted: true});
+        } else {
+            this.state.volume = this.state.oldVolume;
+            this.soundBar.value = this.state.volume * 100;
+            this.setState({muted: false});
+        }
+
+        if (this.chromecastHandler.isCasting()) {
+            this.chromecastHandler.setVolume(this.state.volume);
+        } else {
+            this.videoNode.volume = this.state.volume;
         }
     }
 
@@ -556,6 +615,8 @@ export default class HlsPlayer extends Component {
                 this.chromecastHandler.stopCast();
             }
             this.stopTranscoding();
+            
+            document.removeEventListener("keydown", this.handleKeyPress);
 
             console.log(`[HLS] Unsubscribing from all events`);
         }
@@ -676,6 +737,13 @@ export default class HlsPlayer extends Component {
     }
 
     /**
+     * Skips forward/backward in the video
+     */
+    skip(seconds) {
+        this.videoNode.currentTime += seconds;
+    }
+
+    /**
      * Get the current time of the video
      * 
      * @returns {string} The current time of the video
@@ -753,6 +821,7 @@ export default class HlsPlayer extends Component {
      * Toggle fullscreen mode
      */
     toggleFullscreen() {
+        console.log("Toggling fullscreesssssn")
         try {
             if (!this.fullscreen) {
                 if (this.videoNode.requestFullscreen) {
@@ -856,6 +925,39 @@ export default class HlsPlayer extends Component {
 
     }
 
+    /**
+     * Handle keypresses in the video container
+     */
+    handleKeyPress(event) {
+        if(event.key === 'f'){
+          this.toggleFullscreen();
+        }
+
+        if(event.key === ' ' || event.key === 'p'){
+            this.togglePlay();
+        }
+
+        if(event.key === 'm'){
+            this.toggleMute();
+        }
+
+        if(event.key === 'ArrowUp'){
+            this.setVolume(10);
+        }
+
+        if(event.key === 'ArrowDown'){
+            this.setVolume(-10);
+        }
+
+        if(event.key === 'ArrowRight'){
+            this.skip(15);
+        }
+
+        if(event.key === 'ArrowLeft'){
+            this.skip(-15);
+        }
+      }
+
 
     // TODO: Shouldn't include chromecast api from cdn, should be included in the main server and use import statement
     render() {
@@ -867,7 +969,7 @@ export default class HlsPlayer extends Component {
                     }
                 </Head>
                 <div onMouseMove={this.showControls} className={Styles.videoContainer} ref={node => this.videoContainer = node} onDoubleClick={this.toggleFullscreen}>
-                    <video ref={node => this.videoNode = node} playsInline className={Styles.videoPlayer} onClick={this.togglePlay} controls={this.state.nativeHlsSupported} crossorigin={"anonymous"}>
+                    <video ref={node => this.videoNode = node} playsInline className={Styles.videoPlayer} onClick={this.togglePlay} controls={this.state.nativeHlsSupported} crossOrigin={"anonymous"}>
                         <track id="subtitle" ref={node => this.subtitleNode = node} kind="subtitles" />
                     </video>
                     {this.props.children}
@@ -896,9 +998,14 @@ export default class HlsPlayer extends Component {
                                         }
 
                                         <div className={Styles.soundContainer}>
-                                            <div className={`${Styles.soundImage} ${Styles.button}`}></div>
+                                            {!this.state.muted &&
+                                                <div className={`${Styles.soundImage} ${Styles.button}`} onClick={this.toggleMute}></div>
+                                            }
+                                            {this.state.muted &&
+                                                <div className={`${Styles.mutedSoundImage} ${Styles.button}`} onClick={this.toggleMute}></div>
+                                            }
                                             <div className={Styles.soundbarContainer}>
-                                                <input className={Styles.soundbar} type="range" id="soundbar" name="soundbar" ref={node => this.soundBar = node} />
+                                                <input className={Styles.soundbar} type="range" id="soundbar" name="soundbar" ref={node => this.soundBar = node} defaultValue={this.state.volume} />
                                             </div>
                                         </div>
                                     </div>
