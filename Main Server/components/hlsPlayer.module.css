@@ -198,6 +198,19 @@
     padding: 28px;
 }
 
+.mutedSoundImage {
+    background-image: url('../public/images/muted-speaker.svg');
+    filter: invert(1);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    width: 24px;
+    height: 24px;
+    margin-top: -8px;
+    cursor: pointer;
+    padding: 28px;
+}
+
 .subtitles {
     background-image: url('../public/images/subtitles.svg');
     filter: invert(1);
