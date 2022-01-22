@@ -141,6 +141,36 @@ class Episode extends Content {
         const m3u8Path = path.join(videoFolder, fileName);
         return m3u8Path;
     }
+
+    getLanguages() {
+        return new Promise(resolve => {
+            db.any(`SELECT language, id, stream_index FROM serie_episode_language WHERE serie_episode_id = $1`, [this.#episodeId]).then(result => {
+                resolve(result);
+            });
+        });
+    }
+
+    removeAllLanguages() {
+        return new Promise((resolve, reject) => {
+            db.none('DELETE FROM serie_episode_language WHERE serie_episode_id = $1', [this.#episodeId]).then(result => {
+                resolve();
+            }).catch(error => {
+                logger.ERROR(`Error removing all languages (TV): ${error}`);
+                reject();
+            })
+        });
+    }
+
+    addLanguage(language, streamIndex, codec) {
+        return new Promise((resolve, reject) => {
+            db.none('INSERT INTO serie_episode_language (serie_episode_id, language, stream_index, codec) VALUES ($1, $2, $3, $4)', [this.#episodeId, language, streamIndex, codec]).then(result => {
+                resolve();
+            }).catch(error => {
+                logger.ERROR(`Error inserting language (TV): ${error}`);
+                reject();
+            });
+        });
+    }
 }
 
 module.exports = Episode;

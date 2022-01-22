@@ -13,7 +13,6 @@ export default class HlsPlayer extends Component {
         this.server = this.props.server;
         this.id = this.props.id;
         this.type = this.props.type;
-        this.src = this.props.src;
         this.hls = undefined;
         this.group = undefined; // group id from manifest
         this.notifyAt = this.props.notifyAt // When we have this time left in the video, we will notify the caller
@@ -25,19 +24,23 @@ export default class HlsPlayer extends Component {
             videoPaused: false,
             title: this.props.title,
             infoText: this.props.infoText,
-            subtitles: [],
+            subtitles: [], // For HLS
+            directplaySubtitles: [], // For directplay
             resolutions: [],
             audioLanguages: [],
             activeLanguageStreamIndex: null, // -1 = Not selected yet
-            activeResolutionLevel: 0, // The index of the active resolution, 0 == higheest, i.e state.resolutions[0]
+            activeResolutionLevel: 0, // The index of the active resolution, 0 == highest, i.e state.resolutions[0]
             activeSubtitleId: -1, // -1 = no subtitle selected
+            usingDirectplay: false,
             importGCastAPI: false,
             nativeHlsSupported: false,
             controlsVisible: true,
+            timeAtResolutionChange: 0,
         }
 
         this.updateCurrentTimeInterval = undefined;
         this.pingInterval = undefined;
+
 
         /* SEEK */
         this.seeking = false; // Flag for seeking
@@ -49,6 +52,7 @@ export default class HlsPlayer extends Component {
         this.seekBar = undefined;
         this.seekBarLabel = undefined;
         this.videoNode = undefined;
+        this.subtitleNode = undefined;
         this.videoContainer = undefined;
 
         /* BINDINGS */
@@ -74,20 +78,63 @@ export default class HlsPlayer extends Component {
             this.chromecastHandler = new cheomecastHandler(this.chromecastProgressUpdate, this.chromecastDisconnect);
         }
 
+        this.getSubtitles();
+
         this.getLanguages()
             .then(() => {
-                this.getSrc()
-                    .then(src => {
-                        this.chromecastHandler.setSrc(src);
-                        // If the page got mounted before we got here, we have to setup the player
-                        if (this._ismounted) {
-                            this.setupHls();
-                        }
+                this.getResolutions().then(resolutions => {
+                    const directplay = resolutions[0].name === "Directplay";
+                    this.setState({
+                        resolutions: resolutions,
+                        activeResolutionLevel: resolutions.length - 1,
+                        usingDirectplay: directplay
+                    }, () => {
+                        console.log(directplay)
+                        console.log(resolutions)
+                        this.getSrc(directplay).then(src => {
+                            this.chromecastHandler.setSrc(src); // TODO: Test
+                            if (this._ismounted) {
+                                this.setupHls();
+                            }
+                        })
                     });
 
+                });
             });
     }
 
+    /**
+     * Get all the available resolutions for the video
+     * 
+     * @returns {Promise<Array>}
+     */
+    getResolutions() {
+        return new Promise(resolve => {
+            validateServerAccess(this.server, (serverToken) => {
+                fetch(`${this.server.server_ip}/api/video/${this.id}/getResolution?type=${this.type}&token=${serverToken}`).then(res => {
+                    res.json().then(data => {
+                        const resolutions = data.resolutions.reverse();
+                        const directplay = data.directplay;
+                        const returnData = [];
+                        if (directplay) {
+                            returnData.push(new Resolution(resolutions.length, "Directplay"));
+                        }
+                        for (let i = resolutions.length - 1; i >= 0; i--) {
+                            returnData.push(new Resolution(i, resolutions[i]));
+                        }
+
+                        resolve(returnData);
+                    });
+                })
+            });
+        });
+    }
+
+    /**
+     * Return true if the device natively supports hls
+     * 
+     * @returns {Boolean}
+     */
     supportsHls() {
         const ua = navigator.userAgent;
         const isIos = (/iPad|iPhone|iPod/.test(ua)) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -111,15 +158,19 @@ export default class HlsPlayer extends Component {
      * 
      * @returns The src for the video
      */
-    getSrc() {
+    getSrc(directplay) {
         return new Promise(resolve => {
             validateServerAccess(this.server, (serverToken) => {
                 let src;
-                if (this.state.activeLanguageStreamIndex == null) {
-                    console.log(`[HLS] WARNING: Calling getSrc() when activelanguageStreamIndex is null`);
-                    src = `${this.src}?audioStream=0&type=${this.type}&token=${serverToken}`;
+                if (directplay) {
+                    src = `${this.server.server_ip}/api/video/${this.id}/directplay?type=${this.type}&token=${serverToken}`;
                 } else {
-                    src = `${this.src}?audioStream=${this.state.activeLanguageStreamIndex}&type=${this.type}&token=${serverToken}`;
+                    if (this.state.activeLanguageStreamIndex == null) {
+                        console.log(`[HLS] WARNING: Calling getSrc() when activelanguageStreamIndex is null`);
+                        src = `${this.server.server_ip}/api/video/${this.id}/hls/master?audioStream=0&type=${this.type}&token=${serverToken}`;
+                    } else {
+                        src = `${this.server.server_ip}/api/video/${this.id}/hls/master?audioStream=${this.state.activeLanguageStreamIndex}&type=${this.type}&token=${serverToken}`;
+                    }
                 }
                 resolve(src);
             });
@@ -127,38 +178,46 @@ export default class HlsPlayer extends Component {
     }
 
     /**
-     * Set the video source
+     * Change the source to the video with the given id
      */
-    setSrc(src, id) {
+    setSrc(id) {
         clearInterval(this.updateCurrentTimeInterval);
-        clearInterval(this.pingInterval);
-
-        this.src = src;
         this.id = id;
         this.notified = false;
+        this.getSubtitles();
 
-        this.getLanguages()
-            .then(() => {
-                // getSrc needs to be called after getLanguages
-                this.getSrc()
-                    .then(videoSrc => {
-                        this.chromecastHandler.setSrc(videoSrc);
+        this.getLanguages().then(() => {
+            this.getResolutions().then(resolutions => {
+                const directplay = resolutions[0].name === "Directplay";
+                this.setState({
+                    resolutions: resolutions,
+                    activeResolutionLevel: resolutions.length - 1,
+                    usingDirectplay: directplay
+                }, () => {
+                    this.getSrc(directplay).then(src => {
+                        this.chromecastHandler.setSrc(src); // TODO: test
                         this.chromecastHandler.setInitialSeek(0);
 
                         if (this.state.nativeHlsSupported) {
-                            this.videoNode.src = videoSrc;
+                            this.videoNode.src = src;
+                        } else if (directplay) {
+                            this.videoNode.src = src;
+                            this.videoNode.currentTime = 0;
                         } else {
-                            this.hls.loadSource(videoSrc);
+                            this.hls.loadSource(src);
                             this.hls.attachMedia(this.videoNode);
+                            this.videoNode.src = src;
                         }
                         if (this.chromecastHandler.isCasting()) {
                             this.chromecastHandler.reloadSource();
                         } else {
                             this.videoNode.play();
                         }
-                    });
+                    })
+                });
 
             });
+        });
     }
 
 
@@ -251,15 +310,13 @@ export default class HlsPlayer extends Component {
      */
     onManifestParsed(event, data) {
         this.group = this.getGroupIdFromManifest(data);
-        let resolutions = [];
-        // Reversed because hls.levels have reversed order in terms of quality. We want highest quality at top
-        for (let i = this.hls.levels.length - 1; i >= 0; i--) {
-            resolutions.push(new Resolution(i, data.levels[i].name));
+        this.hls.nextLevel = this.state.activeResolutionLevel;
+        this.videoNode.currentTime = this.state.timeAtResolutionChange;
+
+        // Resume playing if user switched to transcoding
+        if (this.state.timeAtResolutionChange > 0) {
+            this.videoNode.play();
         }
-        this.setState({
-            resolutions: resolutions,
-            activeResolutionLevel: this.hls.levels.length - 1
-        })
     }
 
     /**
@@ -269,14 +326,68 @@ export default class HlsPlayer extends Component {
      */
     onManifestLoaded(event, data) {
         const subs = data.subtitles;
+
+        for (let i = 0; i < subs.length; i++) {
+            const id = this.getSubtitleIdFromHlsUrl(subs[i].url);
+            console.log(`[HLS] Subtitle track ${i}: server id: ${id}`);
+            subs[i].serverId = id;
+        }
+
         if (data.subtitles.length > 0) {
             subs.push({
                 id: -1,
-                name: "Off"
+                name: "Off",
+                serverId: -1,
             });
         }
         this.setState({
             subtitles: data.subtitles
+        });
+
+        // Set the correct subtitle track
+        if (this.state.activeSubtitleId !== -1) {
+            // Get the server id from the active subtitle
+            const directplaySubtitle = this.state.directplaySubtitles.find(s => s.id === this.state.activeSubtitleId);
+            if (directplaySubtitle) {
+                // Get the subtitle from the directplay subtitles
+                const subtitle = data.subtitles.find(s => s.serverId === directplaySubtitle.id);
+                console.log("found");
+                console.log(subtitle);
+                this.setSubtitle(subtitle);
+            }
+        }
+    }
+
+    /**
+     * Get the subtitle server id from the HLS url
+     * 
+     * @param {string} url - The url of the subtitle track
+     * @returns {string} - The server id of the subtitle track
+     */
+    getSubtitleIdFromHlsUrl(url) {
+        const regex = /subtitles\/(\d+)/i;
+        try {
+            return url.match(regex)[1];
+        } catch (e) {
+            console.log("[HLS] No subtitle id found in HLS URL. Can't autoswitch subtitles between directplay and transcoding");
+            console.log(e);
+            return -2; // -2 is a special value that means that we can't autoswitch subtitles
+        }
+    }
+
+    /**
+     * Get the list of subtitles (used for directplay)
+     */
+    getSubtitles() {
+        validateServerAccess(this.server, (serverToken) => {
+            fetch(`${this.server.server_ip}/api/subtitles/list?type=${this.type}&content=${this.id}&token=${serverToken}`).then(res => {
+                res.json().then(data => {
+                    this.setState({
+                        directplaySubtitles: data.subtitles
+                    });
+                    console.log(data);
+                });
+            })
         });
     }
 
@@ -328,11 +439,11 @@ export default class HlsPlayer extends Component {
      * Toggle the video play state
      */
     togglePlay() {
+        clearInterval(this.updateCurrentTimeInterval);
+
         if (this.chromecastHandler.isCasting()) {
             if (this.chromecastHandler.isPaused()) {
                 this.updateCurrentTimeInterval = setInterval(this.updateVideoProgress, 5000);
-            } else {
-                clearInterval(this.updateCurrentTimeInterval);
             }
             this.chromecastHandler.togglePlay();
         } else {
@@ -340,7 +451,6 @@ export default class HlsPlayer extends Component {
                 this.videoNode.play();
                 this.updateCurrentTimeInterval = setInterval(this.updateVideoProgress, 5000);
             } else {
-                clearInterval(this.updateCurrentTimeInterval);
                 this.videoNode.pause();
             }
         }
@@ -367,14 +477,36 @@ export default class HlsPlayer extends Component {
      * Setup the video player and listeners
      */
     setupHls() {
+        const usingDirectplay = this.state.usingDirectplay;
         const nativeHlsSupported = this.supportsHls();
         this.setState({ nativeHlsSupported: nativeHlsSupported }, () => {
             // This needs to be in a callback because setupListeners uses this state
             const useDebug = localStorage.getItem("HLS_DEBUG") === "true";
-            this.getSrc()
+            this.getSrc(usingDirectplay)
                 .then(src => {
                     if (nativeHlsSupported) {
                         this.videoNode.src = src;
+                    } else if (usingDirectplay) {
+                        this.videoNode.src = src;
+                        this.hls = new Hls({ maxMaxBufferLength: 60, debug: useDebug });
+                        this.videoNode.volume = 1;
+                        this.videoNode.currentTime = this.state.timeAtResolutionChange;
+
+                        // Play if changing quality to directplay
+                        if (this.state.timeAtResolutionChange > 0) {
+                            this.videoNode.play();
+                        }
+
+                        // Set the correct subtitle track
+                        if (this.state.activeSubtitleId !== -1) {
+                            // Get the server id from the active subtitle
+                            const subtitle = this.state.subtitles.find(s => s.id === this.state.activeSubtitleId);
+                            if (subtitle) {
+                                // Get the subtitle from the directplay subtitles
+                                const directplaySubtitle = this.state.directplaySubtitles.find(s => s.id === subtitle.serverId);
+                                this.setSubtitle(directplaySubtitle);
+                            }
+                        }
                     } else {
                         this.hls = new Hls({ maxMaxBufferLength: 60, debug: useDebug });
                         this.hls.loadSource(src);
@@ -385,6 +517,25 @@ export default class HlsPlayer extends Component {
                 });
 
 
+        });
+    }
+
+    /**
+     * Switch from directplay to HLS transcoding
+     */
+    switchToHls() {
+        this.setState({ usingDirectplay: false }, () => {
+            this.setupHls();
+        });
+    }
+
+    /**
+     * Switch from HLS transcoding to directplay
+     */
+    switchToDirectplay() {
+        this.hls.destroy();
+        this.setState({ usingDirectplay: true }, () => {
+            this.setupHls();
         });
     }
 
@@ -400,10 +551,13 @@ export default class HlsPlayer extends Component {
             }
             clearInterval(this.updateCurrentTimeInterval);
             clearInterval(this.pingInterval);
+            clearTimeout(this.hideControlsTimeout);
             if (this.chromecastHandler.isCasting()) {
                 this.chromecastHandler.stopCast();
             }
             this.stopTranscoding();
+
+            console.log(`[HLS] Unsubscribing from all events`);
         }
     }
 
@@ -440,8 +594,10 @@ export default class HlsPlayer extends Component {
      * Ping the server that we are still active
      */
     ping() {
+        console.log("Trying to ping")
+        console.log(`group: ${this.group}, usingDirectplay: ${this.state.usingDirectplay}`);
         validateServerAccess(this.server, (serverToken) => {
-            if (this.group != undefined) {
+            if (this.group != undefined && !this.state.usingDirectplay) {
                 fetch(`${this.server.server_ip}/api/video/${this.id}/hls/ping?group=${this.group}&serverToken=${serverToken}`);
             }
         });
@@ -489,9 +645,11 @@ export default class HlsPlayer extends Component {
         }
         time += minutes + ':' + seconds;
 
-        this.seekBarLabel.innerHTML = `<span>${time}</span>`;
-        this.seekBarLabel.style.left = `calc(${newValue}% + (${newPosition}px))`;
-        if (!this.seeking) {
+        if (!isNaN(scrubbed) && !isNaN(percentage)) {
+            this.seekBarLabel.innerHTML = `<span>${time}</span>`;
+            this.seekBarLabel.style.left = `calc(${newValue}% + (${newPosition}px))`;
+        }
+        if (!this.seeking && !isNaN(percentage)) {
             this.seekBar.value = percentage;
         }
     }
@@ -523,6 +681,7 @@ export default class HlsPlayer extends Component {
      * @returns {string} The current time of the video
      */
     getCurrentTime() {
+        console.log(this.videoNode.currentTime)
         if (this.chromecastHandler.isCasting()) {
             return this.chromecastSeekValue;
         } else {
@@ -628,9 +787,16 @@ export default class HlsPlayer extends Component {
      * @param {object} subtitle - The subtitle object
      */
     setSubtitle(subtitle) {
-        console.log(`[HLS] Change subtitle to ${subtitle.name} (id: ${subtitle.id})`);
+        console.log(`[HLS] Change subtitle to ${subtitle.name} (id: ${subtitle.id}) for ${this.state.usingDirectplay ? 'directplay' : 'hls'}`);
         if (this.chromecastHandler.isCasting() && subtitle.id != -1) {
             this.chromecastHandler.setSubtitle(subtitle.name);
+        } else if (this.state.usingDirectplay) {
+            validateServerAccess(this.server, (serverToken) => {
+                this.subtitleNode.src = `${this.server.server_ip}/api/subtitles/get?type=${this.type}&id=${subtitle.id}&token=${serverToken}`;
+                console.log(this.videoNode.textTracks);
+                console.log(this.subtitleNode);
+                this.videoNode.textTracks[0].mode = 'showing';
+            });
         } else {
             this.hls.subtitleTrack = subtitle.id;
         }
@@ -643,13 +809,23 @@ export default class HlsPlayer extends Component {
      * @param {Resolution} resolution - The selected resolution
      */
     setResolution(resolution) {
-        console.log(`[HLS] Change resolution to ${resolution.name} (level: ${resolution.level})`);
-        if (this.chromecastHandler.isCasting()) {
-            this.chromecastHandler.setResolution(resolution);
-        } else {
-            this.hls.nextLevel = resolution.level;
-        }
-        this.setState({ activeResolutionLevel: resolution.level });
+        this.setState({ activeResolutionLevel: resolution.level, timeAtResolutionChange: this.videoNode.currentTime }, () => {
+            console.log(`[HLS] Change resolution to ${resolution.name} (level: ${resolution.level})`);
+            if (this.chromecastHandler.isCasting()) {
+                this.chromecastHandler.setResolution(resolution);
+            } else {
+                if (this.state.usingDirectplay && resolution.name != "Directplay") {
+                    this.videoNode.textTracks[0].mode = 'disabled';
+                    this.switchToHls();
+                    this.hls.nextLevel = resolution.level;
+                } else if (!this.state.usingDirectplay && resolution.name == "Directplay") {
+                    this.switchToDirectplay();
+                } else {
+                    this.hls.nextLevel = resolution.level;
+                }
+
+            }
+        });
     }
 
     /**
@@ -663,10 +839,13 @@ export default class HlsPlayer extends Component {
         }
     }
 
+    /**
+     * Show the video controls
+     */
     showControls() {
         this.setState({ controlsVisible: true });
         this.videoContainer.style.cursor = 'default';
-        
+
         if (this.hideControlsTimeout != undefined) {
             clearTimeout(this.hideControlsTimeout);
         }
@@ -688,7 +867,9 @@ export default class HlsPlayer extends Component {
                     }
                 </Head>
                 <div onMouseMove={this.showControls} className={Styles.videoContainer} ref={node => this.videoContainer = node} onDoubleClick={this.toggleFullscreen}>
-                    <video ref={node => this.videoNode = node} playsInline className={Styles.videoPlayer} onClick={this.togglePlay} controls={this.state.nativeHlsSupported} />
+                    <video ref={node => this.videoNode = node} playsInline className={Styles.videoPlayer} onClick={this.togglePlay} controls={this.state.nativeHlsSupported} crossorigin={"anonymous"}>
+                        <track id="subtitle" ref={node => this.subtitleNode = node} kind="subtitles" />
+                    </video>
                     {this.props.children}
 
                     {!this.state.nativeHlsSupported &&
@@ -730,15 +911,21 @@ export default class HlsPlayer extends Component {
                                         <div className={`${Styles.chromecast} ${Styles.button}`} onClick={() => this.chromecastHandler.requestChromecastSession(this.videoNode.currentTime)}>
                                             <google-cast-launcher></google-cast-launcher>
                                         </div>
-                                        {this.state.subtitles.length > 0 &&
+                                        {(this.state.subtitles.length > 0 || this.state.directplaySubtitles.length > 0) &&
                                             <div className={Styles.subtitleContainer}>
                                                 <div className={`${Styles.subtitles} ${Styles.button}`}></div>
 
                                                 <div className={Styles.subtitlesList}>
                                                     <ul>
-                                                        {this.state.subtitles.map((subtitle, index) => {
+                                                        {!this.state.usingDirectplay && this.state.subtitles.map((subtitle, index) => {
                                                             return (
                                                                 <li key={index} className={subtitle.id == this.state.activeSubtitleId ? `${Styles.activeSubtitle}` : ''} onClick={() => this.setSubtitle(subtitle)}>{subtitle.name}</li>
+                                                            )
+                                                        })}
+
+                                                        {this.state.usingDirectplay && this.state.directplaySubtitles.map((subtitle, index) => {
+                                                            return (
+                                                                <li key={index} className={subtitle.id == this.state.activeSubtitleId ? `${Styles.activeSubtitle}` : ''} onClick={() => this.setSubtitle(subtitle)}>{subtitle.language}</li>
                                                             )
                                                         })}
                                                     </ul>

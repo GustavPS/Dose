@@ -21,58 +21,18 @@ class HlsManager {
         return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     }
 
-    /*
-    getUniqueTranscodingHash() {
-        let hash = this.generateHash();
-        while (global.transcodings.some(transcoding => transcoding.hash === hash)) {
-            hash = this.generateHash();
-        }
-        return hash;
-    }
-    */
-
-    prepareDirectplay(content) {
-        return new Promise((resolve, reject) => {
-            content.getFilePath()
-            .then(async (filePath) => {
-                const output = Transcoding.createTempDir();
-                const startSegment = 0;
-
-                const fastTranscoding = new Transcoding(filePath, startSegment, true);
-                fastTranscoding.prepareDirectplay(output)
-                .then(hlsFile => {
-                    resolve({
-                        id: content.id,
-                        hlsFile: hlsFile,
-                        output: output
-                    });
-                })
-                .catch(() => {
-                    reject({
-                        id: content.id
-                    });
-                });
-            });
-        });
-    }
-
     startTranscoding(content, quality, startSegment, groupHash, audioStreamIndex, audioTranscoding, user) {
         return new Promise(resolve => {
             content.getFilePath()
             .then(filePath => {
-                const isDirectplay = quality == "DIRECTPLAY";
-                //const hash = this.getUniqueTranscodingHash();
                 const output = Transcoding.createTempDir();
 
                 const fastTranscoding = new Transcoding(filePath, startSegment, true); // Fast transcoding
                 const transcodingGroup = new TranscodingGroup(user, content, groupHash, fastTranscoding);
 
-                // If we're using directplay, we don't need the slow transcoding
-                if (!isDirectplay) {
-                    const slowTranscodingStartSegment = startSegment + (Transcoding.FAST_START_TIME / Transcoding.SEGMENT_DURATION)
-                    const slowTranscoding = new Transcoding(filePath, slowTranscodingStartSegment, false); // Slow transcoding
-                    transcodingGroup.addSlowTranscoding(slowTranscoding);
-                }
+                const slowTranscodingStartSegment = startSegment + (Transcoding.FAST_START_TIME / Transcoding.SEGMENT_DURATION)
+                const slowTranscoding = new Transcoding(filePath, slowTranscodingStartSegment, false); // Slow transcoding
+                transcodingGroup.addSlowTranscoding(slowTranscoding);
                 global.transcodings.push(transcodingGroup);
                 const promises = transcodingGroup.start(quality, output, audioStreamIndex, audioTranscoding);
 

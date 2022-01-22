@@ -15,6 +15,8 @@ let TvLibrary;
 let MovieLibrary;
 let getSegment;
 let logger;
+let Transcoding;
+let fsExtra;
 
 class Server {
     constructor(port, dev) {
@@ -67,6 +69,8 @@ class Server {
         TvLibrary = require('./library/tvLibrary');
         MovieLibrary = require('./library/movieLibrary');
         getSegment = require('../pages/api/video/[id]/hls/[quality]/segments/[segment]');
+        Transcoding = require('./hls/transcoding');
+        fsExtra = require('fs-extra');
     }
 
     /**
@@ -193,13 +197,20 @@ class Server {
      * Starts the library watcher
      */
     startWatcher() {
-        this.watcher.init(() => {
-            this.watcher.startWatcher();
+        return new Promise(resolve => {
+            this.watcher.init(() => {
+                this.watcher.startWatcher();
+                resolve();
+            });
         });
     }
 
     createWatcher() {
         this.watcher = new Watcher();
+    }
+
+    removeTempFolder() {
+        fsExtra.emptyDirSync(Transcoding.TEMP_FOLDER);
     }
 
     start() {
@@ -223,6 +234,7 @@ class Server {
             if (isSetupDone) {
                 this.loadRequiredModules();
                 this.configureAllEndpoints();
+                this.removeTempFolder();
             } else {
                 logger.WARNING("Setup not done, only starting setup endpoints");
                 this.configureSetupEndpoints();
@@ -232,10 +244,11 @@ class Server {
                 logger.INFO(`Server started on port ${this.port}`);
                 this.setupEventListeners();
                 if (isSetupDone) {
-                    this.createWatcher();
-                    this.startWatcher();
                     const jobHandler = new JobHandler();
-                    jobHandler.startAllJobs();
+                    this.createWatcher();
+                    this.startWatcher().then(() => {
+                        jobHandler.startAllJobs();
+                    });
                 }
             })
 
