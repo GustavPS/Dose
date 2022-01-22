@@ -109,12 +109,18 @@ class DirectplayPreparationJob extends Job {
                     const filePath = await content.getFilePath();
                     try {
                         const output = await this.convertToAac(filePath);
-                        fs.rename(output, filePath, (err) => {
+                        fs.copyFile(output, filePath, (err) => {
                             if (err) {
                                 metadata.setDirectplayFailed(content.id);
-                                logger.ERROR(`Error renaming file after directplay convertion: ${err}`);
+                                logger.ERROR(`Error copying file after directplay convertion: ${err}`);
                                 console.log(err);
                             } else {
+                                fs.unlink(output, (err) => {
+                                    if (err) {
+                                        logger.ERROR(`Error removing file after directplay convertion:${err}`);
+                                        console.log(err);
+                                    }
+                                });
                                 // Get streams from video
                                 this.getStreams(filePath).then(streams => {
                                     // Get audio streams
