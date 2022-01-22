@@ -7,6 +7,8 @@ const Episode = require('../media/Episode.js');
 const Movie = require('../media/Movie.js');
 const Job = require('./Job.js');
 const fs = require('fs');
+const ffmpeg = require('fluent-ffmpeg');
+const path = require('path');
 
 const logger = new Logger();
 
@@ -14,6 +16,78 @@ class DirectplayPreparationJob extends Job {
     constructor(interval, runAtStart=false) {
         super(interval, runAtStart);
         this.running = false;
+    }
+
+    convertToAac(filePath) {
+        return new Promise((resolve, reject) => {
+            const output = path.join(Transcoding.TEMP_FOLDER, path.basename(filePath))
+            ffmpeg(filePath)
+            .withVideoCodec('copy')
+            .withAudioCodec('aac')
+            .inputOptions([
+                '-threads 4'
+            ])
+            .outputOptions([
+                '-map 0',
+                '-map -v',
+                '-map V',
+                '-c:s copy',
+            ])
+            .on('end', () => {
+                resolve(output);
+            })
+            .on('error', (err, stdout, stderr) => {
+                reject({
+                    err: err,
+                    stdout: stdout,
+                    stderr: stderr
+                })
+            })
+            .output(output)
+            .run();
+        });
+    }
+
+    getStreams(path) {
+        return new Promise((resolve, reject) => {
+            ffmpeg.ffprobe(path, (err, metadata) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(metadata.streams);
+            });
+        });
+    }
+
+    findAudioStreams(streams) {
+        const audioStreams = [];
+        for (let stream of streams) {
+            if (stream.codec_type === 'audio') {
+                if (stream.tags != undefined && stream.tags.language != undefined) {
+                    audioStreams.push({
+                        language: stream.tags.language,
+                        codec: stream.codec_name,
+                        stream: stream.index
+                    });
+                } else {
+                    audioStreams.push({
+                        language: 'Unknown',
+                        codec: stream.codec_name,
+                        stream: stream.index
+                    });
+                }
+
+            }
+        }
+        if (audioStreams.length === 0) {
+            audioStreams.push({
+                language: 'Unknown',
+                codec: 'Unknown',
+                stream: -1
+            });
+        }
+        return audioStreams;
     }
 
     prepareDirectplay(metadata) {
@@ -28,41 +102,50 @@ class DirectplayPreparationJob extends Job {
                 } else {
                     logger.DEBUG(`No files to prepare for directplay (type: ${metadata.getType()})`);
                 }
-                while (candidates.length > 0) {
-                    const promises = [];
-                    // Create m3u8 files for each candidate, max SIMULTANEOUS_DIRECTPLAY_PREPARE_LIMIT at a time
-                    for (let i = 0; i < Transcoding.SIMULTANEOUS_DIRECTPLAY_PREPARE_LIMIT && candidates.length > 0; i++) {
-                        const dbObject = candidates.pop();
-                        const content = isMovie ? new Movie(dbObject.movie_id) : new Episode(dbObject.episode_id);
-                        promises.push(hlsManager.prepareDirectplay(content));
-                    }
+
+                let counter = 0;
+                for (const candidate of candidates) {
+                    const content = isMovie ? new Movie(candidate.movie_id) : new Episode(candidate.episode_id);
+                    const filePath = await content.getFilePath();
                     try {
-                        const files = await Promise.all(promises);
-    
-                        // Save that we have prepared the files and move the m3u8 file to the correct folder
-                        for (let file of files) {
-                            metadata.setDirectplayReady(file.id);
-                            const content = isMovie ? new Movie(file.id) : new Episode(file.id);
-                            const m3u8Path = await content.getM3u8Path();
-    
-                            fs.copyFile(file.hlsFile, m3u8Path, (err) => {
-                                if (err) {
-                                    logger.ERROR(`Error while moving m3u8 file: ${err}`);
-                                } else {
-                                    fs.rm(file.output, {recursive: true, force: true}, (err) => {
-                                        if (err) {
-                                            logger.ERROR(`Error removing directplay preparation temp-path`);
-                                            logger.ERROR(err);
-                                        }
+                        const output = await this.convertToAac(filePath);
+                        fs.rename(output, filePath, (err) => {
+                            if (err) {
+                                metadata.setDirectplayFailed(content.id);
+                                logger.ERROR(`Error renaming file after directplay convertion: ${err}`);
+                                console.log(err);
+                            } else {
+                                // Get streams from video
+                                this.getStreams(filePath).then(streams => {
+                                    // Get audio streams
+                                    const audioStreams = this.findAudioStreams(streams);
+                                    content.removeAllLanguages();
+                                    const promises = [];
+                                    // Store the audio streams to the database
+                                    for (const stream of audioStreams) {
+                                        promises.push(content.addLanguage(stream.language, stream.stream, stream.codec));
+                                    }
+
+                                    Promise.all(promises).then(() => {
+                                        metadata.setDirectplayReady(content.id);
+                                        logger.DEBUG(`Finished preparing a file for directplay, ${candidates.length - counter} file(s) left`);
+                                    }).catch(err => {
+                                        metadata.setDirectplayFailed(content.id);
+                                        logger.ERROR(`Error adding languages to content: ${err}`);
+                                        console.log(err);
                                     });
-                                }
-                            });
-                        }
-                        logger.DEBUG(`Finished preparing ${files.length} file(s) for directplay, ${candidates.length} file(s) left`);
-                    } catch (failedFile) {
-                        metadata.setDirectplayFailed(failedFile.id);
-                        logger.ERROR(`Error preparing file(s) for directplay. Will mark as failed and continue with next one.`);
+                                });
+                               
+                            }
+                        });
+                    } catch (err) {
+                        metadata.setDirectplayFailed(content.id);
+                        console.log(err.err);
+                        console.log(err.stdout);
+                        console.log(err.stderr)
+                        logger.ERROR(`Error converting file: ${filePath}`);
                     }
+                    counter++;
                 }
                 if (gotCandidates) {
                     logger.INFO(`Finished preparing all files for directplay`);

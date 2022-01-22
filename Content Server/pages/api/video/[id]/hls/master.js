@@ -52,22 +52,14 @@ const getPixels = (quality) => {
  * @param {*} duration - The duration of the video
  * @param {*} group - The transcoding group
  * @param {*} audioStream - The audio stream to use
- * @param {*} directplay - If the video supports directplay
  * @param {*} type - The type of the video (movie or episode)
  * @param {*} isIos - If the user is using an iOS device
  * @returns 
  */
-const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, directplay, type, isIos, hasSubtitles, token) => {
+const getM3u8Streams = (resolution, fps, id, duration, group, audioStream, type, isIos, hasSubtitles, token) => {
     let m3u8 = "";
     let bw = 4000;
     const subtitleString = hasSubtitles ? ',SUBTITLES="subs"' : '';
-    if (directplay) {
-        m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=4500,AVERAGE-BANDWIDTH=4500,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",FRAME-RATE=${fps},NAME="Directplay"${subtitleString}\n`;
-        m3u8 += `/api/video/${id}/hls/DIRECTPLAY?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
-        if (isIos) {
-            return m3u8;
-        }
-    }
     if (resolution["8k"]) {
         m3u8 += `#EXT-X-STREAM-INF:BANDWIDTH=6000,AVERAGE-BANDWIDTH=6000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=${getPixels('8k')},FRAME-RATE=${fps},NAME="8K"${subtitleString}\n`;
         m3u8 += `/api/video/${id}/hls/8K?duration=${duration}&group=${group}&audioStream=${audioStream}&type=${type}&token=${token}\n`
@@ -147,21 +139,13 @@ export default async (req, res) => {
     const content = type == "movie" ? new Movie(id) : new Episode(id);
     //const movie = new Movie(id);
     const userAgent = useUserAgent(req.headers['user-agent']);
-    const isChromecast = req.headers['user-agent'].indexOf('CrKey') !== -1; // Currently Chromecast is not supported for directplay streaming
     const isIos = userAgent.isIphone || userAgent.isMac;
-    const browser   = getBrowser(userAgent);
 
     const path = await content.getFilePath()
     const resolutions = await content.getResolutions();
     const subtitles = await content.getSubtitles();
-    const isDirectplayReady = await content.isDirectplayReady();
-    let directPlay = browser.videoCodecSupported(resolutions["codec"]) && !isChromecast && isDirectplayReady;
     const hlsManager = new HlsManager();
     const met = await getMetadata(path);
-
-    if (!isDirectplayReady) {
-        logger.INFO(`Directplay is not ready for ${id}, forcing transcodings`);
-    }
 
     let duration = met.format.duration;
     let fps = met.streams[0].r_frame_rate;
@@ -187,6 +171,6 @@ export default async (req, res) => {
         m3u8 += getSubtitleStreams(id, subtitles, type, token);
     }
 
-    m3u8 += getM3u8Streams(resolutions, fps, id, duration, groupHash, audioStream, directPlay, type, isIos, subtitles.length > 0, token);
+    m3u8 += getM3u8Streams(resolutions, fps, id, duration, groupHash, audioStream, type, isIos, subtitles.length > 0, token);
     res.status(200).send(m3u8);
 }

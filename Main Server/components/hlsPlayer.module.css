@@ -41,23 +41,23 @@
 
 .seekTime {
     position: absolute;
-	top: -50%;
+    top: -50%;
 }
 
 .seekTime span {
     padding: 0 3px;
-	height: 25px;
-	line-height: 25px;
-	text-align: center;
-	background: #0000006b;
-	color: #fff;
-	font-size: 12px;
-	display: block;
-	position: absolute;
+    height: 25px;
+    line-height: 25px;
+    text-align: center;
+    background: #0000006b;
+    color: #fff;
+    font-size: 12px;
+    display: block;
+    position: absolute;
     left: 50%;
     top: -5px;
-	transform: translate(-50%, 0);
-	border-radius: 6px;
+    transform: translate(-50%, 0);
+    border-radius: 6px;
 }
 
 .seekWrapper {
@@ -100,9 +100,11 @@
     display: inline-flex;
     width: 33vw;
 }
+
 .lowerMiddleControls {
     width: 33vw;
 }
+
 .lowerRightControls {
     display: inline-flex;
     width: calc(33vw - 75px);
@@ -130,10 +132,14 @@
     font-size: 25px;
     margin: 0;
     padding: 0;
-    -webkit-user-select: none; /* Safari */  
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE10+/Edge */
-    user-select: none; /* Standard */
+    -webkit-user-select: none;
+    /* Safari */
+    -moz-user-select: none;
+    /* Firefox */
+    -ms-user-select: none;
+    /* IE10+/Edge */
+    user-select: none;
+    /* Standard */
 }
 
 .infoText {
@@ -223,7 +229,7 @@
     position: relative;
 }
 
-.subtitleContainer:hover > .subtitlesList {
+.subtitleContainer:hover>.subtitlesList {
     display: block;
 }
 
@@ -231,7 +237,7 @@
     position: relative;
 }
 
-.resolutionContainer:hover > .resolutionList {
+.resolutionContainer:hover>.resolutionList {
     display: block;
 }
 
@@ -293,7 +299,7 @@
     font-weight: bold;
 }
 
-.soundContainer:hover >.soundbarContainer {
+.soundContainer:hover>.soundbarContainer {
     display: block;
 }
 

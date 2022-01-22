@@ -320,12 +320,10 @@ export default function Home(props) {
       window.scrollTo(window.scrollX, window.scrollY - 1);
       window.scrollTo(window.scrollX, window.scrollY + 1);
   }
-
   return (
     <>
     <HlsPlayer
       ref={videoRef}
-      src={`${server.server_ip}/api/video/${id}/hls/master`}
       server={server}
       id={id}
       type={"movie"}>

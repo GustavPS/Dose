@@ -35,20 +35,16 @@ class Transcoding {
         return "h264_nvenc";
     }
 
-    getCpuVideoCodec(directplay) {
-        if (directplay) {
-            return "copy";
-        } else {
-            return "libx264";
-        }
+    getCpuVideoCodec() {
+        return "libx264";
     }
 
-    getVideoCodec(directplay) {
+    getVideoCodec() {
         // TODO: Parse this as a boolean
         if (process.env.GPU_TRANSCODING === "TRUE") {
             return this.getGpuVideoCodec();
         } else {
-            return this.getCpuVideoCodec(directplay);
+            return this.getCpuVideoCodec();
         }
     }
 
@@ -151,60 +147,16 @@ class Transcoding {
         ];
     }
 
-    prepareDirectplay(output) {
-        return new Promise((resolve, reject) => {
-            this.output = path.join(output, 'result.m3u8');
-            const outputOptions = this.getOutputOptions();
-            const inputOptions = [
-                '-copyts',
-                '-threads 8',
-                '-fflags +genpts', // Fixes AVI issues
-                '-ss 0'
-            ];
-
-            this.ffmpegProc = ffmpeg(this.filePath)
-            .withVideoCodec("copy")
-            .withAudioCodec("copy")
-            .withVideoBitrate(4000)
-            .inputOptions(inputOptions)
-            .outputOptions(outputOptions)
-            .on('end', () =>{
-                delete this.ffmpegProc;
-                resolve(this.output);
-            })
-            .on('error', (err, stdout, stderr) => {
-                logger.ERROR(`Transcoding error for file: ${this.filePath}`);
-                logger.ERROR(`Cannot process video: ${err.message}`);
-                logger.ERROR(`ffmpeg stderr: ${stderr}`);
-                delete this.ffmpegProc;
-                // Remove the output folder (the transcoding) since the transcoding failed
-                fs.rm(output, {recursive: true, force: true}, (err) => {
-                    if (err) {
-                        logger.ERROR(`Error removing directplay preparation temp-path`);
-                        logger.ERROR(err);
-                    }
-                });
-                reject();
-            })
-            .output(this.output);
-            this.ffmpegProc.run();
-        });
-    }
-
     start(quality, output, audioStreamIndex, audioSupported) {
         this.quality = quality;
         return new Promise(resolve => {
             this.output = output;
-            const directplay = quality === "DIRECTPLAY";
-            const audioCodec = audioSupported ? "copy" : "aac";
 
             let outputOptions = this.getOutputOptions();
             outputOptions.push('-map -a');
             outputOptions.push(`-map 0:${audioStreamIndex}`);
 
-            if (!directplay) {
-                outputOptions.push(this.getQualityParameter(quality));
-            }
+            outputOptions.push(this.getQualityParameter(quality));
 
             let inputOptions = [
                 '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
@@ -212,16 +164,15 @@ class Transcoding {
                 this.getSeekParameter(),
             ];
 
-            // If we are using directplay we use fast transcoding for the whole file, since CPU usage is low
-            if (this.fastStart && !directplay) {
+            if (this.fastStart) {
                 outputOptions.push(`-to ${(this.startSegment * Transcoding.SEGMENT_DURATION) + Transcoding.FAST_START_TIME}`); // Quickly transcode the first 4 segments
             } else if (!this.fastStart) {
                 inputOptions.push('-re'); // Process the file slowly to save CPU
             }
 
             this.ffmpegProc = ffmpeg(this.filePath)
-            .withVideoCodec(this.getVideoCodec(directplay))
-            .withAudioCodec(audioCodec)
+            .withVideoCodec(this.getVideoCodec())
+            .withAudioCodec("aac")
             .inputOptions(inputOptions)
             .outputOptions(outputOptions)
             .on('end', () => {
@@ -251,7 +202,7 @@ class Transcoding {
         logger.DEBUG("[HLS] Stopping transcoding");
         this.ffmpegProc.kill();
         // If this process is for a transcoding fast start, we need to keep the temp folder for the slow transcoding process
-        if (!this.fastStart || (this.fastStart && this.quality == "DIRECTPLAY")) {
+        if (!this.fastStart) {
             this.removeTempFolder();
         }
     }

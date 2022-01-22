@@ -349,6 +349,36 @@ class Movie extends Content {
         return 'movie';
     }
 
+    getLanguages() {
+        return new Promise(resolve => {
+            db.any('SELECT language, id, stream_index FROM movie_language WHERE movie_id = $1', [this.#movieId]).then(result => {
+                resolve(result);
+            });
+        });
+    }
+
+    removeAllLanguages() {
+        return new Promise((resolve, reject) => {
+            db.none('DELETE FROM movie_language WHERE movie_id = $1', [this.#movieId]).then(() => {
+                resolve();
+            }).catch(error => {
+                logger.ERROR(`Error removing all languages: ${error}`);
+                reject();
+            });
+        });
+    }
+
+    addLanguage(language, streamIndex, codec) {
+        return new Promise((resolve, reject) => {
+            db.none('INSERT INTO movie_language (movie_id, language, stream_index, codec) VALUES ($1, $2, $3, $4)', [this.#movieId, language, streamIndex, codec]).then(result => {
+                resolve();
+            }).catch(error => {
+                logger.ERROR(`Error inserting language: ${error}`);
+                reject();
+            });
+        });
+    }
+
     async getM3u8Path() {
         const videoPath = await this.getFilePath();
         const videoFolder = path.parse(videoPath).dir;

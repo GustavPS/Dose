@@ -33,6 +33,22 @@ class Content {
     getBackdrop() {
         throw new Error('Not implemented');
     }
+
+    isDirectplayReady() {
+        throw new Error('Not implemented');
+    }
+
+    getLanguages() {
+        throw new Error('Not implemented');
+    }
+
+    removeAllLanguages() {
+        throw new Error('Not implemented');
+    }
+
+    addLanguage() {
+        throw new Error('Not implemented');
+    }
 }
 
 module.exports = Content;
