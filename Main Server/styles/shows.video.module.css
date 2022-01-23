@@ -204,6 +204,7 @@
     flex-wrap: wrap;
     justify-content: center;
     padding: 50px;
+    width: 100%;
 }
 
 @keyframes ldio {

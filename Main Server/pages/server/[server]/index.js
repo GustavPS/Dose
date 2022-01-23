@@ -570,7 +570,7 @@ const main = (props) => {
             <Container fluid className={Styles.contentRows}>
             {popularMovies.length > 0 &&
                     <>
-                        <h2 style={{textTransform: 'capitalize'}}>Populärt just nu</h2>  
+                        <h2 style={{textTransform: 'capitalize'}}>Popular</h2>  
                         <div className={Styles.movieRow}>
                             <div id="popularMovies" className={Styles.scrollable}>
                                 {popularMovies}
@@ -592,7 +592,7 @@ const main = (props) => {
 
                 {ongoingMovies.length > 0 &&
                     <>
-                        <h2 style={{textTransform: 'capitalize'}}>Pågående filmer</h2>  
+                        <h2 style={{textTransform: 'capitalize'}}>Ongoing Movies</h2>  
                         <div className={Styles.movieRow}>
                             <div id="ongoingMovies" className={Styles.scrollable}>
                                 {ongoingMovies}
@@ -614,7 +614,7 @@ const main = (props) => {
 
                 {ongoingShows.length > 0 &&
                     <>
-                        <h2 style={{textTransform: 'capitalize'}}>Pågående serier</h2>    
+                        <h2 style={{textTransform: 'capitalize'}}>Ongoing Shows</h2>    
                         <div className={Styles.movieRow}>
                             <div id="ongoingShows" className={Styles.scrollable}>
                                 {ongoingShows}
@@ -633,10 +633,32 @@ const main = (props) => {
                     <hr className={Styles.divider}></hr>
                     </> 
                 }
+
+                {movieWatchList.length > 0 &&
+                    <>
+                        <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Watchlist</h2></a></Link>   
+                        <div className={Styles.movieRow}>
+                            <div id="movieWatchList" className={Styles.scrollable}>
+                                {movieWatchList}
+                            </div>
+                            {movieWatchList.length * 480 > windowSize.width &&
+                                <>
+                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('movieWatchList')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                    </div>
+                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('movieWatchList')}>
+                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                    </div>
+                                </>
+                            }
+                        </div> 
+                    <hr className={Styles.divider}></hr>
+                    </> 
+                }
      
                 {newlyAddedMovies.length > 0 &&
                     <>
-                        <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda filmer</h2></a></Link>   
+                        <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Newly Added Movies</h2></a></Link>   
                         <div className={Styles.movieRow}>
                             <div id="newlyAddedMovies" className={Styles.scrollable}>
                             {newlyAddedMovies}
@@ -656,31 +678,11 @@ const main = (props) => {
                     </> 
                 }
 
-                {movieWatchList.length > 0 &&
-                    <>
-                        <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Filmer att se senare</h2></a></Link>   
-                        <div className={Styles.movieRow}>
-                            <div id="movieWatchList" className={Styles.scrollable}>
-                                {movieWatchList}
-                            </div>
-                            {movieWatchList.length * 480 > windowSize.width &&
-                                <>
-                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('movieWatchList')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                    </div>
-                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('movieWatchList')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                    </div>
-                                </>
-                            }
-                        </div> 
-                    <hr className={Styles.divider}></hr>
-                    </> 
-                }
+                
                 
                 {newlyAddedEpisodes.length > 0 &&
                     <>
-                        <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda avsnitt</h2></a></Link>
+                        <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Newly Added Episodes</h2></a></Link>
                         <div className={Styles.movieRow}>
                             <div id="newlyAddedEpisodes" className={Styles.scrollable}>
                                 {newlyAddedEpisodes}
@@ -702,7 +704,7 @@ const main = (props) => {
                 
                 {newlyAddedShows.length > 0 &&
                     <>
-                        <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Nyligen tillagda serier</h2></a></Link>
+                        <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Newly Added Shows</h2></a></Link>
                         <div className={Styles.movieRow}>
                             <div id="newlyAddedShows" className={Styles.scrollable}>
                                 {newlyAddedShows}
