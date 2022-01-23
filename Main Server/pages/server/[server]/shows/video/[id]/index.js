@@ -2,7 +2,7 @@ import Head from 'next/head'
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router'
 import ReactPlayer from 'react-player'
-import Styles from '../../../../../../styles/video.module.css';
+import Styles from '../../../../../../styles/shows.video.module.css';
 import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
 import Router from 'next/router';
@@ -119,8 +119,8 @@ export default function Home(props) {
           <div className={Styles.description}>
             <h1>{metadata.title}</h1>
             <div className={Styles.metadata}>
-              <p className={Styles.releaseDate}>Första avsnittet: {metadata.first_air_date}</p>
-              <p className={Styles.addedDate}>Tillagd: {metadata.added_date}</p>
+              <p className={Styles.releaseDate}>First air date: {metadata.first_air_date}</p>
+              <p className={Styles.addedDate}>Added to library: {metadata.added_date}</p>
             </div>
             <div className={Styles.overview}>
                 <p>{metadata.overview}</p>

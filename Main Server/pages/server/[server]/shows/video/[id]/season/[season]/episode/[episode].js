@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router'
-import Styles from '../../../../../../../../../styles/video.module.css';
+import Styles from '../../../../../../../../../styles/shows.video.module.css';
 import fetch from 'node-fetch'
 import Router from 'next/router';
 import cookies from 'next-cookies'
@@ -287,20 +287,25 @@ export default function Home(props) {
             }
             {loaded &&
                 <>
-                    <div id="container">
+                    <div className={Styles.episodeContainer}>
                         <div style={{ backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.backdrop}')` }} className={Styles.background}></div>
                         <div className="backIcon" onClick={() => Router.back()}></div>
 
 
-                        <div className={Styles.top}>
+                        <div className={Styles.top + " " + Styles.episodeTop}>
                             <div className={Styles.poster} style={{ backgroundImage: `url('https://image.tmdb.org/t/p/original${metadata.poster}')` }} />
                             <div className={Styles.description}>
                                 <h1>{metadata.title}</h1>
                                 <div className={Styles.metadata}>
-                                    <p className={Styles.releaseDate}>{metadata.release_date}</p>
-                                    <p className={Styles.runtime}>{Math.floor(metadata.runtime / 60) + "h " + metadata.runtime % 60 + "m"}</p>
-                                    <p className={Styles.endsat}>Slutar vid {metadata.finish_at}</p>
-                                    <p className={Styles.addedDate}>Tillagd {metadata.added_date}</p>
+                                    {false &&
+                                        <>
+                                            <p className={Styles.releaseDate}>{metadata.release_date}</p>
+                                            <p className={Styles.runtime}>{Math.floor(metadata.runtime / 60) + "h " + metadata.runtime % 60 + "m"}</p>
+                                            <p className={Styles.endsat}>Ends at {metadata.finish_at}</p>
+                                        </>
+                                    }
+                                    <p className={Styles.addedDate}>Added {metadata.added_date}</p>
+
                                 </div>
                                 <div className={Styles.overview}>
                                     <p>{metadata.overview}</p>
@@ -309,42 +314,46 @@ export default function Home(props) {
                                     {metadata.currentTimeSeconds > 0 &&
                                         <div style={{ marginRight: "15px" }} className={Styles.actionButton}>
                                             <div className={Styles.playButton} onClick={() => videoRef.current.show(metadata.currentTimeSeconds)}></div>
-                                            <p style={{ marginTop: "5px", fontSize: '14px' }}>Återuppta från {metadata.currentTime}</p>
+                                            <p style={{ marginTop: "5px", fontSize: '14px' }}>Resume from {metadata.currentTime}</p>
                                         </div>
                                     }
                                     <div className={Styles.actionButton}>
                                         <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
-                                        <p style={{ marginTop: "5px", fontSize: '14px' }}>Spela från början</p>
+                                        <p style={{ marginTop: "5px", fontSize: '14px' }}>Play from the start</p>
                                     </div>
-                                    {watched &&
+
+                                    
+                                    {false &&
                                         <div style={{ marginLeft: "15px" }} className={Styles.actionButton}>
                                             <div id="markAsWatched" style={{ backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')` }} className={Styles.playButton} onClick={() => markAsNotWatched()}></div>
-                                            <p id="markAsWatchedText" style={{ marginTop: "5px", fontSize: '14px' }}>Markera som osedd</p>
+                                            <p id="markAsWatchedText" style={{ marginTop: "5px", fontSize: '14px' }}>Mark as seen</p>
                                         </div>
                                     }
-                                    {!watched &&
+                                    {false &&
                                         <div style={{ marginLeft: "15px" }} className={Styles.actionButton}>
                                             <div id="markAsWatched" style={{ backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')` }} className={Styles.playButton} onClick={() => markAsWatched()}></div>
-                                            <p id="markAsWatchedText" style={{ marginTop: "5px", fontSize: '14px' }}>Markera som sedd</p>
+                                            <p id="markAsWatchedText" style={{ marginTop: "5px", fontSize: '14px' }}>Mark as unseen</p>
                                         </div>
                                     }
 
                                     <div className={Styles.actionButton} style={{marginLeft: "15px"}}>
                                         <div id="goToShow" style={{ backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/television.svg')` }} className={Styles.playButton} onClick={goToShowPage} ></div>
-                                        <p id="markAsWatchedText" style={{ marginTop: "5px", fontSize: '14px' }}>Gå till serien</p>
+                                        <p id="markAsWatchedText" style={{ marginTop: "5px", fontSize: '14px' }}>Go to the show</p>
 
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className={Styles.bottom}>
-                            <h1>Actors</h1>
-                            <div className={Styles.actors}>
-                                <div className={Styles.actor}>
+                        {false &&
+                            <div className={Styles.bottom}>
+                                <h1>Actors</h1>
+                                <div className={Styles.actors}>
+                                    <div className={Styles.actor}>
 
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        }
                     </div>
                 </>
             }
