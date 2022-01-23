@@ -38,11 +38,11 @@ export default function Layout({ children, home, searchEnabled, server, relative
           }
           if (content.type === 'movie') {
             elements.push(
-              <MovieBackdrop showTitle key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectMovie(id)}></MovieBackdrop>
+              <MovieBackdrop multipleRows key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectMovie(id)}></MovieBackdrop>
             );
           } else if (content.type === 'serie') {
             elements.push(
-              <MovieBackdrop showTitle key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectShow(id)}></MovieBackdrop>
+              <MovieBackdrop multipleRows key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectShow(id)}></MovieBackdrop>
             );
           }
 
@@ -54,17 +54,6 @@ export default function Layout({ children, home, searchEnabled, server, relative
 
   const onClose = () => {
     setIsSearching(false);
-  }
-
-  const scrollLeft = (id) => {
-    document.getElementById(id).scrollLeft -= (window.innerWidth)*0.8;
-    window.scrollTo(window.scrollX, window.scrollY - 1);
-    window.scrollTo(window.scrollX, window.scrollY + 1);
-  }
-  const scrollRight = (id) => {
-      document.getElementById(id).scrollLeft += (window.innerWidth)*0.8;
-      window.scrollTo(window.scrollX, window.scrollY - 1);
-      window.scrollTo(window.scrollX, window.scrollY + 1);
   }
 
 
@@ -83,22 +72,10 @@ export default function Layout({ children, home, searchEnabled, server, relative
           <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} serverToken={serverToken} onSearch={(result) => onSearch(result)}></Search>}
       </header>
       {isSearching &&
-      <div style={{position: 'relative', top: '115px'}}>
-          <h2 style={{textTransform: 'capitalize', margin: '0 0 15px 15px', color: 'white'}}>Results</h2>  
+      <div style={{position: 'relative', top: '115px', textAlign: 'center'}}>
+          <h2 style={{textTransform: 'capitalize', margin: '0 0 15px 15px', color: 'white'}}>Results ({searchResults.length})</h2>  
         <div className={styles.searchResultBox}>
-          <div id="searchRow" className={styles.SearchResult}>
             {searchResults}
-          </div>
-          {searchResults.length * 480 > windowSize.width &&
-                                        <>
-                                            <div className={styles.scrollButton} onClick={() => scrollLeft('searchRow')}>
-                                                <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                            </div>
-                                            <div className={styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('searchRow')}>
-                                                <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                            </div>
-                                        </>
-          }
         </div>
         </div>
       }
