@@ -84,7 +84,7 @@ export default function Layout({ children, home, searchEnabled, server, relative
       </header>
       {isSearching &&
       <div style={{position: 'relative', top: '115px'}}>
-          <h2 style={{textTransform: 'capitalize', margin: '0 0 15px 15px', color: 'white'}}>Sökresultat</h2>  
+          <h2 style={{textTransform: 'capitalize', margin: '0 0 15px 15px', color: 'white'}}>Results</h2>  
         <div className={styles.searchResultBox}>
           <div id="searchRow" className={styles.SearchResult}>
             {searchResults}
