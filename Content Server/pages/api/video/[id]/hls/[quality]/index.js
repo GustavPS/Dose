@@ -14,7 +14,6 @@ export default async (req, res) => {
 
     if (!validateUser(token, process.env.SECRET, 10800)) {
         res.status(403).end();
-        resolve();
         return;
     }
 
