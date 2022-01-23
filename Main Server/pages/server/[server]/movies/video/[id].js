@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router'
 import { Form, Button, ListGroup, Image} from 'react-bootstrap';
 import ReactPlayer from 'react-player'
-import Styles from '../../../../../styles/video.module.css';
+import Styles from '../../../../../styles/movies.video.module.css';
 import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
 import Router from 'next/router';
