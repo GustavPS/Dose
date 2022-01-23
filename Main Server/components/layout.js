@@ -38,11 +38,11 @@ export default function Layout({ children, home, searchEnabled, server, relative
           }
           if (content.type === 'movie') {
             elements.push(
-              <MovieBackdrop showTitle key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectMovie(content.id)}></MovieBackdrop>
+              <MovieBackdrop showTitle key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectMovie(id)}></MovieBackdrop>
             );
           } else if (content.type === 'serie') {
             elements.push(
-              <MovieBackdrop showTitle key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectShow(content.id)}></MovieBackdrop>
+              <MovieBackdrop showTitle key={count} id={content.id} title={content.title} overview={content.overview} backdrop={img} onClick={(id) => selectShow(id)}></MovieBackdrop>
             );
           }
 
