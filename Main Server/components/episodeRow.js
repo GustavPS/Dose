@@ -1,7 +1,7 @@
 import style from './episodeRow.module.css';
 import { Component } from 'react';
 
-export default class SeasonPoster extends Component {
+export default class EpisodeRow extends Component {
     constructor(props) {
         super(props);
         this.name = props.name
