@@ -18,6 +18,13 @@ export default (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', "*");
         res.setHeader('Access-Control-Allow-Headers', "*");
         const hlsManager = new HlsManager();
+
+        if (isNaN(req.query.time) || isNaN(req.query.videoDuration)) {
+            logger.WARNING("Currenttime/set: Invalid time or videoDuration");
+            res.status(400).send("Invalid time or videoDuration");
+            resolve();
+            return;
+        }
     
         // TODO: Error handling
         const contentId = req.query.id;
