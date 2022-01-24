@@ -13,6 +13,12 @@
     transition: all 0.2;
 }
 
+.episodeContainer {
+    opacity: 1;
+    transition: all 0.2;
+    height: 100vh;
+}
+
 .nextEpisodeButton {
     position: absolute;
     z-index: 200;
@@ -106,16 +112,21 @@
 .top {
     position: relative;
     z-index: 1;
-    width: 100%;
+    width: 75vw;
     height: auto;
     display: inline-flex;
-    padding: 50px 50px 0 50px;
-    margin-top: 40px;
+    margin-top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
+.episodeTop {
+    top: 50%;
+    transform: translate(-50%, -65%);
+}
 .poster {
-    height: 379px;
-    width: 14vw;
+    height: 33vh;
+    width: 30vw;
     background-size: contain;
     background-repeat: no-repeat;
     transition: all 0.2s;
@@ -161,8 +172,14 @@
 }
 
 .bottom {
+    margin-top: 2%;
     color: white;
-    padding: 20px 50px 0 50px;
+    display: flex;
+    justify-content: center;
+}
+
+.bottom h1 {
+    position: absolute;
 }
 
 .unmarkAsWatchText {
@@ -170,12 +187,24 @@
 }
 
 .seasons {
-    display: inline-block;
+    margin-top: 3vh;
+    margin-bottom: 1%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .seasons div {
-    margin: 0 5px;
-    float: left;
+    margin: 5px 5px 5px 5px;
+    border-radius: 5px;
+}
+
+.EpisodeContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 50px;
+    width: 100%;
 }
 
 @keyframes ldio {
@@ -275,6 +304,13 @@
         width: 100%;
     }
 
+    .top {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
     .scrollButton {
         display: none;
     }
@@ -307,6 +343,11 @@
     }
 
     .poster {
-        display: none;
+        width: 100%;
+        height: 440px;
+    }
+
+    .bottom {
+        margin-top: 1vh;
     }
 }

@@ -15,8 +15,9 @@
     width: 100%;
     height: auto;
     color: white;
-    position: relative;
-    height: 235px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .scrollButton {

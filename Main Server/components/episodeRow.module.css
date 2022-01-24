@@ -1,5 +1,5 @@
 .backdrop {
-    width: 20vw;
+    width: 320px;
     height: 200px;
     background-size: contain;
     background-position: center;
@@ -10,15 +10,38 @@
 
 
 .episodeInformation {
-    width: 75vw;
+    width: 320px;
+    text-align: center;
+    max-height: 4vh;
+    height: 4vh;
+    margin-top: 1%;
+    padding: 0px 25px;
+}
+
+.episodeInformation h3 {
+    font-size: 1.25em;
+    font-weight: bold;
 }
 
 .row {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 23vh;
+    margin: 4% 2%;
+    width: 320px;
 }
 
 .row p {
     font-size: 14px;
+}
+
+.overview {
+    width: 100%;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .playIcon {
@@ -30,9 +53,25 @@
     top: 50%;
     transform: translate(-50%, -50%);
     transition: all 0.1s;
+    filter: invert(1);
 }
 
-.playIcon:hover {
+.backdrop:hover > .playIcon {
     width: 60px;
     height: 60px;
+}
+
+
+/* Mobile */
+@media only screen and (max-width: 768px) {
+    .row {
+        margin: 4% 1%;
+    }
+}
+
+/* Large Screen */
+@media only screen and (min-height: 1080px) {
+    .row {
+        margin: 2% 1%;
+    }
 }

@@ -65,7 +65,7 @@ export default class Search extends Component {
     render() {
         return (
             <Form autoComplete="off" className={Style.searchForm}>
-                <Form.Control onInput={this.search} type="text" placeholder="Sök.." />
+                <Form.Control onInput={this.search} type="text" placeholder="Search.." />
             </Form>
         )
     }

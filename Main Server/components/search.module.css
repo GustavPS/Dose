@@ -15,3 +15,19 @@
     border-right: none;
     border-radius: 0;
 }
+
+.searchForm input:focus {
+    background-color: #17344600;
+    color: white;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    box-shadow: none;
+    outline: 0;
+}
+
+.searchForm input::placeholder {
+    color: white;
+    opacity: 1;
+}
