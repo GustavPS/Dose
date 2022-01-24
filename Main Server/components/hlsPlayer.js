@@ -969,7 +969,7 @@ export default class HlsPlayer extends Component {
                     }
                 </Head>
                 <div onMouseMove={this.showControls} className={Styles.videoContainer} ref={node => this.videoContainer = node} onDoubleClick={this.toggleFullscreen}>
-                    <video ref={node => this.videoNode = node} playsInline className={Styles.videoPlayer} onClick={this.togglePlay} controls={this.state.nativeHlsSupported} crossOrigin={"anonymous"}>
+                    <video ref={node => this.videoNode = node} playsInline className={Styles.videoPlayer} onClick={!this.state.nativeHlsSupported ? this.togglePlay : null} controls={this.state.nativeHlsSupported} crossOrigin={"anonymous"}>
                         <track id="subtitle" ref={node => this.subtitleNode = node} kind="subtitles" />
                     </video>
                     {this.props.children}
