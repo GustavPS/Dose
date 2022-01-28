@@ -22,7 +22,7 @@
     "glob": "^7.1.6",
     "jsonwebtoken": "^8.5.1",
     "mime": "^2.4.5",
-    "next": "^12.0.4",
+    "next": "^12.0.9",
     "next-useragent": "^2.5.1",
     "node-async-locks": "^2.0.0",
     "node-fetch": "^2.6.0",
