@@ -30,7 +30,8 @@ export default (req, res) => {
           res.status(400).end();
       } else {
           db.any(`
-          SELECT i.serie_id AS serie_id, i.season_number AS season, i.episode_number AS episode, n.id AS internalEpisodeID, i.name AS title, i.air_date AS first_air_date, i.added_date, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images, l.poster_path as season_poster
+          SELECT i.serie_id AS serie_id, i.season_number AS season, i.episode_number AS episode, n.id AS internalEpisodeID, i.name AS title, i.air_date AS first_air_date, i.added_date, json_agg(json_build_object('path', k.path, 'active', j.active, 'type', j.type)) AS images, l.poster_path as season_poster,
+          n.serie_id AS show_id, i.overview
           FROM serie_episode_metadata i
 
           -- Join with serie_image and image to get an array of the movies images
@@ -50,7 +51,7 @@ export default (req, res) => {
 
           
 
-          GROUP BY i.serie_id, i.season_number, i.episode_number, i.added_date, n.id, l.poster_path
+          GROUP BY i.serie_id, i.season_number, i.episode_number, i.added_date, n.id, l.poster_path, n.serie_id
           ORDER BY ${orderBy} DESC
           OFFSET $1
           LIMIT $2
