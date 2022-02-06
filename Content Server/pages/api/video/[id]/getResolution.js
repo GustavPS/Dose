@@ -77,7 +77,7 @@ export default async (req, res) => {
         }
 
         const isDirectplayReady = await content.isDirectplayReady();
-        let directPlay = browser.videoCodecSupported(resolution["codec"]) && isDirectplayReady && browser.audioCodecSupported("aac")
+        let directPlay = browser.videoCodecSupported(resolution["codec"]) && isDirectplayReady && browser.audioCodecSupported("aac") && !userAgent.isIphone;
 
         res.status(200).json({
             resolutions: availableResolutions,
