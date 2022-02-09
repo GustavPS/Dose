@@ -1,16 +1,12 @@
 import Head from 'next/head'
-import Layout from '../../../../../components/layout';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router'
 import { Form, Button, ListGroup, Image} from 'react-bootstrap';
-import ReactPlayer from 'react-player'
 import Styles from '../../../../../styles/movies.video.module.css';
 import fetch from 'node-fetch'
-import vtt from 'vtt-live-edit';
 import Router from 'next/router';
 import cookies from 'next-cookies'
 
-import VideoComponent from '../../../../../components/videoComponent';
 import HlsPlayer from '../../../../../components/hlsPlayer';
 import VideoTrailer from '.././../../../../components/videoTrailer';
 import validateServerAccess from '../../../../../lib/validateServerAccess';
@@ -329,26 +325,39 @@ export default function Home(props) {
       type={"movie"}>
 
     </HlsPlayer>
-    <Head>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
-    <script src="https://vjs.zencdn.net/7.7.6/video.js"></script>
-
-    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-    <link href="https://vjs.zencdn.net/7.7.6/video-js.css" rel="stylesheet" />
-
-    </Head>
+   
     {(!loaded || !recommendedLoaded) &&
+    <>
+      <Head>
+        <title>Dose</title>
+      </Head>
       <div className={Styles.loadingioSpinnerEclipse}>
           <div className={Styles.ldio}>
               <div></div>
           </div>
       </div>
+    </>
     }
     {loaded && recommendedLoaded && 
     <>
 
 
+  <Head>
+      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
+      <title>{metadata.title + " (" + metadata.release_date.split('-')[0] + ")"}</title>
+      <meta name="title" content={metadata.title + " (" + metadata.release_date + ")"} />
+      <meta name="description" content={metadata.overview} />
 
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content={metadata.title + " (" + metadata.release_date.split('-')[0] + ")"} />
+      <meta property="og:description" content={metadata.overview} />
+      <meta property="og:image" content={"https://image.tmdb.org/t/p/original" + metadata.backdrop} />
+
+      <meta property="twitter:card" content="summary_large_image" />
+      <meta property="twitter:title" content={metadata.title + " (" + metadata.release_date.split('-')[0] + ")"} />
+      <meta property="twitter:description" content={metadata.overview} />
+      <meta property="twitter:image" content={"https://image.tmdb.org/t/p/original" + metadata.backdrop} />
+    </Head>
 
     {trailer !== false && viewTrailer &&
     <VideoTrailer onClose={() => setViewTrailer(false)} videoPath={trailer} />
@@ -369,11 +378,11 @@ export default function Home(props) {
       <div className="metadataBox">
         <Form onSubmit={searchMetadata}>
           <Form.Group controlId="formSearch">
-            <Form.Label>Uppdatera metadata för {metadata.path}</Form.Label>
-            <Form.Control ref={metadataSearch} type="text" placeholder="Sök efter ny metadata..." />
+            <Form.Label>Update metadata for {metadata.path}</Form.Label>
+            <Form.Control ref={metadataSearch} type="text" placeholder="Search for new metadata..." />
           </Form.Group>
           <Button variant="primary" type="submit">
-            Sök
+            Search
           </Button>
         </Form>
         <div style={{clear: 'both'}}></div>
@@ -392,8 +401,8 @@ export default function Home(props) {
         <div className={Styles.metadata}>
           <p className={Styles.releaseDate}>{metadata.release_date}</p>
           <p className={Styles.runtime}>{Math.floor(metadata.runtime / 60) + "h " + metadata.runtime%60+"m"}</p>
-          <p className={Styles.endsat}>Slutar vid {metadata.finish_at}</p>
-          <p className={Styles.addedDate}>Tillagd {metadata.added_date}</p>
+          <p className={Styles.endsat}>Ends At {metadata.finish_at}</p>
+          <p className={Styles.addedDate}>Added {metadata.added_date}</p>
         </div>
         <div className={Styles.overview}>
             <p>{metadata.overview}</p>
@@ -402,44 +411,44 @@ export default function Home(props) {
           {metadata.currentTimeSeconds > 0 &&
           <div style={{marginRight: "15px"}} className={Styles.actionButton}>
             <div className={Styles.playButton} onClick={() => videoRef.current.show(metadata.currentTimeSeconds)}></div>
-            <p style={{marginTop: "5px", fontSize: '14px'}}>Återuppta från {metadata.currentTime}</p>
+            <p style={{marginTop: "5px", fontSize: '14px'}}>Resume from {metadata.currentTime}</p>
           </div>
           }
           <div style={{marginRight: "15px"}} className={Styles.actionButton}>
             <div className={Styles.playButton} onClick={() => videoRef.current.show()}></div>
-            <p style={{marginTop: "5px", fontSize: '14px'}}>Spela från början</p>
+            <p style={{marginTop: "5px", fontSize: '14px'}}>Play from start</p>
           </div>
           <div className={`${Styles.actionButton} ${Styles.buttonHiddenForMobile}`}>
             <div className={Styles.playButton} onClick={() => setViewTrailer(true)}></div>
-            <p style={{marginTop: "5px", fontSize: '14px'}}>Visa trailer</p>
+            <p style={{marginTop: "5px", fontSize: '14px'}}>Show trailer</p>
           </div>
           {watched &&
               <div style={{marginLeft: "15px"}} className={Styles.actionButton}>
               <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => markAsNotWatched()}></div>
-              <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som osedd</p>
+              <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Mark as watched</p>
               </div>
           }
           {!watched &&
             <div style={{marginLeft: "15px"}} className={Styles.actionButton}>
               <div id="markAsWatched" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => markAsWatched()}></div>
-              <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Markera som sedd</p>
+              <p id="markAsWatchedText" style={{marginTop: "5px", fontSize: '14px'}}>Unmark as watched</p>
             </div>
           }
           {inWatchList &&
               <div style={{marginLeft: "15px"}} className={Styles.actionButton}>
               <div id="inWatchList" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/cross.svg')`}} className={Styles.playButton} onClick={() => removeFromWatchList()}></div>
-              <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Ta bort från watchlist</p>
+              <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Remove from watchlist</p>
               </div>
           }
           {!inWatchList &&
             <div style={{marginLeft: "15px"}} className={Styles.actionButton}>
               <div id="inWatchList" style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/eye.svg')`}} className={Styles.playButton} onClick={() => addToWatchList()}></div>
-              <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Lägg till i watchlist</p>
+              <p id="inWatchListText" style={{marginTop: "5px", fontSize: '14px'}}>Add to watchlist</p>
             </div>
           }
           <div className={`${Styles.actionButton} ${Styles.buttonHiddenForMobile}`}>
             <div style={{marginLeft: "15px", backgroundImage: `url('${process.env.NEXT_PUBLIC_SERVER_URL}/images/search.svg')`}} className={Styles.playButton} onClick={() => setMetadataBox(true)}></div>
-            <p style={{marginLeft: "15px", marginTop: "5px", fontSize: '14px'}}>Uppdatera metadata</p>
+            <p style={{marginLeft: "15px", marginTop: "5px", fontSize: '14px'}}>Update metadata</p>
           </div>
 
           <ChangeImages  id={id} server={server} serverToken={serverToken} type="movies"></ChangeImages>

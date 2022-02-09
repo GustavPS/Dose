@@ -524,6 +524,9 @@ const main = (props) => {
 
     // LAYOUT //
     return (<>
+        <Head>
+            <title>Dose - {server.server_name}</title>
+        </Head>
         {!loaded &&
             <div className={Styles.loadingioSpinnerEclipse}>
             <div className={Styles.ldio}>
@@ -535,8 +538,8 @@ const main = (props) => {
 
         <Layout searchEnabled server={server} serverToken={cookie.get('serverToken')}>
         <Head>
+            <title>Dose - {server.server_name}</title>
         </Head>
-
         {recommendedMovie != false &&
             <div className={Styles.recommended}>
                 <video  autoPlay={true} loop={true} preload="auto" muted>

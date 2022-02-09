@@ -10,7 +10,7 @@ export default function Connect(props) {
     return (
         <Layout home relative>
             <Head>
-
+                <title>Dose</title>
             </Head>
             <div className={style.connect}>
                 <h1>Connect</h1>
