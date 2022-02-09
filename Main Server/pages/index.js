@@ -42,6 +42,7 @@ export default function Home() {
   return (
     <Layout home relative>
       <Head>
+        <title>Dose</title>
       </Head>
       {data && data.servers &&
       <div className={style.servers}>

@@ -61,10 +61,11 @@ export default function Layout({ children, home, searchEnabled, server, relative
   return (
     <div>
       <Head>
-        <link rel="icon" 
-        type="image/png" 
-        href="../public/images/favicon.png" />
+        <link rel="shortcut icon" 
+        type="image/x-icon"
+        href={`${process.env.NEXT_PUBLIC_SERVER_URL}/favicon.ico`} />
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
+        <title>Dose</title>
       </Head>
       <header style={relative !== undefined ? {position: 'relative'} : {}}>
         <img className={styles.logo} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/logo.png`} layout="fill"></img>

@@ -207,6 +207,7 @@ export default (props) => {
     return (
         <Layout searchEnabled server={server} serverToken={cookie.get('serverToken')}>
             <Head>
+                <title>Dose</title>
             </Head>
             <Carousel interval={10000}>
                 {latestMovies}
