@@ -28,7 +28,7 @@ const fetcher = url =>
     }
   );
 const chooseServer = server => {
-  Cookies.remove('serverToken')
+  cookie.remove('serverToken')
   cookie.set('server', JSON.stringify({
     id: server.server_id,
     name: server.server_name,
