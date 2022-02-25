@@ -25,11 +25,37 @@ class TvMetadata extends Metadata {
         });
     }
 
-    setDirectplayReady(id) {
+    getPreviewHandlingNeeded() {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                t.any(`
+                SELECT metaTable.name, metaTable.episode_number, metaTable.season_number, metaTable.serie_id, episodeTable.id AS episode_id, metaTable.preview_extracted
+                FROM serie_episode_metadata metaTable
+
+                INNER JOIN serie_episode episodeTable
+                ON metaTable.serie_id = episodeTable.serie_id AND metaTable.episode_number = episodeTable.episode AND metaTable.season_number = episodeTable.season_number
+                
+                WHERE preview_extracted = FALSE`)
+                .then(episodes => resolve(episodes));
+            });
+        });
+    }
+
+    setPreviewExtracted(id) {
         return new Promise(resolve => {
             db.tx(async t => {
                 const result = await t.one(`SELECT serie_id, season_number, episode FROM serie_episode WHERE id = $1`, [id]);
                 t.none("UPDATE serie_episode_metadata SET directplay_ready = TRUE WHERE episode_number = $1 AND season_number = $2 AND serie_id = $3", [result.episode, result.season_number, result.serie_id])
+                .then(() => resolve());
+            });
+        });
+    }
+
+    setDirectplayReady(id) {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                const result = await t.one(`SELECT serie_id, season_number, episode FROM serie_episode WHERE id = $1`, [id]);
+                t.none("UPDATE serie_episode_metadata SET preview_extracted = TRUE WHERE episode_number = $1 AND season_number = $2 AND serie_id = $3", [result.episode, result.season_number, result.serie_id])
                 .then(() => resolve());
             });
         });

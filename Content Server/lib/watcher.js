@@ -10,7 +10,7 @@ const logger = new Logger();
 
 
 class Watcher {
-    static IGNORED_FILE_ENDINGS = ['.m3u8'];
+    static IGNORED_FILE_ENDINGS = ['.m3u8', '.jpg'];
     /**
      * Initialize the watcher object
      * 
