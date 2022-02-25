@@ -82,6 +82,25 @@ class MovieMetadata extends Metadata {
         });
     }
 
+
+    setPreviewExtracted(movieID) {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                t.none("UPDATE movie_metadata SET preview_extracted = TRUE WHERE movie_id = $1", [movieID])
+                .then(() => resolve());
+            });
+        });
+    }
+
+    getPreviewHandlingNeeded() {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                t.any(`SELECT title, movie_id, tmdb_id, preview_extracted FROM movie_metadata WHERE preview_extracted = FALSE`)
+                .then(movies => resolve(movies));
+            });
+        });
+    }
+
     /**
      * Get a list of movies with bad images
      * 

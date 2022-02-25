@@ -7,9 +7,19 @@ import cheomecastHandler from '../lib/chromecastHandler';
 import Resolution from '../lib/resolution';
 import { Component } from 'react';
 
+
 export default class HlsPlayer extends Component {
+    static async getInitialProps ({ query }) {
+        const id = query.id
+    
+        return {
+          show_id: id
+        }
+      }
+    
     constructor(props) {
         super(props);
+        this.show_id = this.props.show_id;
         this.server = this.props.server;
         this.id = this.props.id;
         this.type = this.props.type;
@@ -39,6 +49,7 @@ export default class HlsPlayer extends Component {
             volume: 1,
             oldVolume: 1,
             muted: false,
+            previewImages: [],
         }
 
         this.updateCurrentTimeInterval = undefined;
@@ -54,6 +65,7 @@ export default class HlsPlayer extends Component {
         /* REFS */
         this.seekBar = undefined;
         this.seekBarLabel = undefined;
+        this.seekBarPreview = undefined;
         this.videoNode = undefined;
         this.subtitleNode = undefined;
         this.videoContainer = undefined;
@@ -78,13 +90,13 @@ export default class HlsPlayer extends Component {
         this.showControls = this.showControls.bind(this);
         this.handleKeyPress = this.handleKeyPress.bind(this);
 
+
         let runningOnClient = typeof window !== "undefined";
         if (runningOnClient) {
             this.chromecastHandler = new cheomecastHandler(this.chromecastProgressUpdate, this.chromecastDisconnect);
         }
 
         this.getSubtitles();
-
         this.getLanguages()
             .then(() => {
                 this.getResolutions().then(resolutions => {
@@ -178,6 +190,25 @@ export default class HlsPlayer extends Component {
                     }
                 }
                 resolve(src);
+            });
+        });
+    }
+
+    /**
+     * Get preview images
+     * 
+     * @returns an array of base64 encoded images
+     */
+     getPreviewImages() {
+        return new Promise(resolve => {
+            validateServerAccess(this.server, (serverToken) => {
+                console.log(`${this.server.server_ip}/api/previewImage/${this.id}/all?type=${this.type}&token=${serverToken}`)
+                fetch(`${this.server.server_ip}/api/previewImage/${this.id}/all?type=${this.type}&token=${serverToken}`).then(res => {
+                    res.json().then(data => {
+                        console.log(data)
+                        resolve(data);
+                    });
+                })
             });
         });
     }
@@ -644,6 +675,12 @@ export default class HlsPlayer extends Component {
         this.soundBar.value = 100;
         this.seekBar.value = 0;
         this.pingInterval = setInterval(this.ping, 5000);
+        
+        this.getPreviewImages().then((image_array) => {
+            this.setState({
+                previewImages: image_array
+            });
+        });
     }
 
     componentWillUnmount() {
@@ -705,10 +742,14 @@ export default class HlsPlayer extends Component {
             time = hours !== 0 ? hours + ':' : '';
         }
         time += minutes + ':' + seconds;
-
-        if (!isNaN(scrubbed) && !isNaN(percentage)) {
+        
+        if (!isNaN(scrubbed)) {
             this.seekBarLabel.innerHTML = `<span>${time}</span>`;
             this.seekBarLabel.style.left = `calc(${newValue}% + (${newPosition}px))`;
+            if(this.state.previewImages.length != 0) {
+                this.seekBarPreview.innerHTML = `<img src=${"data:image/png;base64," + (this.state.previewImages[Math.floor(scrubbed / 10)] == undefined ? "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzU4LjU0LjEwMAD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABwEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAJABAAMBIgACEQADEQD/2gAMAwEAAhEDEQA/AIeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/2Q==" : this.state.previewImages[Math.floor(scrubbed / 10)])}></img>`
+                this.seekBarPreview.style.left = `calc(${newValue}% - (${65}px))`;
+            }
         }
         if (!this.seeking && !isNaN(percentage)) {
             this.seekBar.value = percentage;
@@ -720,6 +761,9 @@ export default class HlsPlayer extends Component {
      */
     startSeek() {
         this.seeking = true;
+        if(this.state.previewImages.length != 0) {
+            this.seekBarPreview.style.display = "block";
+        }
     }
 
     /**
@@ -734,6 +778,7 @@ export default class HlsPlayer extends Component {
             this.updateVideoProgress();
         }
         this.seeking = false;
+        this.seekBarPreview.style.display = "none";
     }
 
     /**
@@ -921,7 +966,7 @@ export default class HlsPlayer extends Component {
         this.hideControlsTimeout = setTimeout(() => {
             this.setState({ controlsVisible: false });
             this.videoContainer.style.cursor = 'none';
-        }, 5000);
+        }, 5000000000000000000);
 
     }
 
@@ -983,7 +1028,14 @@ export default class HlsPlayer extends Component {
 
                             <div className={`${Styles.videoControls} ${this.state.controlsVisible ? Styles.visible : ""}`}>
                                 <div className={Styles.seekWrapper}>
-                                    <div className={Styles.seekTime} id="seekTime" ref={node => this.seekBarLabel = node}></div>
+                                    <div className={Styles.seekBarPreview} ref={node => this.seekBarPreview = node}>
+
+                                    </div>
+                                
+                                    <div className={Styles.seekTime} id="seekTime" ref={node => this.seekBarLabel = node}>
+                                    
+                                    </div>
+                                    
                                     <input className={Styles.seekbar} type="range" id="seekbar" name="seekbar" ref={node => this.seekBar = node}
                                         min="0" max="100" step="0.01" className={Styles.seekbar} onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime} />
                                 </div>

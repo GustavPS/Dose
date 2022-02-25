@@ -6,6 +6,7 @@ const path = require('path');
 const Logger = require('../../../../lib/logger');
 const logger = new Logger();
 
+
 export default (req, res) => {
     return new Promise(async (resolve, reject) => {
       res.setHeader('Access-Control-Allow-Origin', "*");
