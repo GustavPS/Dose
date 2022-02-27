@@ -8,18 +8,9 @@ import Resolution from '../lib/resolution';
 import { Component } from 'react';
 
 
-export default class HlsPlayer extends Component {
-    static async getInitialProps ({ query }) {
-        const id = query.id
-    
-        return {
-          show_id: id
-        }
-      }
-    
+export default class HlsPlayer extends Component {    
     constructor(props) {
         super(props);
-        this.show_id = this.props.show_id;
         this.server = this.props.server;
         this.id = this.props.id;
         this.type = this.props.type;
@@ -106,8 +97,6 @@ export default class HlsPlayer extends Component {
                         activeResolutionLevel: resolutions.length - 1,
                         usingDirectplay: directplay
                     }, () => {
-                        console.log(directplay)
-                        console.log(resolutions)
                         this.getSrc(directplay).then(src => {
                             this.chromecastHandler.setSrc(src); // TODO: Test
                             if (this._ismounted) {
@@ -202,10 +191,8 @@ export default class HlsPlayer extends Component {
      getPreviewImages() {
         return new Promise(resolve => {
             validateServerAccess(this.server, (serverToken) => {
-                console.log(`${this.server.server_ip}/api/previewImage/${this.id}/all?type=${this.type}&token=${serverToken}`)
                 fetch(`${this.server.server_ip}/api/previewImage/${this.id}/all?type=${this.type}&token=${serverToken}`).then(res => {
                     res.json().then(data => {
-                        console.log(data)
                         resolve(data);
                     });
                 })
@@ -388,8 +375,6 @@ export default class HlsPlayer extends Component {
             if (directplaySubtitle) {
                 // Get the subtitle from the directplay subtitles
                 const subtitle = data.subtitles.find(s => s.serverId === directplaySubtitle.id);
-                console.log("found");
-                console.log(subtitle);
                 this.setSubtitle(subtitle);
             }
         }
@@ -422,7 +407,6 @@ export default class HlsPlayer extends Component {
                     this.setState({
                         directplaySubtitles: data.subtitles
                     });
-                    console.log(data);
                 });
             })
         });
@@ -439,7 +423,6 @@ export default class HlsPlayer extends Component {
             this.videoNode.volume = this.state.volume;
         }
         
-        console.log("Volume", this.state.volume);
         if(this.state.volume <= 0.1) {
             this.setState({muted: true});
         } else {
@@ -794,7 +777,6 @@ export default class HlsPlayer extends Component {
      * @returns {string} The current time of the video
      */
     getCurrentTime() {
-        console.log(this.videoNode.currentTime)
         if (this.chromecastHandler.isCasting()) {
             return this.chromecastSeekValue;
         } else {
@@ -866,7 +848,6 @@ export default class HlsPlayer extends Component {
      * Toggle fullscreen mode
      */
     toggleFullscreen() {
-        console.log("Toggling fullscreesssssn")
         try {
             if (!this.fullscreen) {
                 if (this.videoNode.requestFullscreen) {
@@ -907,8 +888,6 @@ export default class HlsPlayer extends Component {
         } else if (this.state.usingDirectplay) {
             validateServerAccess(this.server, (serverToken) => {
                 this.subtitleNode.src = `${this.server.server_ip}/api/subtitles/get?type=${this.type}&id=${subtitle.id}&token=${serverToken}`;
-                console.log(this.videoNode.textTracks);
-                console.log(this.subtitleNode);
                 this.videoNode.textTracks[0].mode = 'showing';
             });
         } else {
@@ -966,7 +945,7 @@ export default class HlsPlayer extends Component {
         this.hideControlsTimeout = setTimeout(() => {
             this.setState({ controlsVisible: false });
             this.videoContainer.style.cursor = 'none';
-        }, 5000000000000000000);
+        }, 5000);
 
     }
 
