@@ -29,7 +29,7 @@ class TvMetadata extends Metadata {
         return new Promise(resolve => {
             db.tx(async t => {
                 const result = await t.one(`SELECT serie_id, season_number, episode FROM serie_episode WHERE id = $1`, [id]);
-                t.none("UPDATE serie_episode_metadata SET preview_extracted = TRUE WHERE episode_number = $1 AND season_number = $2 AND serie_id = $3", [result.episode, result.season_number, result.serie_id])
+                t.none("UPDATE serie_episode_metadata SET directplay_ready = TRUE WHERE episode_number = $1 AND season_number = $2 AND serie_id = $3", [result.episode, result.season_number, result.serie_id])
                 .then(() => resolve());
             });
         });
@@ -65,7 +65,7 @@ class TvMetadata extends Metadata {
         return new Promise(resolve => {
             db.tx(async t => {
                 const result = await t.one(`SELECT serie_id, season_number, episode FROM serie_episode WHERE id = $1`, [id]);
-                t.none("UPDATE serie_episode_metadata SET directplay_ready = TRUE WHERE episode_number = $1 AND season_number = $2 AND serie_id = $3", [result.episode, result.season_number, result.serie_id])
+                t.none("UPDATE serie_episode_metadata SET preview_extracted = TRUE WHERE episode_number = $1 AND season_number = $2 AND serie_id = $3", [result.episode, result.season_number, result.serie_id])
                 .then(() => resolve());
             });
         });
@@ -75,7 +75,7 @@ class TvMetadata extends Metadata {
         return new Promise(resolve => {
             db.tx(async t => {
                 const result = await t.one(`SELECT serie_id, season_number, episode FROM serie_episode WHERE id = $1`, [id]);
-                t.none("UPDATE serie_episode_metadata SET directplay_ready = FALSE, preview_extraction_failed = TRUE WHERE episode_number = $1 AND season_number = $2 AND serie_id = $3", [result.episode, result.season_number, result.serie_id])
+                t.none("UPDATE serie_episode_metadata SET preview_extracted = FALSE, preview_extraction_failed = TRUE WHERE episode_number = $1 AND season_number = $2 AND serie_id = $3", [result.episode, result.season_number, result.serie_id])
                 .then(() => resolve());
             });
         });
