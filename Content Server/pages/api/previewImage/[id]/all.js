@@ -19,12 +19,10 @@ export default async (req, res) => {
           return;
       }
 
-      console.log(type)
       if (type == "movie") {
         getMoviePath(id).then((movie_path) => {
           const dir = path.dirname(movie_path) + "/preview_images"
           let response_array = []
-          console.log(dir)
           fs.readdir(dir, (err, files) => {
             if(files != undefined && files.length > 0) {
               for(let file of files) {
@@ -41,7 +39,6 @@ export default async (req, res) => {
         getEpisodeData(id).then((data) => {
           const dir = path.dirname(path.join(data.basepath, data.subpath)) + "/preview_images/e" + data.episode_number
           let response_array = []
-          console.log(dir)
           fs.readdir(dir, (err, files) => {
             if(files != undefined && files.length > 0) {
               for(let file of files) {
