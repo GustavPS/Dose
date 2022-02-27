@@ -98,6 +98,7 @@ class PreviewImageJob extends Job {
                         logger.INFO(err.stdout);
                         logger.ERROR(err.stderr)
                         logger.ERROR(`Error extracting images from file: ${filePath}`);
+                        metadata.setPreviewExtractionFailed(content.id);
                     }
                 }
                 if (gotCandidates) {

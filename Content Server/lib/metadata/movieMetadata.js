@@ -82,21 +82,29 @@ class MovieMetadata extends Metadata {
         });
     }
 
+    getPreviewHandlingNeeded() {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                t.any(`SELECT title, movie_id, tmdb_id, preview_extracted FROM movie_metadata WHERE preview_extracted = FALSE AND preview_extraction_failed = FALSE`)
+                .then(movies => resolve(movies));
+            });
+        });
+    }
+
+    setPreviewExtractionFailed(movieID) {
+        return new Promise(resolve => {
+            db.tx(async t => {
+                t.none("UPDATE movie_metadata SET preview_extracted = FALSE, preview_extraction_failed = TRUE WHERE movie_id = $1", [movieID])
+                .then(() => resolve());
+            });
+        });
+    }
 
     setPreviewExtracted(movieID) {
         return new Promise(resolve => {
             db.tx(async t => {
                 t.none("UPDATE movie_metadata SET preview_extracted = TRUE WHERE movie_id = $1", [movieID])
                 .then(() => resolve());
-            });
-        });
-    }
-
-    getPreviewHandlingNeeded() {
-        return new Promise(resolve => {
-            db.tx(async t => {
-                t.any(`SELECT title, movie_id, tmdb_id, preview_extracted FROM movie_metadata WHERE preview_extracted = FALSE`)
-                .then(movies => resolve(movies));
             });
         });
     }
