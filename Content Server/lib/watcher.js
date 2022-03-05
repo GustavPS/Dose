@@ -22,6 +22,20 @@ class Watcher {
     }
 
     /**
+     * Get the RegExp expression for the files to ignore
+     * 
+     * @returns {RegExp} - The regex pattern to ignore
+     */
+    getIgnoredFileRegex() {
+        const pattern = new RegExp(
+            Watcher.IGNORED_FILE_ENDINGS.map(fileEnding => {
+                return `(.*\\${fileEnding})`;
+            }).join('|'), 'g');
+        console.log(pattern);
+        return pattern;
+    }
+
+    /**
      * Initiate the class
      * 
      * @param {Function} cb - The function to be called after the class is initialized.
@@ -136,7 +150,7 @@ class Watcher {
     /**
      * Get all the libraries that is saved in the database and save it in the libraries variable
      */
-    async fetchLibraries(print=true) {
+    async fetchLibraries(print = true) {
         const movieLibraries = await db.any("SELECT * FROM library WHERE type = 'MOVIES'");
         const tvLibraries = await db.any("SELECT * FROM library WHERE type = 'SERIES'");
         if (print && (movieLibraries.length > 0 || tvLibraries.length > 0)) {
@@ -180,33 +194,25 @@ class Watcher {
      */
     watch(library) {
         if (!this.isInitialized()) throw ('Class is not initialized.');
-        
+
         let relativePath = path.relative(process.cwd(), library.getPath());
         chokidar.watch(relativePath, {
-          awaitWriteFinish: true,
-          ignoreInitial: false
-        })
-        .on('add', async (filePath, event) => {
-            const extension = path.extname(filePath);
-            if (!Watcher.IGNORED_FILE_ENDINGS.includes(extension)) {
-                filePath = this.cleanPath(filePath, relativePath);
-                if (library.getType() === 'SERIES') {
-                    await library.newEntry(filePath);
-                } else {
-                    library.newEntry(filePath);
-                }
+            ignored: this.getIgnoredFileRegex(),
+            awaitWriteFinish: true,
+            ignoreInitial: false
+        }).on('add', async (filePath, event) => {
+            filePath = this.cleanPath(filePath, relativePath);
+            if (library.getType() === 'SERIES') {
+                await library.newEntry(filePath);
+            } else {
+                library.newEntry(filePath);
             }
-        })
-        .on('unlink', (filePath) => {
+        }).on('unlink', (filePath) => {
             filePath = this.cleanPath(filePath, relativePath);
             library.removeEntry(filePath);
-        })
-        .on('addDir', filePath => {
-        })
-        .on('error', error => {
+        }).on('error', error => {
             logger.ERROR(`File system watcher error: ${error}`);
-        })
-        .on('ready', () => {
+        }).on('ready', () => {
             logger.DEBUG(`Watching ${relativePath} for changes`);
         });
     }
