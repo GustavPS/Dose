@@ -6,9 +6,6 @@ create table category
     name             text
 );
 
-alter table category
-    owner to postgres;
-
 create table image
 (
     id   bigserial
@@ -16,9 +13,6 @@ create table image
             primary key,
     path text
 );
-
-alter table image
-    owner to postgres;
 
 create table library
 (
@@ -31,9 +25,6 @@ create table library
     path text not null,
     type text not null
 );
-
-alter table library
-    owner to postgres;
 
 create table movie
 (
@@ -48,9 +39,6 @@ create table movie
     trailer text
 );
 
-alter table movie
-    owner to postgres;
-
 create table movie_category
 (
     movie_id    integer not null
@@ -64,9 +52,6 @@ create table movie_category
     constraint movie_category_pkey
         primary key (movie_id, category_id)
 );
-
-alter table movie_category
-    owner to postgres;
 
 create table movie_image
 (
@@ -84,38 +69,34 @@ create table movie_image
         primary key (movie_id, image_id)
 );
 
-alter table movie_image
-    owner to postgres;
-
 create table movie_metadata
 (
-    id                  bigserial
+    id                        bigserial
         constraint movie_metadata_pkey
             primary key,
-    movie_id            integer not null
+    movie_id                  integer not null
         constraint movieid
             references movie
             on delete cascade,
-    title               text,
-    overview            text,
-    poster              text,
-    release_date        text,
-    runtime             integer,
-    backdrop            text,
-    added_date          text,
-    popularity          numeric,
-    trailer             text,
-    run_time            integer,
-    tmdb_id             integer default '-1'::integer,
-    found_good_poster   boolean default false,
-    found_good_backdrop boolean default false,
-    found_good_logo     boolean default false,
-    directplay_ready    boolean default false,
-    directplay_failed   boolean default false
+    title                     text,
+    overview                  text,
+    poster                    text,
+    release_date              text,
+    runtime                   integer,
+    backdrop                  text,
+    added_date                text,
+    popularity                numeric,
+    trailer                   text,
+    run_time                  integer,
+    tmdb_id                   integer default '-1'::integer,
+    found_good_poster         boolean default false,
+    found_good_backdrop       boolean default false,
+    found_good_logo           boolean default false,
+    directplay_ready          boolean default false,
+    directplay_failed         boolean default false,
+    preview_extracted         boolean default false,
+    preview_extraction_failed boolean default false
 );
-
-alter table movie_metadata
-    owner to postgres;
 
 create table serie
 (
@@ -130,9 +111,6 @@ create table serie
     name    text    not null
 );
 
-alter table serie
-    owner to postgres;
-
 create table serie_category
 (
     serie_id    integer not null
@@ -146,9 +124,6 @@ create table serie_category
     constraint serie_category_pkey
         primary key (serie_id, category_id)
 );
-
-alter table serie_category
-    owner to postgres;
 
 create table serie_episode
 (
@@ -166,32 +141,28 @@ create table serie_episode
         primary key (serie_id, season_number, episode)
 );
 
-alter table serie_episode
-    owner to postgres;
-
 create table serie_episode_metadata
 (
-    air_date          text    not null,
-    name              text    not null,
-    overview          text    not null,
-    image_path        text    not null,
-    vote_average      text    not null,
-    episode_number    integer not null,
-    season_number     integer not null,
-    serie_id          integer not null
+    air_date                  text    not null,
+    name                      text    not null,
+    overview                  text    not null,
+    image_path                text    not null,
+    vote_average              text    not null,
+    episode_number            integer not null,
+    season_number             integer not null,
+    serie_id                  integer not null
         constraint serieid
             references serie
             on delete cascade,
-    added_date        text    not null,
-    run_time          integer default '-1'::integer,
-    directplay_ready  boolean default false,
-    directplay_failed boolean default false,
+    added_date                text    not null,
+    run_time                  integer default '-1'::integer,
+    directplay_ready          boolean default false,
+    directplay_failed         boolean default false,
+    preview_extracted         boolean default false,
+    preview_extraction_failed boolean default false,
     constraint serie_episode_metadata_pkey
         primary key (episode_number, season_number, serie_id)
 );
-
-alter table serie_episode_metadata
-    owner to postgres;
 
 create table serie_image
 (
@@ -208,9 +179,6 @@ create table serie_image
     constraint serie_image_pkey
         primary key (image_id, serie_id)
 );
-
-alter table serie_image
-    owner to postgres;
 
 create table serie_metadata
 (
@@ -230,9 +198,6 @@ create table serie_metadata
     tmdb_id        integer not null
 );
 
-alter table serie_metadata
-    owner to postgres;
-
 create table serie_season
 (
     serie_id      integer not null
@@ -244,9 +209,6 @@ create table serie_season
     constraint serie_season_pkey
         primary key (serie_id, season_number)
 );
-
-alter table serie_season
-    owner to postgres;
 
 create table serie_season_metadata
 (
@@ -264,9 +226,6 @@ create table serie_season_metadata
         primary key (serie_id, season_id)
 );
 
-alter table serie_season_metadata
-    owner to postgres;
-
 create table users
 (
     id         bigserial
@@ -275,9 +234,6 @@ create table users
     username   text                 not null,
     has_access boolean default true not null
 );
-
-alter table users
-    owner to postgres;
 
 create table user_episode_progress
 (
@@ -295,9 +251,6 @@ create table user_episode_progress
         primary key (user_id, episode_id)
 );
 
-alter table user_episode_progress
-    owner to postgres;
-
 create table user_movie_progress
 (
     user_id      integer not null
@@ -314,9 +267,6 @@ create table user_movie_progress
         primary key (user_id, movie_id)
 );
 
-alter table user_movie_progress
-    owner to postgres;
-
 create table user_movie_watched
 (
     user_id  integer not null
@@ -330,9 +280,6 @@ create table user_movie_watched
     constraint user_movie_watched_pkey
         primary key (user_id, movie_id)
 );
-
-alter table user_movie_watched
-    owner to postgres;
 
 create table user_next_episode
 (
@@ -353,9 +300,6 @@ create table user_next_episode
         primary key (user_id, serie_id)
 );
 
-alter table user_next_episode
-    owner to postgres;
-
 create table user_refresh_token
 (
     id            serial
@@ -368,9 +312,6 @@ create table user_refresh_token
     refresh_token text    not null,
     access_token  text    not null
 );
-
-alter table user_refresh_token
-    owner to postgres;
 
 create table user_movie_watchlist
 (
@@ -385,9 +326,6 @@ create table user_movie_watchlist
     constraint user_movie_watchlist_pkey
         primary key (user_id, movie_id)
 );
-
-alter table user_movie_watchlist
-    owner to postgres;
 
 create table movie_resolution
 (
@@ -408,9 +346,6 @@ create table movie_resolution
     codec    text    not null
 );
 
-alter table movie_resolution
-    owner to postgres;
-
 create table serie_episode_resolution
 (
     episode_id integer not null
@@ -430,9 +365,6 @@ create table serie_episode_resolution
     codec      text    not null
 );
 
-alter table serie_episode_resolution
-    owner to postgres;
-
 create table serie_episode_language
 (
     id               serial
@@ -447,9 +379,6 @@ create table serie_episode_language
     codec            text    not null
 );
 
-alter table serie_episode_language
-    owner to postgres;
-
 create table movie_language
 (
     id           serial
@@ -463,9 +392,6 @@ create table movie_language
     stream_index integer not null,
     codec        text    not null
 );
-
-alter table movie_language
-    owner to postgres;
 
 create table serie_episode_subtitle
 (
@@ -486,9 +412,6 @@ create table serie_episode_subtitle
     extracted  boolean not null
 );
 
-alter table serie_episode_subtitle
-    owner to postgres;
-
 create table subtitle
 (
     id         bigserial
@@ -508,9 +431,6 @@ create table subtitle
     extracted  boolean not null
 );
 
-alter table subtitle
-    owner to postgres;
-
 create table actor
 (
     id    integer not null
@@ -519,9 +439,6 @@ create table actor
     name  text    not null,
     image text
 );
-
-alter table actor
-    owner to postgres;
 
 create table movie_actor
 (
@@ -539,9 +456,6 @@ create table movie_actor
         primary key (actor_id, movie_id)
 );
 
-alter table movie_actor
-    owner to postgres;
-
 create table movie_recommended
 (
     movie_id_1 integer not null
@@ -557,9 +471,6 @@ create table movie_recommended
         primary key (movie_id_1, movie_id_2)
 );
 
-alter table movie_recommended
-    owner to postgres;
-
 create table movie_popular
 (
     movie_id integer not null
@@ -570,21 +481,15 @@ create table movie_popular
             on delete cascade
 );
 
-alter table movie_popular
-    owner to postgres;
-
 create table admin
 (
     username text not null,
     password text not null,
-    salt     text not null,
     id       serial
         constraint admin_pk
-            primary key
+            primary key,
+    salt     text not null
 );
-
-alter table admin
-    owner to postgres;
 
 create unique index admin_id_uindex
     on admin (id);
@@ -604,9 +509,6 @@ create table admin_access_token
     refresh_token text    not null
 );
 
-alter table admin_access_token
-    owner to postgres;
-
 create unique index admin_access_token_access_token_uindex
     on admin_access_token (access_token);
 
@@ -615,4 +517,14 @@ create unique index admin_access_token_admin_id_uindex
 
 create unique index admin_access_token_refresh_token_uindex
     on admin_access_token (refresh_token);
+
+create table main_server_requests
+(
+    id text not null
+        constraint main_server_requests_pk
+            primary key
+);
+
+create unique index main_server_requests_id_uindex
+    on main_server_requests (id);
 
