@@ -51,7 +51,7 @@ export default async function handle(req, res) {
                     resolve();
                 } else {
                     getUserId(username).then(userId => {
-                        db.none(`DELETE FROM user_server WHERE user_id = $1`, [userId]);
+                        db.none(`DELETE FROM user_server WHERE user_id = $1 AND server_id = $2`, [userId, serverName]);
                         res.status(200).json({
                             success: true
                         });
