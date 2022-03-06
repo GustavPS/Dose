@@ -43,12 +43,10 @@ class PreviewImageJob extends Job {
             output_dir += "/preview_images/e" + episode_number
             output_file = output_dir + "/img%04d.jpg";
         }
-        if (await fsExists(output_dir)) {
-            logger.DEBUG('Directory exists!');
-        } else {
-            logger.DEBUG('Directory not found. Creatin it');
-            await fsMkdir(output_dir, { recursive: true });
+        if (!(await fsExists(output_dir))) {
+            await fsMkdir(output_dir);
         }
+
         return new Promise((resolve, reject) => {
 
             ffmpeg(input_path)
