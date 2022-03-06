@@ -7,14 +7,14 @@ const Logger = require('../../../../lib/logger');
 const logger = new Logger();
 
 
-export default (req, res) => {
+const getTrailer = async (req, res) => {
     return new Promise(async (resolve, reject) => {
       res.setHeader('Access-Control-Allow-Origin', "*");
       res.setHeader('Access-Control-Allow-Headers', "*");
 
-      let token = req.query.token;
-      let id = req.query.id;
-      let type = req.query.type;
+      const id = req.params.id;
+      const { token, type } = req.query;
+
       if (!validateUser(token)) {
           res.status(403).end();
           resolve();
@@ -83,3 +83,5 @@ function getMovieTrailerPath(movieID) {
       });
   });
 }
+
+module.exports = getTrailer;
