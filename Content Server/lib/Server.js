@@ -14,6 +14,7 @@ let Watcher;
 let TvLibrary;
 let MovieLibrary;
 let getSegment;
+let getTrailer;
 let logger;
 let Transcoding;
 let fsExtra;
@@ -69,6 +70,7 @@ class Server {
         TvLibrary = require('./library/tvLibrary');
         MovieLibrary = require('./library/movieLibrary');
         getSegment = require('../pages/api/video/[id]/hls/[quality]/segments/[segment]');
+        getTrailer = require('../pages/api/trailer/[id]/index.js');
         Transcoding = require('./hls/transcoding');
         fsExtra = require('fs-extra');
     }
@@ -184,11 +186,14 @@ class Server {
      */
     configureAllEndpoints() {
         /**
-         * Setup regular express API endpoint to the HLS segment endpoint since
+         * Setup regular express API endpoint to the video endpoints since
          * nextJS will remove support for API-endpoints with more than 4MB responses in the future.
          **/
         this.expressApp.get('/api/video/:id/hls/:quality/segments/:segment', async (req, res) => {
             getSegment(req, res);
+        });
+        this.expressApp.get('/api/trailer/:id', async (req, res) => {
+            getTrailer(req, res);
         });
         this.expressApp.all('*', (req, res) => this.nextHandler(req, res));
     }
