@@ -31,7 +31,6 @@ class Watcher {
             Watcher.IGNORED_FILE_ENDINGS.map(fileEnding => {
                 return `(.*\\${fileEnding})`;
             }).join('|'), 'g');
-        console.log(pattern);
         return pattern;
     }
 
@@ -45,7 +44,6 @@ class Watcher {
         await this.fetchLibraries();
         this.initialized = true;
         cb();
-
     }
 
     /**
