@@ -528,3 +528,9 @@ create table main_server_requests
 create unique index main_server_requests_id_uindex
     on main_server_requests (id);
 
+create table general
+(
+    server_name    text not null,
+    main_server_ip text not null
+);
+

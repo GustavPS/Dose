@@ -31,12 +31,12 @@ const reportToMainServer = (mainServerUrl, contentServerIp, contentServerName) =
                     });
                 }
             })
-            .catch(err => {
-                reject({
-                    code: -1,
-                    error: err
+                .catch(err => {
+                    reject({
+                        code: -1,
+                        error: err
+                    })
                 })
-            })
         });
     });
 }
@@ -51,6 +51,14 @@ const addAdminAccount = (username, password) => {
             // Error inserting to database
             logger.ERROR(`Error inserting to the database: ${err}`)
             reject(err);
+        });
+    });
+}
+
+const saveGeneralInfo = (serverName, mainServerIp) => {
+    return new Promise(resolve => {
+        db.none('INSERT INTO general (server_name, main_server_ip) VALUES ($1, $2)', [serverName, mainServerIp]).then(() => {
+            resolve();
         });
     });
 }
@@ -108,11 +116,13 @@ export default async (req, res) => {
             reportToMainServer(mainServerUrl, contentServerIp, contentServerName).then(() => {
                 addAdminAccount(username, password).then(() => {
                     saveToConfigFile(config, mainServerUrl).then(() => {
-                        CommonEvent.emit('setup.done');
-                        res.status(200).json({
-                            success: true
+                        saveGeneralInfo(contentServerName, mainServerUrl).then(() => {
+                            CommonEvent.emit('setup.done');
+                            res.status(200).json({
+                                success: true
+                            });
+                            resolve();
                         });
-                        resolve();
                     }).catch(err => {
                         // Error writing to config file
                         res.status(500).send({ success: false, error: "Couldn't write to config file" });
@@ -132,11 +142,13 @@ export default async (req, res) => {
                     logger.WARNING(`Server ${contentServerIp} is already added on the main server, continuing anyway`);
                     addAdminAccount(username, password).then(() => {
                         saveToConfigFile(config, mainServerUrl).then(() => {
-                            CommonEvent.emit('setup.done');
-                            res.status(200).json({
-                                success: true
+                            saveGeneralInfo(contentServerName, mainServerUrl).then(() => {
+                                CommonEvent.emit('setup.done');
+                                res.status(200).json({
+                                    success: true
+                                });
+                                resolve();
                             });
-                            resolve();
                         }).catch(err => {
                             // Error writing to config file
                             res.status(500).send({ success: false, error: "Couldn't write to config file" });
