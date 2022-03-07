@@ -38,12 +38,8 @@ To start the main server run:
 
 `npm run start`
 
-There is currently no admin dashboard, so to setup you have to change the following values in the database:
-Add a server to the table `server` containing the server ip of the `Movie Server`, set the `ID` to whatever you want.
-Start the server and go to `/register` to create an account. Then go to the table `user_server` and create a new row containing the new user ID and the server id from the step before.
-
 ### Movie Server
-Import the file `movieserver_dump` to a postgresql database called `MovieServer`
+First you have to edit `.env.local` in ContentServer and set the temp folder to a path. This path should have a quite large volume, since the temp transcoding files are located here.
 
 To start the movie server run the following commands in the `MovieServer` folder.
 
@@ -53,8 +49,10 @@ To start the movie server run the following commands in the `MovieServer` folder
 
 `npm run start`
 
-To setup a library open the table `library` and enter the name and the path to the movie/tv show library. The path must end with a `\` if you are on windows, or a `/` if you are on linux. `TYPE` should either be `MOVIES` or `SERIES` (you can't have movies and tv shows in the same library).
-Open the table `users` and add the username that you created on the MainServer. `has_access` should be set to true.
+Go to http://localhost:3001 and follow the setup process. After you've done the setup steps it's recommended that you restart the server. 
+
+#### Add users
+To add users to the server go to http://localhost:3001/dashboard/admins and add the users. Note that they have to be registered to the Main Server before this step.
 
 ## DISCLAIMER
 I am not responsible or liable in any manner for any illegal content that people uses DOSE to view and/or host. I do not control and are not responsible for what people host, transmit, share or view using DOSE. I am not responsible for any illegal, offensive, inappropriate, obscene, unlawful or otherwise objectionable content that people host or view using DOSE.
