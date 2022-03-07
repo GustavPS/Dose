@@ -18,9 +18,6 @@ A complete library solution for movies and TV Shows. Display and view your purch
 * Automatically extract subtitles from video files
 * Support for videos with multiple audio streams
 
-### Dev build
-If you want the latest features use the [Dev branch](https://github.com/GustavPS/Dose/tree/dev)
-
 ### Android TV
 The android TV app is available [here](https://github.com/GustavPS/DoseReactNative)
 
