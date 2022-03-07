@@ -1,4 +1,7 @@
 # DOSE
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 A complete library solution for movies and TV Shows. Display and view your purchased content via the web using a beautiful UI.
 
 ### Features
@@ -58,3 +61,23 @@ Open the table `users` and add the username that you created on the MainServer. 
 
 ## DISCLAIMER
 I am not responsible or liable in any manner for any illegal content that people uses DOSE to view and/or host. I do not control and are not responsible for what people host, transmit, share or view using DOSE. I am not responsible for any illegal, offensive, inappropriate, obscene, unlawful or otherwise objectionable content that people host or view using DOSE.
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/GustavPS"><img src="https://avatars.githubusercontent.com/u/8510654?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gustav P Svensson</b></sub></a><br /><a href="https://github.com/GustavPS/Dose/commits?author=GustavPS" title="Code">💻</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
