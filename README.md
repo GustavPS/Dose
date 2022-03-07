@@ -72,6 +72,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tr>
     <td align="center"><a href="https://github.com/weeklyvillain"><img src="https://avatars.githubusercontent.com/u/16028826?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Filip Eriksson</b></sub></a><br /><a href="https://github.com/GustavPS/Dose/commits?author=weeklyvillain" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/GustavPS"><img src="https://avatars.githubusercontent.com/u/8510654?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gustav P Svensson</b></sub></a><br /><a href="https://github.com/GustavPS/Dose/commits?author=GustavPS" title="Code">💻</a></td>
   </tr>
 </table>
 
