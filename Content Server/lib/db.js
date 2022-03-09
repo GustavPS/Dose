@@ -8,7 +8,12 @@ env.loadEnvConfig('./', process.env.NODE_ENV !== 'production');
 // For updates: https://github.com/vercel/next.js/discussions/31978
 if (!global.db) {
     try {
-        const configPath = path.join(process.env.TEMP_DIRECTORY, 'config.json');
+        let configPath;
+        if (process.env.TEST === 'TRUE') {
+            configPath = path.join(process.env.TEMP_DIRECTORY, 'test_config.json');
+        } else {
+            configPath = path.join(process.env.TEMP_DIRECTORY, 'config.json');
+        }
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         const user = config.database.user;
         const password = config.database.password;

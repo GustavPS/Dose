@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const cors = require('../../../lib/cors');
 const db = require('../.././../lib/db');
+require("../../../mocks");
+
 
 // TODO: Investigate if it's OK to use sync here. I think this only runs once.
 const configPath = path.join(process.env.TEMP_DIRECTORY, 'config.json');
