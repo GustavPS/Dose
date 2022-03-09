@@ -19,7 +19,7 @@ jobs:
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
     # Docker Hub image that `container-job` executes in
-    container: node:16.14-jessie
+    container: node:16.3.0-alpine
 
     # Service containers to run with `container-job`
     services:
