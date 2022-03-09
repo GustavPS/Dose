@@ -67,7 +67,7 @@ jobs:
         uses: jsdaniell/create-json@1.1.2
         with:
           name: "config.json"
-          json: '{"database":{"host":"localhost","port":"5432","user":"postgres","password":"postgres","name":"TestServer"},"setup":{"done":true,"database":true,"admin":true},"mainServer":"http:\/\/localhost:3000"}'
+          json: '{"database":{"host":"postgres","port":"5432","user":"postgres","password":"postgres","name":"TestServer"},"setup":{"done":true,"database":true,"admin":true},"mainServer":"http:\/\/localhost:3000"}'
           dir: 'temp/'
 
       - name: Connect to PostgreSQL
