@@ -50,9 +50,9 @@ jobs:
       # Performs a clean installation of all dependencies in the `package.json` file
       # For more information, see https://docs.npmjs.com/cli/ci.html
       - name: Install dependencies
-        run: npm ci
-        working-directory: | 
-          & "./Content Server"
+        run: |
+          cd "Content Server"
+          npm ci
         
       - name: Create config file
         id: create-config
