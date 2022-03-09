@@ -1,7 +1,13 @@
 # DOSE
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
+<div align="center">
+  <img src="https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square" alt="Coverage status">
+  <img src="https://github.com/GustavPS/Dose/actions/workflows/main.yml/badge.svg" alt="CI status">
+  <img src="https://github.com/GustavPS/Dose/actions/workflows/codeql-analysis.yml/badge.svg" alt="Security status">
+  
+</div>
+
+
+
 A complete library solution for movies and TV Shows. Display and view your purchased content via the web using a beautiful UI.
 
 ### Features
