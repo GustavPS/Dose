@@ -6,7 +6,11 @@
     "dev": "nodemon --exec babel-node --trace-warnings server.js",
     "build": "next build",
     "linuxStart": "NODE_ENV=production node server.js",
-    "windowsStart": "node server.js"
+    "windowsStart": "node server.js",
+    "cypress": "cypress open",
+    "cypress:run": "cypress run",
+    "build:run": "npm run build && TEST=TRUE npm run linuxStart",
+    "ci": "start-server-and-test build:run http://localhost:3001 cypress:run"
   },
   "dependencies": {
     "@babel/preset-react": "^7.13.13",
@@ -57,8 +61,14 @@
     "@babel/plugin-proposal-private-methods": "^7.14.5",
     "@babel/preset-env": "^7.9.6",
     "autoprefixer": "^10.4.0",
+    "cypress": "^9.5.1",
+    "msw": "^0.39.0",
     "nodemon": "^2.0.3",
     "postcss": "^8.4.4",
+    "start-server-and-test": "^1.14.0",
     "tailwindcss": "^2.2.19"
+  },
+  "msw": {
+    "workerDirectory": "public"
   }
 }
