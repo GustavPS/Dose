@@ -19,7 +19,7 @@ jobs:
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
     # Docker Hub image that `container-job` executes in
-    container: python3.10-nodejs16-alpine
+    container: nikolaik/python-nodejs:python3.7-nodejs16-alpine
 
     # Service containers to run with `container-job`
     services:
