@@ -48,7 +48,7 @@ jobs:
           python-version: '3.7' # Version range or exact version of a Python version to use, using SemVer's version range syntax
         
       - name: pwd
-        run: python --version
+        run: python3 --version
       - name: ls
         run: ls -la
 
