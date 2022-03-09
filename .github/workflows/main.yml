@@ -19,7 +19,7 @@ jobs:
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
     # Docker Hub image that `container-job` executes in
-    container: node:10.18-jessie
+    container: node:16.14-jessie
 
     # Service containers to run with `container-job`
     services:
@@ -65,9 +65,9 @@ jobs:
       - name: Connect to PostgreSQL
         # Runs a script that creates a PostgreSQL table, populates
         # the table with data, and then retrieves the data.
-        run: npm run ci
-        working-directory: | 
-          & "./Content Server"
+        run: |
+          cd "Content Server"
+          npm run ci
         # Environment variables used by the `client.js` script to create a new PostgreSQL table.
         env:
           # The hostname used to communicate with the PostgreSQL service container
