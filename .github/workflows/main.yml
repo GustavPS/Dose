@@ -19,7 +19,7 @@ jobs:
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
     # Docker Hub image that `container-job` executes in
-    container: node:16.3.0-alpine
+    container: python3.10-nodejs16-alpine
 
     # Service containers to run with `container-job`
     services:
@@ -41,11 +41,6 @@ jobs:
       # Downloads a copy of the code in your repository before running CI tests
       - name: Check out repository code
         uses: actions/checkout@v2
-      
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8 # Version range or exact version of a Python version to use, using SemVer's version range syntax
         
       - name: pwd
         run: python --version
