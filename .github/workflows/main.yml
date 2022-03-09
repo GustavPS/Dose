@@ -51,7 +51,8 @@ jobs:
       # For more information, see https://docs.npmjs.com/cli/ci.html
       - name: Install dependencies
         run: npm ci
-        working-directory: "Content Server"
+        working-directory: | 
+          Content Server
         
       - name: Create config file
         id: create-config
@@ -65,7 +66,8 @@ jobs:
         # Runs a script that creates a PostgreSQL table, populates
         # the table with data, and then retrieves the data.
         run: npm run ci
-        working-directory: "Content Server"
+        working-directory: | 
+          Content Server
         # Environment variables used by the `client.js` script to create a new PostgreSQL table.
         env:
           # The hostname used to communicate with the PostgreSQL service container
