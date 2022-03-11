@@ -8,6 +8,7 @@
 const Logger = require('../../../../../../../lib/logger');
 const logger = new Logger();
 const pathLib = require('path');
+const sanitize = require('sanitize-filename');
 const db = require('../../../../../../../lib/db');
 const fs = require('fs');
 
@@ -100,9 +101,7 @@ const getSegment = async (req, res) => {
     const codecInfo = await content.getAudioCodecByStreamIndex(audioStream);
 
     return new Promise(async (resolve) => {
-        const segmentText = req.params.segment; //<segment>.ts
-        const segmentsText = req.query.segments; // segments in text format
-        const segments = parseInt(segmentsText); // segments in int
+        const segmentText = sanitize(req.params.segment); //<segment>.ts
         const segment = parseInt(segmentText); //<segment>
         const startSegment = Math.max(segment - 1, 0);
         let path;
