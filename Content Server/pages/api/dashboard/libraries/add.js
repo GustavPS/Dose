@@ -35,6 +35,17 @@ const validateLibraries = (libraries) => {
 
 export default (req, res) => {
     const libraries = req.body;
+
+    if (!Array.isArray(libraries)) {
+        res.status(400).send('Libraries must be an array');
+        return;
+    }
+
+    if (libraries.length > 10) {
+        res.status(400).send('You can only add 10 libraries at a time');
+        return;
+    }
+
     return new Promise(async (resolve) => {
         const token = req.query.token;
         if (!validateUser(token, process.env.DASHBOARD_SECRET)) {
