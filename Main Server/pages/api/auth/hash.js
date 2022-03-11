@@ -1,6 +1,7 @@
 const crypto = require('crypto');
-const jwtSecret = 'SUPERSECRETE20220';
 const jwt = require('jsonwebtoken');
+
+const { serverRuntimeConfig } = require('next/config').default();
 
 /**
  * generates random string of characters i.e salt
@@ -44,7 +45,7 @@ function decodeJWT(token, ignoreExpiration=false) {
     }
 
     try {
-        decoded = jwt.verify(token, jwtSecret, {
+        decoded = jwt.verify(token, getSecret(), {
             ignoreExpiration: ignoreExpiration
         });
     } catch (e) {
@@ -59,7 +60,7 @@ function decodeJWT(token, ignoreExpiration=false) {
 }
 
 function getSecret() {
-    return jwtSecret;
+    return serverRuntimeConfig.secret;
 }
 
 function generateRefreshToken() {
