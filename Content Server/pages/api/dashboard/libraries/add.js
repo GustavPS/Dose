@@ -34,7 +34,7 @@ const validateLibraries = (libraries) => {
 
 
 export default (req, res) => {
-    const libraries = req.body;
+    const libraries = req.body.libraries;
 
     if (!Array.isArray(libraries)) {
         res.status(400).send('Libraries must be an array');
@@ -67,7 +67,6 @@ export default (req, res) => {
         } else {
             const promises = [];
             for (const library of libraries) {
-
                 promises.push(db.one('INSERT INTO library (name, path, type) VALUES ($1, $2, $3) RETURNING id', [library.name, library.path, library.type], c => +c.id));
                 logger.INFO(`Adding library ${library.name} with path ${library.path}`);
             }

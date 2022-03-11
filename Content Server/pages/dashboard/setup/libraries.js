@@ -123,7 +123,9 @@ export default class Libraries extends Component {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(this.state.libraries)
+                    body: {
+                        libraries: JSON.stringify(this.state.libraries)
+                    }
                 })
                 .then(r => r.json())
                 .then(result => {
