@@ -4,22 +4,24 @@ const pgp = require('pg-promise')();
 const path = require('path');
 
 class Test {
-    #databaseName = "TestMovieServer";
+    static databaseName = "TestMovieServer";
+    static configFile;
     #sqlDump = "files/dump.sql";
+
 
     constructor(configFile) {
         const testConfigPath = path.join(process.env.TEMP_DIRECTORY, 'test_config.json');
         fs.copyFileSync(configFile, testConfigPath);
 
         const data = JSON.parse(fs.readFileSync(testConfigPath));
-        data.database.name = this.#databaseName;
+        data.database.name = Test.databaseName;
         fs.writeFileSync(testConfigPath, JSON.stringify(data, null, 4));
 
-        this.configFile = testConfigPath;
+        Test.configFile = testConfigPath;
     }
 
-    getConfig() {
-        return JSON.parse(fs.readFileSync(this.configFile, 'utf8'));
+    static getConfig() {
+        return JSON.parse(fs.readFileSync(Test.configFile, 'utf8'));
     }
 
     createDatabase(host, port, username, password, databaseName) {
@@ -72,12 +74,12 @@ class Test {
     }
 
     async createDummyUser() {
-        const config = this.getConfig();
+        const config = Test.getConfig();
         const host = config.database.host;
         const port = config.database.port;
         const username = config.database.user;
         const password = config.database.password;
-        const databaseName = this.#databaseName;
+        const databaseName = Test.databaseName;
         const db = await this.getPgpInstance(host, port, username, password, databaseName);
 
         await db.none('INSERT INTO users (username, has_access) VALUES ($1, $2)', ['test', true]);
@@ -88,15 +90,15 @@ class Test {
     }
 
     async setupTestEnvironment() {
-        const config = this.getConfig();
+        const config = Test.getConfig();
         const host = config.database.host;
         const port = config.database.port;
         const username = config.database.user;
         const password = config.database.password;
 
-        return this.dropDatabase(host, port, username, password, this.#databaseName)
-            .then(() => this.createDatabase(host, port, username, password, this.#databaseName))
-            .then(() => this.getPgpInstance(host, port, username, password, this.#databaseName))
+        return this.dropDatabase(host, port, username, password, Test.databaseName)
+            .then(() => this.createDatabase(host, port, username, password, Test.databaseName))
+            .then(() => this.getPgpInstance(host, port, username, password, Test.databaseName))
             .then(db => this.importSql(db, this.#sqlDump))
     }
 }
