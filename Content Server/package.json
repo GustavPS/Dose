@@ -76,5 +76,10 @@
   },
   "msw": {
     "workerDirectory": "public"
+  },
+  "overrides": {
+    "yargs@5.0.0": {
+      "yargs-parser": "^5.0.0"
+    }
   }
 }

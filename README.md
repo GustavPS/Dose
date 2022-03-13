@@ -60,6 +60,9 @@ Go to http://localhost:3001 and follow the setup process. After you've done the 
 #### Add users
 To add users to the server go to http://localhost:3001/dashboard/admins and add the users. Note that they have to be registered to the Main Server before this step.
 
+## Support
+Join our newly created discord for support [here](https://discord.gg/fKeYBzwxrE)
+
 ## DISCLAIMER
 I am not responsible or liable in any manner for any illegal content that people uses DOSE to view and/or host. I do not control and are not responsible for what people host, transmit, share or view using DOSE. I am not responsible for any illegal, offensive, inappropriate, obscene, unlawful or otherwise objectionable content that people host or view using DOSE.
 
