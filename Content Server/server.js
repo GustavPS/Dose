@@ -1,6 +1,6 @@
 const path = require('path');
 const Server = require('./lib/Server');
-const Test = require('./lib/Test');
+const Test = require('./lib/tests/Test');
 const env = require('@next/env');
 
 env.loadEnvConfig('./', process.env.NODE_ENV !== 'production');

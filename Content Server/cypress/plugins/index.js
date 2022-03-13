@@ -15,8 +15,32 @@
 /**
  * @type {Cypress.PluginConfig}
  */
+const webpackPreprocessor = require('@cypress/webpack-preprocessor');
+const { webpack } = require('webpack');
+const MockData = require("../../lib/tests/MockData.js");
+require('dotenv').config();
+
 // eslint-disable-next-line no-unused-vars
 module.exports = (on, config) => {
-  // `on` is used to hook into various events Cypress emits
-  // `config` is the resolved Cypress config
+  config.env = process.env
+
+  const options = {
+    // send in the options from your webpack.config.js, so it works the same
+    // as your app's code
+    webpackOptions: require('./webpack.config.js'),
+  }
+
+  on('file:preprocessor', webpackPreprocessor(options))
+  on('task', {
+    async createDummyGenre() {
+      return new Promise(async (resolve) => {
+        const mockData = new MockData();
+        await mockData.createDummyGenre();
+        resolve(null);
+      })
+    }
+  });
+
+
+  return config;
 }
