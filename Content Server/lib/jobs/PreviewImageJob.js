@@ -44,7 +44,7 @@ class PreviewImageJob extends Job {
             output_file = output_dir + "/img%04d.jpg";
         }
         if (!(await fsExists(output_dir))) {
-            await fsMkdir(output_dir);
+            await fsMkdir(output_dir, { recursive: true });
         }
 
         return new Promise((resolve, reject) => {
