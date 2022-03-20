@@ -3,6 +3,7 @@
   <img src="https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square" alt="Coverage status">
   <img src="https://github.com/GustavPS/Dose/actions/workflows/main.yml/badge.svg" alt="CI status">
   <img src="https://github.com/GustavPS/Dose/actions/workflows/codeql-analysis.yml/badge.svg" alt="Security status">
+  <a href="https://www.codefactor.io/repository/github/gustavps/dose"><img src="https://www.codefactor.io/repository/github/gustavps/dose/badge" alt="CodeFactor" /></a>
   
 </div>
 
