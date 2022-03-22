@@ -27,6 +27,12 @@
     cursor: pointer;
 }
 
+.divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    margin-left: 50px !important;
+    margin-right: 50px !important;
+}
+
 /* Mobile */
 @media only screen and (max-width: 768px) {
     .scrollButton {
