@@ -9,7 +9,6 @@ export default async function handle(req, res) {
     // Not authenticated
     if (user !== false) {
         username = user.username;
-        console.log(`${username} just validated.`);
     }
     res.status(200).json({
         valid: user !== false,
