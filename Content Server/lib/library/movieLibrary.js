@@ -131,7 +131,7 @@ class MovieLibrary extends Library {
                                             break;
                                         }
                                     }
-                                    sockets.emit("newMovie", {"id": internalMovieID, "title": result.metadata.title, "overview": result.metadata.overview, "backdrop_path": back} )
+                                    sockets.emit("newMovie", {"id": internalMovieID, "title": result.metadata.title, "overview": result.metadata.overview, "backdrop": back} )
                                     
                                 resolve(true);
                             });

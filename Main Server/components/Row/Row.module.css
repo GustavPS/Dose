@@ -1,0 +1,35 @@
+.row {
+    width: 100%;
+    height: auto;
+    color: white;
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.scrollable {
+    overflow: auto;
+    overflow-y: visible;
+    -ms-overflow-style: none;
+    white-space: nowrap;
+    scroll-behavior: smooth;
+}
+
+
+.scrollable::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollButton {
+    filter: invert(1);
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+/* Mobile */
+@media only screen and (max-width: 768px) {
+    .scrollButton {
+        display: none;
+    }
+}

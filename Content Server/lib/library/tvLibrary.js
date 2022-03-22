@@ -112,7 +112,7 @@ class TvLibrary extends Library {
                                         break;
                                     }
                                 }
-                                sockets.emit("newShow", {"id": internalSerieID, "title": metadata.name, "overview": metadata.overview, "backdrop_path": back} )
+                                sockets.emit("newShow", {"id": internalSerieID, "title": metadata.name, "overview": metadata.overview, "backdrop": back} )
                                 resolve(internalSerieID);
                             });
                         }).catch(async (error) => {
@@ -272,7 +272,7 @@ class TvLibrary extends Library {
                             db.tx(async t => {
                             let poster = await t.one('SELECT poster_path FROM serie_season_metadata WHERE serie_id = $1 AND season_id = $2;', [internalSerieID, seasonNumber]);
                             
-                            sockets.emit("newEpisode", {"serie_id": internalSerieID, "internalepisodeid": internal_episode_id, "season": seasonNumber, "episode": episodeNumber, "poster": poster.poster_path} )
+                            sockets.emit("newEpisode", {"serie_id": internalSerieID, "internalepisodeid": internal_episode_id, "season": seasonNumber, "episode": episodeNumber, "season_poster": poster.poster_path} )
                       });
                             resolve(true);
                         });
