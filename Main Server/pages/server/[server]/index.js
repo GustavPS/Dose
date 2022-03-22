@@ -1,32 +1,21 @@
 import Layout from '../../../components/layout'
+import Row from '../../../components/Row/row';
 import Head from 'next/head'
 import fetch from 'node-fetch'
 import cookie from 'js-cookie';
 import Router from 'next/router';
-import { useEffect, useState } from 'react';
-import { Carousel, Container, Row, Col } from 'react-bootstrap';
+import { useEffect, useState, useRef } from 'react';
+import { Container } from 'react-bootstrap';
 import Link from 'next/link';
-import validateServerAccess from '../../../lib/validateServerAccess';
-import useWindowSize from '../../../components/hooks/WindowSize';
 import Styles from '../../../styles/server.module.css';
 import MovieBackdrop from '../../../components/movieBackdrop';
 import EpisodePoster from '../../../components/episodePoster';
 import socketIOClient from "socket.io-client";
-
-const fetcher = url =>
-  fetch(url)
-    .then(r => {
-      return r.json().then(result => {
-          return result;
-      });
-    }
-  );
+import ContentServer from '../../../lib/ContentServer';
 
 const main = (props) => {
     // props.server is from the SSR under this function
-    let server = props.server;
-    
-    const [latestMovies, setLatesMovies] = useState(null);
+    const server = props.server;
     const [ongoingMovies, setOngoingMovies] = useState([]);
     const [movieWatchList, setMovieWatchList] = useState([]);
     const [ongoingShows, setOngoingShows] = useState([]);
@@ -35,465 +24,60 @@ const main = (props) => {
     const [newlyAddedEpisodes, setNewlyAddedEpisodes] = useState([]);
     const [recommendedMovie, setRecommendedMovie] = useState(false);
     const [popularMovies, setPopularMovies] = useState([]);
-    let loading = 0;
     const [loaded, setLoaded] = useState(false)
-    let movieIds = 0;
-    let episodeIds = 0;
 
-    const windowSize = useWindowSize();
-    let allContent = [];
+    const newlyAddedMoviesRef = useRef(null);
+    const contentServer = new ContentServer(server);
+    newlyAddedMoviesRef.current = newlyAddedMovies;
 
-    /**
-     * Makes a query to the current active server for a list of movies
-     * 
-     * @param {string} genre 
-     * @param {string} orderby 
-     * @param {int} limit 
-     */
-    const getMovieList = async (genre=null, orderby=null, limit=20, ongoing=false, watchlist=false, popular=false) => {
-        return new Promise((resolve, reject) => {
-            let url;
-            if (ongoing) {
-                url = `${server.server_ip}/api/movies/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
-            } else if(watchlist) {
-                url = `${server.server_ip}/api/movies/list/watchlist?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
-            } else if(popular) {
-                url = `${server.server_ip}/api/movies/list/popular?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
-            } else {
-                url = `${server.server_ip}/api/movies/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
-            }
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    limit: 20
-                })
-            })
-            .then((r) => r.json())
-            .then((response) => {
-                // Mark the movies active image
-                response.result.forEach(movie => {
-                    for (let image of movie.images) {
-                        if (image.active) {
-                            if (image.type === 'BACKDROP') {
-                                if (image.path === 'no_image') {
-                                    movie.backdrop = null;
-                                } else {
-                                    movie.backdrop = image.path;
-                                }
-                            } else {
-                                if (image.path === 'no_image') {
-                                    movie.backdrop = null;
-                                } else {
-                                    movie.poster = image.path;
-                                }
-                            }
-
-                            if (movie.backdrop != null && movie.poster != null) {
-                                break;
-                            }
-                        }
-                    }
-                });
-                resolve(response.result);
-            });
+    const fetchData = () => {
+        const promises = [
+            contentServer.getPopularMovies(),
+            contentServer.getOngoingMovies(),
+            contentServer.getWatchlist(),
+            contentServer.getNewlyAddedMovies(),
+            contentServer.getNewlyAddedShows(),
+            contentServer.getOngoingShows(),
+            contentServer.getNewlyAddedEpisodes()
+        ];
+        Promise.all(promises).then(([popularMovies, ongoingMovies, watchlist, newlyAddedMovies, newlyAddedShows, ongoingShows, newlyAddedEpisodes]) => {
+            setPopularMovies(popularMovies);
+            setOngoingMovies(ongoingMovies);
+            setMovieWatchList(watchlist);
+            setNewlyAddedMovies(newlyAddedMovies);
+            setNewlyAddedShows(newlyAddedShows);
+            setOngoingShows([...ongoingShows.upcoming, ...ongoingShows.ongoing]);
+            setNewlyAddedEpisodes(newlyAddedEpisodes);
+            setLoaded(true);
         });
     }
 
-    /**
-     * Makes a query to the current active server for a list of new episodes
-     * 
-     * @param {string} genre 
-     * @param {string} orderby 
-     * @param {int} limit 
-     */
-         const getNewEpisodeList = async (orderby=null, limit=20) => {
-            return new Promise((resolve, reject) => {
-                let url;
-                url = `${server.server_ip}/api/series/list/episodes?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        limit: 20
-                    })
-                })
-                .then((r) => r.json())
-                .then((response) => {
-                    // Mark the movies active image
-                    response.result.forEach(episode => {
-                        console.log(episode)
-                        for (let image of episode.images) {
-                            if (image.active) {
-                                if (image.type === 'BACKDROP') {
-                                    if (image.path === 'no_image') {
-                                        episode.backdrop = null;
-                                    } else {
-                                        episode.backdrop = image.path;
-                                    }
-                                } else if (image.type === 'POSTER') {
-                                    if (image.path === 'no_image') {
-                                        episode.poster = null;
-                                    } else {
-                                        episode.poster = image.path;
-                                    }
-                                } else {
-                                    if (image.path === 'no_image') {
-                                        episode.backdrop = null;
-                                    } else {
-                                        episode.poster = image.path;
-                                    }
-                                }
-    
-                                if (episode.backdrop != null && episode.poster != null) {
-                                    break;
-                                }
-                            }
-                        }
-                    });
-                    console.log(response.result);
-                    resolve(response.result);
-                });
-            });
-        }
-
-    const getShowList = async (genre=null, orderby=null, limit=20, ongoing=false) => {
-        return new Promise((resolve, reject) => {
-            let url;
-            if (ongoing) {
-                url = `${server.server_ip}/api/series/list/ongoing?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
-            } else {
-                url = `${server.server_ip}/api/series/list${genre !== null ? '/genre/'+genre : ''}?${orderby !== null ? 'orderby='+orderby+'&' : ''}limit=${limit}&token=${cookie.get('serverToken')}`
-            }
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    limit: 20
-                })
-            })
-            .then((r) => r.json())
-            .then((response) => {
-                // Mark the movies active image
-                if (ongoing) {
-                    response.upcoming.forEach(movie => {
-                        for (let image of movie.images) {
-                            if (image.active) {
-                                if (image.type === 'BACKDROP') {
-                                    if (image.path === 'no_image') {
-                                        movie.backdrop = null;
-                                    } else {
-                                        movie.backdrop = image.path;
-                                    }
-                                } else {
-                                    if (image.path === 'no_image') {
-                                        movie.backdrop = null;
-                                    } else {
-                                        movie.poster = image.path;
-                                    }
-                                }
-    
-                                if (movie.backdrop != null && movie.poster != null) {
-                                    break;
-                                }
-                            }
-                        }
-                    });
-
-                    response.ongoing.forEach(movie => {
-                        for (let image of movie.images) {
-                            if (image.active) {
-                                if (image.type === 'BACKDROP') {
-                                    if (image.path === 'no_image') {
-                                        movie.backdrop = null;
-                                    } else {
-                                        movie.backdrop = image.path;
-                                    }
-                                } else {
-                                    if (image.path === 'no_image') {
-                                        movie.backdrop = null;
-                                    } else {
-                                        movie.poster = image.path;
-                                    }
-                                }
-    
-                                if (movie.backdrop != null && movie.poster != null) {
-                                    break;
-                                }
-                            }
-                        }
-                    });
-                    resolve(response);
-                    return;
-                }
-
-
-                response.result.forEach(movie => {
-                    for (let image of movie.images) {
-                        if (image.active) {
-                            if (image.type === 'BACKDROP') {
-                                if (image.path === 'no_image') {
-                                    movie.backdrop = null;
-                                } else {
-                                    movie.backdrop = image.path;
-                                }
-                            } else {
-                                if (image.path === 'no_image') {
-                                    movie.backdrop = null;
-                                } else {
-                                    movie.poster = image.path;
-                                }
-                            }
-
-                            if (movie.backdrop != null && movie.poster != null) {
-                                break;
-                            }
-                        }
-                    }
-                });
-                resolve(response.result);
-            });
-        });
-    }
-
-    const getActiveImage = (images, type) => {
-        for (let image of images) {
-            if (image.type === type && image.active && image.path != "no_image") {
-                return image;
-            }
-        }
-        return false;
-    }
-
-    useEffect(() => {
-        validateServerAccess(server, (serverToken) => {
-                
-           
-            // Get recommended video (random video right now)
-            fetch(`${server.server_ip}/api/movies/list/random?trailer=true&token=${cookie.get('serverToken')}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-            })
-            .then((r) => r.json())
-            .then(result => {
-                if (result.status === 'success') {
-                    result.movie.activeLogo = getActiveImage(result.movie.images, 'LOGO');
-                    console.log(result);
-
-                    setRecommendedMovie(result.movie);
-                } else {
-                    console.log("Error getting recommended movie");
-                }
-            })
-            
-
-            // Get all the newest released movies (The slieshow)
-            getMovieList(null, 'release_date', 5).then(movies => {
-                movies.reverse();
-                let movieElements = [];
-                for (let movie of movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/original/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    movieElements.push(
-                        <Carousel.Item>
-                            <img 
-                                className="d-block w-100"
-                                src={img}
-                                alt={movie.title}
-                                style={{objectFit: 'cover', height: '90vh', minHeight: '500px', cursor: 'pointer'}}
-                                onClick={() => {selectMovie(movie.id)}}
-                            />
-                            <Carousel.Caption>
-                                <h3 style={{textShadow: '0px 0px 6px #000'}}>{movie.title}</h3>
-                                <p style={{textShadow: '0px 0px 6px #000'}}>{movie.overview}</p>
-                            </Carousel.Caption>
-                        </Carousel.Item>
-                    );
-                }
-                loading++
-                setLatesMovies(movieElements);
-
-            }).then(() => {
-                if(loading == 7) {
-                    setLoaded(true)
-                }
-            })
-
-            // Get popular movies
-            getMovieList(null, 'release_date', 20, false, false, true).then(movies => {
-                movies.reverse();
-                let movieElements = [];
-                for (let movie of movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    movieElements.push(
-                        <MovieBackdrop key={movie.id} markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                    );
-                }
-                loading++
-                setPopularMovies(movieElements);
-
-            }).then(() => {
-                if(loading == 7) {
-                    setLoaded(true)
-                }
-            })
-
-            // Get ongoing movies
-            getMovieList(null, 'release_date', 20, true).then(movies => {
-                movies.reverse();
-                let movieElements = [];
-                for (let movie of movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    movieElements.push(
-                        <MovieBackdrop key={movie.id} markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                    );
-                }
-                loading++
-                setOngoingMovies(movieElements);
-
-            }).then(() => {
-                if(loading == 7) {
-                    setLoaded(true)
-                }
-            })
-
-            // Get watchlist for movies
-            getMovieList(null, 'release_date', 20, false, true).then(movies => {
-                movies.reverse();
-                let movieElements = [];
-                for (let movie of movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    movieElements.push(
-                        <MovieBackdrop markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                    );
-                }
-                loading++
-                setMovieWatchList(movieElements);
-
-            }).then(() => {
-                if(loading == 7) {
-                    setLoaded(true)
-                }
-            })
-
-            // Get newly added movies
-            getMovieList(null, 'added_date', 20).then(movies => {
-                let movieElements = [];
-                for (let movie of movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    movieElements.push(
-                        <MovieBackdrop key={movieIds} markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-                    );
-                }
-                loading++
-                setNewlyAddedMovies(movieElements);
-
-            }).then(() => {
-                if(loading == 7) {
-                    setLoaded(true)
-                }
-            })
-
-            // Get newly added shows
-            getShowList(null, 'added_date', 20).then(shows => {
-                let showElements = [];
-                for (let show of shows) {
-                    let img = show.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${show.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    showElements.push(
-                        <MovieBackdrop key={show.id} markAsDoneButton id={show.id} time={show.watchtime} runtime={show.runtime} title={show.title} overview={show.overview} runtime={show.runtime} backdrop={img} onClick={(id) => selectShow(show.id)}></MovieBackdrop>
-                    );
-                }
-                loading++
-                setNewlyAddedShows(showElements);
-
-            }).then(() => {
-                if(loading == 7) {
-                    setLoaded(true)
-                }
-            })
-            // Get ongoing shows
-            getShowList(null, 'added_date', 20, true).then(result => {
-                let showElements = [];
-                for (let show of result.upcoming) {
-                    let img = show.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${show.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    showElements.push(
-                        <MovieBackdrop showTitle markAsDoneButton id={show.id} time={show.time_watched} runtime={show.runtime} title={show.season_name + " - Episode " + show.episode_number}
-                                       overview={show.overview} runtime={show.total_time} backdrop={img} onClick={(id) => selectEpisode(show.show_id, show.season_number, show.episode_number, show.internalepisodeid)}></MovieBackdrop>
-                    );
-                }
-                for (let show of result.ongoing) {
-                    let img = show.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${show.backdrop}` : 'https://via.placeholder.com/2000x1000' 
-                    showElements.push(
-                        <MovieBackdrop showTitle markAsDoneButton id={show.id} time={show.time_watched} runtime={show.runtime} title={show.season_name + " - Episode " + show.episode_number}
-                                       overview={show.overview} runtime={show.total_time} backdrop={img} onClick={(id) => selectEpisode(show.show_id, show.season_number, show.episode_number, show.internalepisodeid)}></MovieBackdrop>
-                    );
-                }
-                loading++
-                setOngoingShows(showElements);
-
-            }).then(() => {
-                if(loading == 7) {
-                    setLoaded(true)
-                }
-            })
-
-            getNewEpisodeList('added_date', 20).then(episodes => {
-                let episodeElements = [];
-                console.log(episodes)
-                for (let episode of episodes) {
-                    let poster = episode.poster !== null ? `https://image.tmdb.org/t/p/w500/${episode.season_poster}` : 'https://via.placeholder.com/500x1000';
-                    let backdrop = episode.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${episode.backdrop}` : 'https://via.placeholder.com/500x1000' 
-                    episodeElements.push(
-                        <EpisodePoster key={episodeIds++} show={episode.serie_id} season={episode.season} episode={episode.episode} poster={poster} internalEpisodeID={episode.internalepisodeid} backdrop={backdrop}
-                            onClick={(season, episode, show, internalEpisodeID) => selectEpisode(show, season, episode, internalEpisodeID)}></EpisodePoster>
-                    );
-                }
-                loading++
-                setNewlyAddedEpisodes(episodeElements);
-            }).then(() => {
-                if(loading == 7) {
-                    setLoaded(true)
-                }
-            })
-
-
-        });
-    }, [loading]);
-
-    useEffect(() => {
+    const setupSockets = () => {
         const socket = socketIOClient(server.server_ip);
-
         socket.on("newMovie", movie => {
-            console.log(movie);
-            let img = movie.backdrop_path !== undefined ? `https://image.tmdb.org/t/p/w500/${movie.backdrop_path}` : 'https://via.placeholder.com/2000x1000';
-            let element = <MovieBackdrop animate={true} key={movieIds++} markAsDoneButton id={movie.id} time={movie.watchtime} runtime={movie.runtime} title={movie.title} overview={movie.overview} runtime={movie.runtime} backdrop={img} onClick={(id) => selectMovie(movie.id)}></MovieBackdrop>
-            if(!newlyAddedMovies.includes(element)){
-                setNewlyAddedMovies(oldArray => [element, ...oldArray.slice(0, 19)]);
+            if (!newlyAddedMovies.includes(movie)) {
+                setNewlyAddedMovies(oldArray => [movie, ...oldArray.slice(0, 19)]);
             }
         });
         socket.on("newEpisode", episode => {
-            console.log(episode);
-            let img = episode.poster !== undefined ? `https://image.tmdb.org/t/p/w500/${episode.poster}` : 'https://via.placeholder.com/2000x1000';
-            let element =  <EpisodePoster animate={false} key={episodeIds++} show={episode.serie_id} season={episode.season} episode={episode.episode} poster={img} internalEpisodeID={episode.internalepisodeid} backdrop={img}
-            onClick={(season, episode, show, internalEpisodeID) => selectEpisode(show, season, episode, internalEpisodeID)}></EpisodePoster>
-            if(!newlyAddedEpisodes.includes(element)){
-                setNewlyAddedEpisodes(oldArray => [element, ...oldArray.slice(0, 19)]);
+            if (!newlyAddedEpisodes.includes(episode)) {
+                setNewlyAddedEpisodes(oldArray => [episode, ...oldArray.slice(0, 19)]);
             }
         });
         socket.on("newShow", show => {
-            let img = show.backdrop_path !== undefined ? `https://image.tmdb.org/t/p/w500/${show.backdrop_path}` : 'https://via.placeholder.com/2000x1000';
-            let element = <MovieBackdrop animate={true} key={show.id} markAsDoneButton id={show.id} time={show.watchtime} runtime={show.runtime} title={show.title} overview={show.overview} backdrop={img} onClick={(id) => selectShow(show.id)}></MovieBackdrop>
-            if(!newlyAddedShows.includes(element)){
-                setNewlyAddedShows(oldArray => [element, ...oldArray.slice(0, 19)]);
+            if (!newlyAddedShows.includes(show)) {
+                setNewlyAddedShows(oldArray => [show, ...oldArray.slice(0, 19)]);
             }
-            console.log(newlyAddedShows.length);
+        });
+    }
+
+    useEffect(() => {
+        setupSockets();
+        fetchData();
+        contentServer.getRandomTrailer().then(movie => {
+            setRecommendedMovie(movie);
+        }).catch(err => {
+            console.error(err);
         });
     }, []);
 
@@ -510,16 +94,43 @@ const main = (props) => {
         Router.push(`/server/${server.server_id}/shows/video/${showID}/season/${seasonNumber}/episode/${episodeNumber}?internalID=${internalEpisodeID}`)
     }
 
-
-    const scrollLeft = (id) => {
-        document.getElementById(id).scrollLeft -= (window.innerWidth)*0.8;
-        window.scrollTo(window.scrollX, window.scrollY - 1);
-        window.scrollTo(window.scrollX, window.scrollY + 1);
+    const renderMovie = (item, index) => {
+        const img = item.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${item.backdrop}` : 'https://via.placeholder.com/2000x1000'
+        return (
+            <MovieBackdrop id={item.id} time={item.watchtime} runtime={item.runtime} title={item.title}
+                overview={item.overview} backdrop={img} onClick={(id) => selectMovie(item.id)}>
+            </MovieBackdrop>
+        )
     }
-    const scrollRight = (id) => {
-        document.getElementById(id).scrollLeft += (window.innerWidth)*0.8;
-        window.scrollTo(window.scrollX, window.scrollY - 1);
-        window.scrollTo(window.scrollX, window.scrollY + 1);
+
+    const renderShows = (item, index) => {
+        const img = item.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${item.backdrop}` : 'https://via.placeholder.com/2000x1000'
+        return (
+            <MovieBackdrop id={item.id} time={item.watchtime} runtime={item.runtime} title={item.title} overview={item.overview}
+                backdrop={img} onClick={(id) => selectShow(item.id)}>
+            </MovieBackdrop>
+        )
+    }
+
+    const renderEpisodes = (item, index) => {
+        const poster = item.season_poster !== null ? `https://image.tmdb.org/t/p/w500/${item.season_poster}` : 'https://via.placeholder.com/500x1000';
+        const backdrop = item.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${item.backdrop}` : 'https://via.placeholder.com/500x1000'
+        return (
+            <EpisodePoster show={item.serie_id} season={item.season} episode={item.episode} poster={poster}
+                internalEpisodeID={item.internalepisodeid} backdrop={backdrop}
+                onClick={(season, episode, show, internalEpisodeID) => selectEpisode(show, season, episode, internalEpisodeID)}>
+            </EpisodePoster>
+        );
+    };
+
+    const renderOngoing = (item, index) => {
+        let img = item.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${item.backdrop}` : 'https://via.placeholder.com/2000x1000'
+        return (
+            <MovieBackdrop showTitle id={item.id} time={item.time_watched} title={item.season_name + " - Episode " + item.episode_number}
+                overview={item.overview} runtime={item.total_time} backdrop={img}
+                onClick={(id) => selectEpisode(item.show_id, item.season_number, item.episode_number, item.internalepisodeid)}>
+            </MovieBackdrop>
+        );
     }
 
     // LAYOUT //
@@ -529,219 +140,75 @@ const main = (props) => {
         </Head>
         {!loaded &&
             <div className={Styles.loadingioSpinnerEclipse}>
-            <div className={Styles.ldio}>
-                <div></div>
-            </div>
+                <div className={Styles.ldio}>
+                    <div></div>
+                </div>
             </div>
         }
         {loaded &&
 
-        <Layout searchEnabled server={server} serverToken={cookie.get('serverToken')}>
-        <Head>
-            <title>Dose - {server.server_name}</title>
-        </Head>
-        {recommendedMovie != false &&
-            <div className={Styles.recommended}>
-                <video  autoPlay={true} loop={true} preload="auto" muted>
-                    <source src={`${server.server_ip}/api/trailer/${recommendedMovie["id"]}?type=MOVIE&token=${cookie.get('serverToken')}`}type="video/mp4" />
-                </video>
-                <div className={Styles.recommendedInformation}>
-                    {recommendedMovie["activeLogo"] != false &&
-                    <img src={`https://image.tmdb.org/t/p/original/${recommendedMovie["activeLogo"].path}`} className={Styles.logo} />
-                    }
-                    {recommendedMovie["activeLogo"] == false &&
-                    <h1>{recommendedMovie["title"]}</h1>
-                    }
-                    <p>{recommendedMovie["overview"]}</p>
-                    <div className={Styles.controls}>
-                        <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}?autoPlay=true`}>
-                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/001-play-button.png`} />
-                        </Link>
-                        <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}`}>
-                            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/002-information.png`} />
-                        </Link>
+            <Layout searchEnabled server={server} serverToken={cookie.get('serverToken')}>
+                <Head>
+                    <title>Dose - {server.server_name}</title>
+                </Head>
+                {recommendedMovie != false &&
+                    <div className={Styles.recommended}>
+                        <video autoPlay={true} loop={true} preload="auto" muted>
+                            <source src={`${server.server_ip}/api/trailer/${recommendedMovie["id"]}?type=MOVIE&token=${cookie.get('serverToken')}`} type="video/mp4" />
+                        </video>
+                        <div className={Styles.recommendedInformation}>
+                            {recommendedMovie["activeLogo"] != false &&
+                                <img src={`https://image.tmdb.org/t/p/original/${recommendedMovie["activeLogo"].path}`} className={Styles.logo} />
+                            }
+                            {recommendedMovie["activeLogo"] == false &&
+                                <h1>{recommendedMovie["title"]}</h1>
+                            }
+                            <p>{recommendedMovie["overview"]}</p>
+                            <div className={Styles.controls}>
+                                <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}?autoPlay=true`}>
+                                    <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/001-play-button.png`} />
+                                </Link>
+                                <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}`}>
+                                    <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/002-information.png`} />
+                                </Link>
+                            </div>
+                        </div>
                     </div>
+                }
+
+                <br></br>
+                <div style={{ color: 'white' }}>
+                    <Container fluid className={Styles.contentRows}>
+
+                        <Row title="Popular" items={popularMovies} itemSize={480} render={renderMovie}></Row>
+                        <hr className={Styles.divider}></hr>
+
+                        <Row title="Ongoing Movies" items={ongoingMovies} itemSize={480} render={renderMovie}></Row>
+                        <hr className={Styles.divider}></hr>
+
+                        <Row title="Ongoing Shows" items={ongoingShows} itemSize={480} render={renderOngoing}></Row>
+                        <hr className={Styles.divider}></hr>
+
+                        <Row title="Watchlist" items={movieWatchList} itemSize={480} render={renderMovie}></Row>
+                        <hr className={Styles.divider}></hr>
+
+                        <Row title="Newly added" items={newlyAddedMovies} itemSize={480} render={renderMovie}></Row>
+                        <hr className={Styles.divider}></hr>
+
+                        <Row title="Newly Added Episodes" items={newlyAddedEpisodes} itemSize={202} render={renderEpisodes}></Row>
+                        <hr className={Styles.divider}></hr>
+
+                        <Row title="Newly Added Shows" items={newlyAddedShows} itemSize={480} render={renderShows}></Row>
+
+                    </Container>
                 </div>
-    
-    
-            </div>
+            </Layout>
         }
-
-            
-        <br></br>
-        <div style={{color: 'white'}}>
-            <Container fluid className={Styles.contentRows}>
-            {popularMovies.length > 0 &&
-                    <>
-                        <h2 style={{textTransform: 'capitalize'}}>Popular</h2>  
-                        <div className={Styles.movieRow}>
-                            <div id="popularMovies" className={Styles.scrollable}>
-                                {popularMovies}
-                            </div>
-                            {popularMovies.length * 480 > windowSize.width &&
-                                <>
-                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('popularMovies')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" />
-                                    </div>
-                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('popularMovies')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" />
-                                    </div>
-                                </>
-                            }
-                        </div> 
-                    <hr className={Styles.divider}></hr>
-                    </> 
-                }
-
-                {ongoingMovies.length > 0 &&
-                    <>
-                        <h2 style={{textTransform: 'capitalize'}}>Ongoing Movies</h2>  
-                        <div className={Styles.movieRow}>
-                            <div id="ongoingMovies" className={Styles.scrollable}>
-                                {ongoingMovies}
-                            </div>
-                            {ongoingMovies.length * 480 > windowSize.width &&
-                                <>
-                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingMovies')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" />
-                                    </div>
-                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingMovies')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" />
-                                    </div>
-                                </>
-                            }
-                        </div> 
-                    <hr className={Styles.divider}></hr>
-                    </> 
-                }
-
-                {ongoingShows.length > 0 &&
-                    <>
-                        <h2 style={{textTransform: 'capitalize'}}>Ongoing Shows</h2>    
-                        <div className={Styles.movieRow}>
-                            <div id="ongoingShows" className={Styles.scrollable}>
-                                {ongoingShows}
-                            </div>
-                            {ongoingShows.length * 480 > windowSize.width &&
-                                <>
-                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('ongoingShows')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                    </div>
-                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('ongoingShows')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                    </div>
-                                </>
-                            }
-                        </div> 
-                    <hr className={Styles.divider}></hr>
-                    </> 
-                }
-
-                {movieWatchList.length > 0 &&
-                    <>
-                        <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Watchlist</h2></a></Link>   
-                        <div className={Styles.movieRow}>
-                            <div id="movieWatchList" className={Styles.scrollable}>
-                                {movieWatchList}
-                            </div>
-                            {movieWatchList.length * 480 > windowSize.width &&
-                                <>
-                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('movieWatchList')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                    </div>
-                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('movieWatchList')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                    </div>
-                                </>
-                            }
-                        </div> 
-                    <hr className={Styles.divider}></hr>
-                    </> 
-                }
-     
-                {newlyAddedMovies.length > 0 &&
-                    <>
-                        <Link href={"/server/" + server.server_id + "/movies"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Newly Added Movies</h2></a></Link>   
-                        <div className={Styles.movieRow}>
-                            <div id="newlyAddedMovies" className={Styles.scrollable}>
-                            {newlyAddedMovies}
-                            </div>
-                            {newlyAddedMovies.length * 480 > windowSize.width &&
-                                <>
-                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedMovies')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                    </div>
-                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedMovies')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                    </div>
-                                </>
-                            }
-                        </div> 
-                    <hr className={Styles.divider}></hr>
-                    </> 
-                }
-
-                
-                
-                {newlyAddedEpisodes.length > 0 &&
-                    <>
-                        <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Newly Added Episodes</h2></a></Link>
-                        <div className={Styles.movieRow}>
-                            <div id="newlyAddedEpisodes" className={Styles.scrollable}>
-                                {newlyAddedEpisodes}
-                            </div>
-                            {newlyAddedEpisodes.length * 480 > windowSize.width &&
-                                <>
-                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedEpisodes')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                    </div>
-                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedEpisodes')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                    </div>
-                                </>
-                            }
-                        </div> 
-                    <hr className={Styles.divider}></hr>
-                    </> 
-                }
-                
-                {newlyAddedShows.length > 0 &&
-                    <>
-                        <Link href={"/server/" + server.server_id + "/shows"}><a style={{color: 'white'}}><h2 style={{textTransform: 'capitalize'}}>Newly Added Shows</h2></a></Link>
-                        <div className={Styles.movieRow}>
-                            <div id="newlyAddedShows" className={Styles.scrollable}>
-                                {newlyAddedShows}
-                            </div>
-                            {newlyAddedShows.length * 480 > windowSize.width &&
-                                <>
-                                    <div className={Styles.scrollButton} onClick={() => scrollLeft('newlyAddedShows')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
-                                    </div>
-                                    <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('newlyAddedShows')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
-                                    </div>
-                                </>
-                            }
-                        </div> 
-                    <hr className={Styles.divider}></hr>
-                    </> 
-                }
-            </Container>
-        </div>
-        </Layout>
-        }
-        </>
+    </>
     )
 }
 
 export default main;
-
-
-
-
-
-
-
 
 // Get the information about the server and send it to the front end before render (this is server-side)
 export async function getServerSideProps(context) {
@@ -754,13 +221,11 @@ export async function getServerSideProps(context) {
         body: JSON.stringify({
             id: serverId
         }),
-    })
-    .then((r) => r.json())
-    .then((data) => {
+    }).then((r) => r.json()).then((data) => {
         return {
             props: {
                 server: data.server
             }
-          }
+        }
     });
-  }
+}
