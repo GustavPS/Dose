@@ -1,6 +1,5 @@
 import Layout from '../../../../components/layout'
 import Head from 'next/head'
-import fetch from 'node-fetch'
 import cookie from 'js-cookie';
 import Router from 'next/router';
 import { useEffect, useState } from 'react';

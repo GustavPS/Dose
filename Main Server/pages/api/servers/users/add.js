@@ -1,5 +1,4 @@
 const db = require('../../../../lib/db').default;
-const fetch = require('node-fetch');
 
 const userHasAccessToServer = (userId, serverId) => {
     return new Promise((resolve, reject) => {

@@ -1,5 +1,4 @@
 const db = require('../../../lib/db').default;
-const fetch = require('node-fetch');
 
 export default async function handle(req, res) {
     const { id, ip, name } = req.body;
