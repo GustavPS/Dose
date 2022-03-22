@@ -23,7 +23,7 @@ export default function Row(props) {
     useEffect(() => {
         if (items.length === 0 && props.items.length !== 0) {
             setItems(props.items);
-        } 
+        }
     }, [items]);
 
     const scrollLeft = () => {
@@ -38,7 +38,7 @@ export default function Row(props) {
     }
 
     return (
-        <div style={{display: items.length > 0 ? 'block' : 'none'}}>
+        <div style={{ display: items.length > 0 ? 'block' : 'none' }}>
             <div className={className} style={style}>
                 <h2 style={{ textTransform: 'capitalize' }}>{title}</h2>
                 <div className={Styles.row}>
@@ -61,6 +61,7 @@ export default function Row(props) {
                     }
                 </div>
             </div>
+            <hr className={Styles.divider}></hr>
         </div>
     );
 }

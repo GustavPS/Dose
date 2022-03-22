@@ -180,23 +180,11 @@ const main = (props) => {
                     <Container fluid className={Styles.contentRows}>
 
                         <Row title="Popular" items={popularMovies} itemSize={480} render={renderMovie}></Row>
-                        <hr className={Styles.divider}></hr>
-
                         <Row title="Ongoing Movies" items={ongoingMovies} itemSize={480} render={renderMovie}></Row>
-                        <hr className={Styles.divider}></hr>
-
                         <Row title="Ongoing Shows" items={ongoingShows} itemSize={480} render={renderOngoing}></Row>
-                        <hr className={Styles.divider}></hr>
-
                         <Row title="Watchlist" items={movieWatchList} itemSize={480} render={renderMovie}></Row>
-                        <hr className={Styles.divider}></hr>
-
                         <Row title="Newly added" items={newlyAddedMovies} itemSize={480} render={renderMovie}></Row>
-                        <hr className={Styles.divider}></hr>
-
                         <Row title="Newly Added Episodes" items={newlyAddedEpisodes} itemSize={202} render={renderEpisodes}></Row>
-                        <hr className={Styles.divider}></hr>
-
                         <Row title="Newly Added Shows" items={newlyAddedShows} itemSize={480} render={renderShows}></Row>
 
                     </Container>
