@@ -17,8 +17,6 @@ export default function Row(props) {
     // setItems to an empty array to clear the items. It will be set to the items passed in the props in the second useEffect
     useEffect(() => {
         const newItems = [...props.items];
-        console.log(newItems)
-
         setItems([]);
     }, [props.items]);
 

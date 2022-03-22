@@ -53,10 +53,10 @@ export default class ContentServer {
     #request(url, options) {
         return new Promise(resolve => {
             fetch(url, options).then(r => r.json()).then(response => {
-                response.result.forEach(movie => {
-                    const images = this.getActiveImages(movie.images);
-                    movie.backdrop = images.backdrop;
-                    movie.poster = images.poster;
+                response.result.forEach(item => {
+                    const images = this.getActiveImages(item.images);
+                    item.backdrop = images.backdrop;
+                    item.poster = images.poster;
                 });
                 resolve(response.result);
             });

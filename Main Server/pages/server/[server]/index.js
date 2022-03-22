@@ -195,7 +195,7 @@ const main = (props) => {
                         <Row title="Newly added" items={newlyAddedMovies} itemSize={480} render={renderMovie}></Row>
                         <hr className={Styles.divider}></hr>
 
-                        <Row title="Newly Added Episodes" items={newlyAddedEpisodes} itemSize={480} render={renderEpisodes}></Row>
+                        <Row title="Newly Added Episodes" items={newlyAddedEpisodes} itemSize={202} render={renderEpisodes}></Row>
                         <hr className={Styles.divider}></hr>
 
                         <Row title="Newly Added Shows" items={newlyAddedShows} itemSize={480} render={renderShows}></Row>
