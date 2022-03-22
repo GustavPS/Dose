@@ -3,7 +3,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router'
 import ReactPlayer from 'react-player'
 import Styles from '../../../../../../styles/shows.video.module.css';
-import fetch from 'node-fetch'
 import vtt from 'vtt-live-edit';
 import Router from 'next/router';
 import SeasonPoster from '../../../../../../components/seasonPoster';

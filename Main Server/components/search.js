@@ -1,6 +1,5 @@
 import Style from './search.module.css';
 import Form from 'react-bootstrap/Form';
-import fetch from 'node-fetch'
 import validateServerAccess from '../lib/validateServerAccess';
 import didYouMean from 'didyoumean';
 import { Component } from 'react';
