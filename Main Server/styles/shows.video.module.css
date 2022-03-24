@@ -133,9 +133,9 @@
 }
 
 .poster:hover {
-    -webkit-box-shadow: inset 0px 0px 32px 17px rgba(0,0,0,0.77);
-    -moz-box-shadow: inset 0px 0px 32px 17px rgba(0,0,0,0.77);
-    box-shadow: inset 0px 0px 32px 17px rgba(0,0,0,0.77);
+    -webkit-box-shadow: inset 0 0 32px 17px rgba(0,0,0,0.77);
+    -moz-box-shadow: inset 0 0 32px 17px rgba(0,0,0,0.77);
+    box-shadow: inset 0 0 32px 17px rgba(0,0,0,0.77);
 }
 
 .metadata {
@@ -195,7 +195,7 @@
 }
 
 .seasons div {
-    margin: 5px 5px 5px 5px;
+    margin: 5px;
     border-radius: 5px;
 }
 
@@ -335,7 +335,7 @@
     }
 
     .buttonHiddenForMobile {
-        display: none;;
+        display: none;
     }
 
     .playButton {

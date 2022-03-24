@@ -109,7 +109,7 @@
     width: 100%;
     height: auto;
     display: inline-flex;
-    padding: 50px 50px 0 50px;
+    padding: 50px 50px 0;
     margin-top: 40px;
 }
 
@@ -122,9 +122,9 @@
 }
 
 .poster:hover {
-    -webkit-box-shadow: inset 0px 0px 32px 17px rgba(0,0,0,0.77);
-    -moz-box-shadow: inset 0px 0px 32px 17px rgba(0,0,0,0.77);
-    box-shadow: inset 0px 0px 32px 17px rgba(0,0,0,0.77);
+    -webkit-box-shadow: inset 0 0 32px 17px rgba(0,0,0,0.77);
+    -moz-box-shadow: inset 0 0 32px 17px rgba(0,0,0,0.77);
+    box-shadow: inset 0 0 32px 17px rgba(0,0,0,0.77);
 }
 
 .metadata {
@@ -162,7 +162,7 @@
 
 .bottom {
     color: white;
-    padding: 20px 50px 0 50px;
+    padding: 20px 50px 0;
 }
 
 .unmarkAsWatchText {
