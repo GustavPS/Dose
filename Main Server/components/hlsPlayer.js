@@ -86,27 +86,6 @@ export default class HlsPlayer extends Component {
         if (runningOnClient) {
             this.chromecastHandler = new cheomecastHandler(this.chromecastProgressUpdate, this.chromecastDisconnect);
         }
-
-        this.getSubtitles();
-        this.getLanguages()
-            .then(() => {
-                this.getResolutions().then(resolutions => {
-                    const directplay = resolutions[0].name === "Directplay";
-                    this.setState({
-                        resolutions: resolutions,
-                        activeResolutionLevel: resolutions.length - 1,
-                        usingDirectplay: directplay
-                    }, () => {
-                        this.getSrc(directplay).then(src => {
-                            this.chromecastHandler.setSrc(src); // TODO: Test
-                            if (this._ismounted) {
-                                this.setupHls();
-                            }
-                        })
-                    });
-
-                });
-            });
     }
 
     /**
@@ -637,6 +616,30 @@ export default class HlsPlayer extends Component {
     }
 
     componentDidMount() {
+        // TODO: Make this readable..
+        this.getSubtitles();
+        this.getLanguages()
+            .then(() => {
+                this.getResolutions().then(resolutions => {
+                    const directplay = resolutions[0].name === "Directplay";
+                    this.setState({
+                        resolutions: resolutions,
+                        activeResolutionLevel: resolutions.length - 1,
+                        usingDirectplay: directplay
+                    }, () => {
+                        this.getSrc(directplay).then(src => {
+                            this.chromecastHandler.setSrc(src); // TODO: Test
+                            this.setupHls();
+                        })
+                    });
+
+                });
+            });
+
+
+
+
+
         // Check the localStorage if the chromecast API has already been loaded, if not, load it
         let runningOnClient = typeof window !== "undefined";
         if (runningOnClient && window["gCastIncluded"] == null) {
@@ -651,10 +654,6 @@ export default class HlsPlayer extends Component {
         });
 
         this._ismounted = true;
-        // If we have found the language, we can setup HLS. If not we will wait for the language to be found
-        if (Hls.isSupported() && this.state.activeLanguageStreamIndex !== null) {
-            this.setupHls();
-        }
         this.soundBar.value = 100;
         this.seekBar.value = 0;
         this.pingInterval = setInterval(this.ping, 5000);
