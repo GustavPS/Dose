@@ -4,7 +4,9 @@ const Transcoding = require('./transcoding.js');
 const TranscodingGroup = require('./TranscodingGroup.js');
 const AsyncLock = require('node-async-locks').AsyncLock;
 const Logger = require('../logger');
+const Config = require('../config');
 const logger = new Logger();
+const config = new Config();
 
 // A singleton class managing HLS Transcodings
 class HlsManager {
@@ -23,15 +25,15 @@ class HlsManager {
 
     startTranscoding(content, quality, startSegment, groupHash, audioStreamIndex, audioTranscoding, user) {
         return new Promise(resolve => {
-            content.getFilePath()
-            .then(filePath => {
+            Promise.all([content.getFilePath(), config.getConfig()]).then(([filePath, conf]) => {
+                const useGpuTranscoding = conf.gpuTranscoding ?? false;
                 const output = Transcoding.createTempDir();
 
-                const fastTranscoding = new Transcoding(filePath, startSegment, true); // Fast transcoding
+                const fastTranscoding = new Transcoding(filePath, startSegment, true, useGpuTranscoding); // Fast transcoding
                 const transcodingGroup = new TranscodingGroup(user, content, groupHash, fastTranscoding);
 
                 const slowTranscodingStartSegment = startSegment + (Transcoding.FAST_START_TIME / Transcoding.SEGMENT_DURATION)
-                const slowTranscoding = new Transcoding(filePath, slowTranscodingStartSegment, false); // Slow transcoding
+                const slowTranscoding = new Transcoding(filePath, slowTranscodingStartSegment, false, useGpuTranscoding); // Slow transcoding
                 transcodingGroup.addSlowTranscoding(slowTranscoding);
                 global.transcodings.push(transcodingGroup);
                 const promises = transcodingGroup.start(quality, output, audioStreamIndex, audioTranscoding);
@@ -39,7 +41,7 @@ class HlsManager {
                 Promise.all(promises).then(() => {
                     resolve();
                 });
-            })
+            });
         });
     }
 

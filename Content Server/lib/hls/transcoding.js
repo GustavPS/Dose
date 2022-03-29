@@ -12,19 +12,17 @@ class Transcoding {
     static FAST_START_SEGMENTS = 50;
     static FAST_START_TIME = Transcoding.SEGMENT_DURATION * Transcoding.FAST_START_SEGMENTS;
 
-    constructor(filePath, startSegment, fastStart=false) {
+    constructor(filePath, startSegment, fastStart=false, gpuTranscoding) {
         this.CRF_SETTING = 22;
         this.filePath = filePath;
         this.startSegment = startSegment;
         this.latestSegment = startSegment;
+        this.gpuTranscoding = gpuTranscoding;
         this.output = "";
         this.ffmpegProc;
         
         this.fastStart = fastStart;
-        //this.hash = hash;
-        //this.groupHash = groupHash;
         this.finished = false;
-        //this.lastRequestedTime = Date.now();
     }
 
     getOutput() {
@@ -40,8 +38,7 @@ class Transcoding {
     }
 
     getVideoCodec() {
-        // TODO: Parse this as a boolean
-        if (process.env.GPU_TRANSCODING === "TRUE") {
+        if (this.gpuTranscoding) {
             return this.getGpuVideoCodec();
         } else {
             return this.getCpuVideoCodec();
@@ -121,8 +118,14 @@ class Transcoding {
         return dir;
     }
 
-    getOutputOptions() {
+    getCpuOutputOptions() {
         return [
+            '-deadline realtime'
+        ]
+    }
+
+    getOutputOptions() {
+        const options = [
             '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
             '-pix_fmt yuv420p',
             '-map 0',
@@ -131,8 +134,6 @@ class Transcoding {
             '-g 52',
             `-crf ${this.CRF_SETTING}`,
             '-sn',
-            '-deadline realtime',
-            '-preset:v ultrafast',
             '-f hls',
             `-hls_time ${Transcoding.SEGMENT_DURATION}`,
             '-force_key_frames expr:gte(t,n_forced*2)',
@@ -145,6 +146,11 @@ class Transcoding {
             '-b:a 192k',
             '-muxdelay 0'
         ];
+
+        if (!this.gpuTranscoding) {
+            return options.concat(this.getCpuOutputOptions());
+        }
+        return options;
     }
 
     start(quality, output, audioStreamIndex, audioSupported) {
@@ -165,7 +171,7 @@ class Transcoding {
             ];
 
             if (this.fastStart) {
-                outputOptions.push(`-to ${(this.startSegment * Transcoding.SEGMENT_DURATION) + Transcoding.FAST_START_TIME}`); // Quickly transcode the first 4 segments
+                outputOptions.push(`-to ${(this.startSegment * Transcoding.SEGMENT_DURATION) + Transcoding.FAST_START_TIME}`); // Quickly transcode the first segments
             } else if (!this.fastStart) {
                 inputOptions.push('-re'); // Process the file slowly to save CPU
             }
@@ -184,11 +190,13 @@ class Transcoding {
                 this.latestSegment = latestSegment;
             })
             .on('start', (commandLine) => {
-                logger.DEBUG(`[HLS] Spawned Ffmpeg (startSegment: ${this.startSegment}) with command: ${commandLine}`);
+                logger.DEBUG(`[HLS] Spawned Ffmpeg (startSegment: ${this.startSegment}, GPU: ${this.gpuTranscoding}) with command: ${commandLine}`);
                 resolve();
             })
             .on('error', (err, stdout, stderr) => {
                 if (err.message != 'Output stream closed' && err.message != 'ffmpeg was killed with signal SIGKILL') {
+                    console.log(err);
+                    console.log(stdout);
                     logger.ERROR(`Cannot process video: ${err.message}`);
                     logger.ERROR(`ffmpeg stderr: ${stderr}`);
                 }
