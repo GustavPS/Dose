@@ -213,15 +213,6 @@ class Transcoding {
             outputOptions = outputOptions.concat(this.getQualityParameter(quality));
 
             const inputOptions = this.getInputOptions();
-/*
-            let inputOptions = [
-                '-y',
-                '-loglevel verbose',
-                '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
-                '-hwaccel nvdec',
-                '-threads 8',
-                this.getSeekParameter(),
-            ];*/
 
             if (this.fastStart) {
                 outputOptions.push(`-to ${(this.startSegment * Transcoding.SEGMENT_DURATION) + Transcoding.FAST_START_TIME}`); // Quickly transcode the first segments
