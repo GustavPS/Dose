@@ -151,7 +151,8 @@ class Transcoding {
 
     getCpuOutputOptions() {
         return [
-            '-deadline realtime'
+            '-deadline realtime',
+            '-preset:v ultrafast'
         ]
     }
 
