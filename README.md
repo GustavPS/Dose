@@ -45,10 +45,10 @@ To start the main server run:
 
 `npm run start`
 
-### Movie Server
+### Content Server
 First you have to edit `.env.local` in ContentServer and set the temp folder to a path. This path should have a quite large volume, since the temp transcoding files are located here.
 
-To start the movie server run the following commands in the `MovieServer` folder.
+To start the content server run the following commands in the `ContentServer` folder.
 
 `$env:NODE_ENV="production"`
 
