@@ -15,6 +15,7 @@ export default function Layout({ children, home, searchEnabled, server, relative
   let currentResults = [];
   let count = 0;
   searchEnabled = searchEnabled == undefined ? false : true;
+  let shouldShowMenu = server == undefined ? false : true;
 
   const selectMovie = (id) => {
       Router.push(`/server/${server.server_id}/movies/video/${id}`);
@@ -67,8 +68,18 @@ export default function Layout({ children, home, searchEnabled, server, relative
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
         <title>Dose</title>
       </Head>
-      <header style={relative !== undefined ? {position: 'relative'} : {}}>
-        <img className={styles.logo} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/logo.png`} layout="fill"></img>
+      <header style={relative !== undefined ? {position: 'relative'} : {alignItems: 'center', display: 'flex'}}>
+        {!shouldShowMenu &&
+          <img className={styles.logo} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/logo.png`} layout="fill"></img>
+        }
+        {shouldShowMenu &&
+          <>
+             <a href={`/server/${server.server_id}`}><img className={styles.logo} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/logo.png`} layout="fill"></img></a>
+            <a href={`/server/${server.server_id}/movies`} className={styles.menuBtn}>Movies</a>
+            <a href={`/server/${server.server_id}/shows`} className={styles.menuBtn}>Shows</a>
+          </>
+        }
+        
         {searchEnabled &&
           <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} serverToken={serverToken} onSearch={(result) => onSearch(result)}></Search>}
       </header>
@@ -87,3 +98,4 @@ export default function Layout({ children, home, searchEnabled, server, relative
     </div>
   )
 }
+
