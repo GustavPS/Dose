@@ -1,0 +1,14 @@
+.link {
+    color: white;
+    margin: 0 10px;
+    font-weight: 200;
+}
+
+.link:hover {
+    color: rgb(192, 192, 192);
+    text-decoration: none;
+}
+
+.active {
+    font-weight: bold;
+}

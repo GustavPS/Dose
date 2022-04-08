@@ -50,8 +50,35 @@
 }
 
 .header {
+    min-height: 50px;
+    position: absolute;
+    z-index: 50;
+    width: 100%;
+    color: white;
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 10%, rgba(0, 0, 0, 0.6) 50%, rgba(0, 0, 0, 0));
+}
+
+.headerContent {
+    margin: 10px 5%;
     align-items: center;
-    display: flex;
+    display: inline-flex;
+}
+
+.headerContent h1 {
+    font-size: 35px;
+    margin-bottom: unset;
+    line-height: unset;
+}
+
+.menu {
+    margin: 3px 0 0 20px;
+}
+
+.search {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
 }
 
 @media only screen and (max-width: 768px) {
