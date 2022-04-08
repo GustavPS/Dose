@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Styles from './Row.module.css';
 import useWindowSize from '../hooks/WindowSize';
+import Link from 'next/link';
 
 export default function Row(props) {
     const {
@@ -8,7 +9,8 @@ export default function Row(props) {
         style,
         title,
         render,
-        itemSize
+        itemSize,
+        link
     } = props;
     const windowSize = useWindowSize();
     const [items, setItems] = useState([]);
@@ -40,7 +42,19 @@ export default function Row(props) {
     return (
         <div style={{ display: items.length > 0 ? 'block' : 'none' }}>
             <div className={className} style={style}>
-                <h2 style={{ textTransform: 'capitalize' }}>{title}</h2>
+                {link != undefined &&
+                    <Link href={link}>
+                        <a className={Styles.link}>
+                            <h2 className={Styles.title} style={{ textTransform: 'capitalize' }}>
+                                {title}
+                            </h2>
+                        </a>
+                    </Link>
+                }
+                {link == undefined &&
+                    <h2 style={{ textTransform: 'capitalize' }}>{title}</h2>
+                }
+
                 <div className={Styles.row}>
                     <div ref={itemsRef} className={Styles.scrollable}>
                         {

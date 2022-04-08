@@ -4,7 +4,6 @@ import Search from './search';
 import {useState} from 'react'
 import MovieBackdrop from './movieBackdrop';
 import Router from 'next/router';
-import Image from 'next/image';
 import useWindowSize from './hooks/WindowSize';
 
 
@@ -68,17 +67,18 @@ export default function Layout({ children, home, searchEnabled, server, relative
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
         <title>Dose</title>
       </Head>
-      <header style={relative !== undefined ? {position: 'relative'} : {alignItems: 'center', display: 'flex'}}>
-        {!shouldShowMenu &&
-          <img className={styles.logo} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/logo.png`} layout="fill"></img>
-        }
-        {shouldShowMenu &&
-          <>
-             <a href={`/server/${server.server_id}`}><img className={styles.logo} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/logo.png`} layout="fill"></img></a>
-            <a href={`/server/${server.server_id}/movies`} className={styles.menuBtn}>Movies</a>
-            <a href={`/server/${server.server_id}/shows`} className={styles.menuBtn}>Shows</a>
-          </>
-        }
+      <header className={styles.header} style={relative !== undefined ? {position: 'relative'} : {}}>
+          {!shouldShowMenu &&
+            <img className={styles.logo} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/logo.png`} layout="fill"></img>
+          }
+          {shouldShowMenu &&
+            <>
+              <a href={`/server/${server.server_id}`}><img className={styles.logo} src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/logo.png`} layout="fill"></img></a>
+              <a href={`/server/${server.server_id}/movies`} className={styles.menuBtn}>Movies</a>
+              <a href={`/server/${server.server_id}/shows`} className={styles.menuBtn}>Shows</a>
+            </>
+          }
+
         
         {searchEnabled &&
           <Search onClose={() => onClose()} searchEnabled={searchEnabled} server={server} serverToken={serverToken} onSearch={(result) => onSearch(result)}></Search>}

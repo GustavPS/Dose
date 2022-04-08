@@ -49,6 +49,11 @@
     color: white;
 }
 
+.header {
+    align-items: center;
+    display: flex;
+}
+
 @media only screen and (max-width: 768px) {
     .logo {
         width: 100px !important;
