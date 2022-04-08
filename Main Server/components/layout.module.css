@@ -34,14 +34,28 @@
     min-height: 0 !important;
     min-width: 0 !important;
     filter: invert(1);
-    position: absolute;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
     margin: 0 0 0 15px !important;
+}
+
+.menuBtn {
+    color: white;
+    text-decoration: none;
+    display: inline;
+    margin-left: 20px;
+    font-size: 1.5rem;
+}
+
+.menuBtn:hover {
+    color: white;
 }
 
 @media only screen and (max-width: 768px) {
     .logo {
         width: 100px !important;
+    }
+
+    .menuBtn {
+        margin-left: 15px !important;
+        font-size: 1rem !important;
     }
 }
