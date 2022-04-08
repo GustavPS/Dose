@@ -33,6 +33,20 @@
     margin-right: 50px !important;
 }
 
+.link {
+    text-decoration: none;
+    color: white;
+}
+
+.link:hover {
+    text-decoration: none;
+    color: rgb(192, 192, 192);
+}
+
+.title {
+    font-size: 20px;
+}
+
 /* Mobile */
 @media only screen and (max-width: 768px) {
     .scrollButton {
