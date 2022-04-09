@@ -193,7 +193,16 @@ export default class ContentServer {
     getMoviesByGenre(genre, limit = 20) {
         return new Promise(resolve => {
             validateServerAccess(this.#server, (token) => {
-                const url = `${this.#ip}/api/movies/list/genre/${genre}?orderby=release_date&limit=${limit}&token=${token}`;
+                const url = `${this.#ip}/api/movies/list/genre/${genre}?orderby=added_date&limit=${limit}&token=${token}`;
+                resolve(this.#request(url, this.getStandardPostOptions(limit)));
+            });
+        });
+    }
+
+    getShowsByGenre(genre, limit= 20) {
+        return new Promise(resolve => {
+            validateServerAccess(this.#server, (token) => {
+                const url = `${this.#ip}/api/series/list/genre/${genre}?orderby=added_date&limit=${limit}&token=${token}`;
                 resolve(this.#request(url, this.getStandardPostOptions(limit)));
             });
         });

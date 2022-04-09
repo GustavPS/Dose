@@ -18,7 +18,7 @@ export default (props) => {
     const fetchData = () => {
         contentServer.getAllGenres().then(genres => {
             const promises = [];
-            for (let genre of genres) {
+            for (const genre of genres) {
                 promises.push(contentServer.getMoviesByGenre(genre.name));
             }
             Promise.all(promises).then(values => {
@@ -39,7 +39,7 @@ export default (props) => {
     const selectMovie = (id) => {
         Router.push(`/server/${server.server_id}/movies/video/${id}`);
     }
-    
+
     const renderMovie = (item, _index) => {
         const img = item.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${item.backdrop}` : 'https://via.placeholder.com/2000x1000'
         return (
@@ -56,16 +56,17 @@ export default (props) => {
                 <title>Dose</title>
             </Head>
             <br></br>
-            <div style={{color: 'white'}}>
+            <div style={{ color: 'white' }}>
                 <Container fluid>
                     {genres.map((genre, idx) => {
-                        return <Row link={`/server/${server.server_id}/movies/genre/${genre.name}`}
-                                    title={genre.name}
-                                    key={idx}
-                                    items={genre.movies}
-                                    itemSize={480}
-                                    render={renderMovie}>
-                                </Row>
+                        return <Row
+                            link={`/server/${server.server_id}/movies/genre/${genre.name}`}
+                            title={genre.name}
+                            key={idx}
+                            items={genre.movies}
+                            itemSize={480}
+                            render={renderMovie}>
+                        </Row>
                     })}
                 </Container>
             </div>
@@ -92,12 +93,12 @@ export async function getServerSideProps(context) {
             id: serverId
         }),
     })
-    .then((r) => r.json())
-    .then((data) => {
-        return {
-            props: {
-                server: data.server
+        .then((r) => r.json())
+        .then((data) => {
+            return {
+                props: {
+                    server: data.server
+                }
             }
-          }
-    });
-  }
+        });
+}
