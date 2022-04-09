@@ -68,13 +68,14 @@ jobs:
           npm ci
 
       - name: Run Content Server lint
-        run: npm run lint
+        run: |
+        cd "Content Server"
+        npm run lint
 
       - name: Run Main Server lint
         run: |
-          cd "../Main Server"
+          cd "Main Server"
           npm run lint
-          cd "../Content Server"
         
       - name: Create config file
         id: create-config
