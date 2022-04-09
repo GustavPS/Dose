@@ -69,8 +69,8 @@ jobs:
 
       - name: Run Content Server lint
         run: |
-        cd "Content Server"
-        npm run lint
+          cd "Content Server"
+          npm run lint
 
       - name: Run Main Server lint
         run: |
