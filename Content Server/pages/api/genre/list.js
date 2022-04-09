@@ -3,7 +3,7 @@ const cors = require('../../../lib/cors');
 const jwt = require('jsonwebtoken');
 const validateUser = require('../../../lib/validateUser');
 
-export default (req, res) => {
+const GenreList = (req, res) => {
     return new Promise(resolve => {
         res = cors(res);
 
@@ -25,4 +25,5 @@ export default (req, res) => {
         });
     });
 }
-  
+
+export default GenreList;

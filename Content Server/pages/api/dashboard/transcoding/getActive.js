@@ -4,7 +4,7 @@ const HlsManager = require('../../../../lib/hls/HlsManager');
 const logger = new Logger();
 const validateUser = require('../../../../lib/validateUser');
 
-export default async (req, res) => {
+const GetActiveTranscoding = async (req, res) => {
     const token = req.query.token;
     if (!validateUser(token, process.env.DASHBOARD_SECRET)) {
         res.status(403).end();
@@ -29,3 +29,5 @@ export default async (req, res) => {
 
     res.status(200).json(response);
 }
+
+export default GetActiveTranscoding;

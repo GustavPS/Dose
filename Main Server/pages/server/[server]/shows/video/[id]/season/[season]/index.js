@@ -106,11 +106,7 @@ export default function Home(props) {
     {loaded &&
     <>
         <Head>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
-
-        <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-        <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-
+          <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet" />
         </Head>
 
         <div id="container">

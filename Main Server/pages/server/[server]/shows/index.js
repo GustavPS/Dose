@@ -9,7 +9,7 @@ import MovieBackdrop from '../../../../components/movieBackdrop';
 import Row from '../../../../components/Row/row';
 import ContentServer from '../../../../lib/ContentServer';
 
-export default (props) => {
+const ShowsPage = (props) => {
     // props.server is from the SSR under this function
     const [genres, setGenres] = useState([]);
     const server = props.server;
@@ -72,12 +72,7 @@ export default (props) => {
     )
 }
 
-
-
-
-
-
-
+export default ShowsPage;
 
 // Get the information about the server and send it to the front end before render (this is server-side)
 export async function getServerSideProps(context) {

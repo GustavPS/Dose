@@ -1,7 +1,7 @@
 const Config = require('../../../../lib/config');
 
 
-export default (req, res) => {
+const SetupStatus = (req, res) => {
     return new Promise(resolve => {
         const config = new Config();
         config.getConfig()
@@ -11,4 +11,5 @@ export default (req, res) => {
         });
     });
 }
-  
+
+export default SetupStatus;

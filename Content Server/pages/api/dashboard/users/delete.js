@@ -46,7 +46,7 @@ const removeUserFromMainServer = (mainServerUrl, serverName, username) => {
         });
     });
 }
-export default async (req, res) => {
+const DeleteUser = async (req, res) => {
     res = cors(res);
     const { token, id, username } = req.body;
 
@@ -69,3 +69,5 @@ export default async (req, res) => {
         });
     });
 }
+
+export default DeleteUser;

@@ -48,7 +48,7 @@ const getGeneralInfo = () => {
 }
 
 
-export default (req, res) => {
+const CreateUser = (req, res) => {
     const { username, token } = req.body;
     if (!validateUser(token, process.env.DASHBOARD_SECRET)) {
         res.status(403).json({
@@ -102,3 +102,5 @@ export default (req, res) => {
         });
     });
 }
+
+export default CreateUser;

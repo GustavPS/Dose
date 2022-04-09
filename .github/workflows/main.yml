@@ -62,10 +62,25 @@ jobs:
 
       # Performs a clean installation of all dependencies in the `package.json` file
       # For more information, see https://docs.npmjs.com/cli/ci.html
-      - name: Install dependencies
+      - name: Install Content Server dependencies
         run: |
           cd "Content Server"
           npm ci
+
+      - name: Run Content Server lint
+        run: |
+          cd "Content Server"
+          npm run lint
+
+      - name: Install Main Server dependencies
+        run: |
+          cd "Main Server"
+          npm ci
+
+      - name: Run Main Server lint
+        run: |
+          cd "Main Server"
+          npm run lint
         
       - name: Create config file
         id: create-config

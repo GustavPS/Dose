@@ -39,7 +39,7 @@ const saveConfig = (databaseConfig) => {
 
 }
 
-export default (req, res) => {
+const SetupDatabase = (req, res) => {
     const { username, password, port, host, dbName, existingDatabase } = req.body;
     return new Promise(resolve => {
         // Object to create the database
@@ -101,3 +101,5 @@ export default (req, res) => {
         });
     });
 }
+
+export default SetupDatabase;

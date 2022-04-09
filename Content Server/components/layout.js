@@ -26,12 +26,12 @@ export default class Register extends Component {
                 <div className="bg-gray-800 text-gray-100 flex justify-between md:hidden">
                     {/* logo */}
                     <a href="#" className="text-white">
-                        <img src="/images/logo.png" className="w-50 p-4 filter invert" />
+                        <img alt="logo" src="/images/logo.png" className="w-50 p-4 filter invert" />
                     </a>
 
                     {/* Mobile menu botton */}
                     <button onClick={this.openNav} className="p-4 focus:outline-none focus:bg-gray-700">
-                        <img src="/images/menu.svg" className="h-5 w-5 filter invert" />
+                        <img alt="menu" src="/images/menu.svg" className="h-5 w-5 filter invert" />
                     </button>
                 </div>
 
@@ -39,7 +39,7 @@ export default class Register extends Component {
                                 md:relative md:translate-x-0">
                     {/* logo */}
                     <a href="#" className="text-white">
-                        <img src="/images/logo.png" className="w-100 px-3.5 filter invert" />
+                        <img alt="logo" src="/images/logo.png" className="w-100 px-3.5 filter invert" />
                     </a>
                     {/* nav */}
                     <nav>
