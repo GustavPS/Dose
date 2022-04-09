@@ -52,7 +52,7 @@ export default function Row(props) {
                     </Link>
                 }
                 {link == undefined &&
-                    <h2 style={{ textTransform: 'capitalize' }}>{title}</h2>
+                    <h2 className={Styles.title} style={{ textTransform: 'capitalize' }}>{title}</h2>
                 }
 
                 <div className={Styles.row}>
