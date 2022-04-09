@@ -73,7 +73,7 @@ export default class Search extends Component {
     render() {
         return (
             <div className={this.className}>
-                <img onClick={this.openForm} src="/images/search.png" width={30} height={30} className={Style.searchIcon} />
+                <img alt="" onClick={this.openForm} src="/images/search.png" width={30} height={30} className={Style.searchIcon} />
 
                 <Form autoComplete="off" className={`${Style.searchForm} ${this.state.formVisible ? Style.visible : ''}`}>
                     <Form.Control onInput={this.search} type="text" placeholder="Search.." />

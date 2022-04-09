@@ -9,7 +9,7 @@ const ORDERBY = [
   'popularity'
 ];
 
-export default (req, res) => {
+const List = (req, res) => {
     return new Promise(resolve => {
         res = cors(res);
 
@@ -55,4 +55,5 @@ export default (req, res) => {
         });
     });
 }
-  
+
+export default List;

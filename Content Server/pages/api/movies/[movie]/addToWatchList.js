@@ -2,7 +2,7 @@ const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
 
-export default (req, res) => {
+const AddToWatchlist = (req, res) => {
   return new Promise(resolve => {
         res = cors(res);
         let movieID = req.query.movie;
@@ -28,4 +28,5 @@ export default (req, res) => {
         resolve();
   });
 }
-  
+
+export default AddToWatchlist;

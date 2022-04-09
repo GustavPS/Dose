@@ -9,7 +9,7 @@ const validateUser = require('../../../../lib/validateUser');
 const metadataObj = new MovieMetadata();
 
 
-export default (req, res) => {
+const GetImages = (req, res) => {
     return new Promise(resolve => {
         let movieID = req.query.movie;
         res = cors(res);
@@ -29,3 +29,5 @@ export default (req, res) => {
         });
     });
 }
+
+export default GetImages;

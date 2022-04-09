@@ -10,7 +10,8 @@
     "cypress": "cypress open",
     "cypress:run": "cypress run",
     "build:run": "npm run build && TEST=TRUE npm run linuxStart",
-    "ci": "start-server-and-test build:run http://localhost:3001 cypress:run"
+    "ci": "start-server-and-test build:run http://localhost:3001 cypress:run",
+    "lint": "next lint"
   },
   "dependencies": {
     "@babel/preset-react": "^7.13.13",
@@ -68,6 +69,8 @@
     "@cypress/webpack-preprocessor": "^5.11.1",
     "autoprefixer": "^10.4.0",
     "cypress": "^9.5.1",
+    "eslint": "8.13.0",
+    "eslint-config-next": "12.1.4",
     "msw": "^0.39.0",
     "nodemon": "^2.0.3",
     "postcss": "^8.4.4",
