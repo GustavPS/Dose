@@ -217,7 +217,7 @@ class Transcoding {
 
             if (this.fastStart) {
                 outputOptions.push(`-to ${(this.startSegment * Transcoding.SEGMENT_DURATION) + Transcoding.FAST_START_TIME}`); // Quickly transcode the first segments
-            } else if (!this.fastStart) {
+            } else if (!this.fastStart && !this.gpuTranscoding) { // TODO: We shouldn't run slow transcoding on GPU
                 inputOptions.push('-re'); // Process the file slowly to save CPU
             }
 
