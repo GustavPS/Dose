@@ -12,19 +12,17 @@ class Transcoding {
     static FAST_START_SEGMENTS = 50;
     static FAST_START_TIME = Transcoding.SEGMENT_DURATION * Transcoding.FAST_START_SEGMENTS;
 
-    constructor(filePath, startSegment, fastStart=false) {
+    constructor(filePath, startSegment, fastStart=false, gpuTranscoding) {
         this.CRF_SETTING = 22;
         this.filePath = filePath;
         this.startSegment = startSegment;
         this.latestSegment = startSegment;
+        this.gpuTranscoding = gpuTranscoding;
         this.output = "";
         this.ffmpegProc;
         
         this.fastStart = fastStart;
-        //this.hash = hash;
-        //this.groupHash = groupHash;
         this.finished = false;
-        //this.lastRequestedTime = Date.now();
     }
 
     getOutput() {
@@ -40,45 +38,81 @@ class Transcoding {
     }
 
     getVideoCodec() {
-        // TODO: Parse this as a boolean
-        if (process.env.GPU_TRANSCODING === "TRUE") {
+        if (this.gpuTranscoding) {
             return this.getGpuVideoCodec();
         } else {
             return this.getCpuVideoCodec();
         }
     }
 
-    getQualityParameter(quality) {
-        let parameter;
+    getQualityParameterCpu(quality) {
+        let parameters;
         switch (quality) {
             case "240P":
-                parameter = '-vf scale=320:-2';
+                parameters = ['-vf scale=320:-2', '-b:v 1M'];
                 break;
             case "360P":
-                parameter = '-vf scale=480:-2';
+                parameters = ['-vf scale=480:-2', '-b:v 1500k'];
                 break;
             case "480P":
-                parameter = '-vf scale=854:-2';
+                parameters = ['-vf scale=854:-2', '-b:v 4M'];
                 break;
             case "720P":
-                parameter = '-vf scale=1280:-2';
+                parameters = ['-vf scale=1280:-2', '-b:v 7500k'];
                 break;
             case "1080P":
-                parameter = '-vf scale=1920:-2';
+                parameters = ['-vf scale=1920:-2', '-b:v 12M'];
                 break;
             case "1440P":
-                parameter = '-vf scale=2560:-2';
+                parameters = ['-vf scale=2560:-2', '-b:v 24M'];
                 break;
             case "4K":
-                parameter = '-vf scale=3840:-2';
+                parameters = ['-vf scale=3840:-2', '-b:v 60M'];
                 break;
             case "8K":
-                parameter = '-vf scale=7680:-2';
+                parameters = ['-vf scale=7680:-2', '-b:v 120M'];
                 break;
             default:
                 throw `${quality} is not a valid quality selector (transcoding.js)`
         }
-        return parameter;
+        return parameters;
+    }
+    
+    getQualityParameterGpu(quality) {
+        let parameters;
+        switch (quality) {
+            case "240P":
+                parameters = ['-filter_complex [0:v]hwdownload,scale_npp=w=352:h=-2,format=nv12,format=yuv420p[0:v]', '-b:v 1M'];
+                break;
+            case "360P":
+                parameters = ['-filter_complex [0:v]hwdownload,scale_npp=w=480:h=-2,format=nv12,format=yuv420p[0:v]', '-b:v 1500k'];
+                break;
+            case "480P":
+                parameters = ['-filter_complex [0:v]hwdownload,scale_npp=w=854:h=-2,format=nv12,format=yuv420p[0:v]', '-b:v 4M'];
+                break;
+            case "720P":
+                parameters = ['-filter_complex [0:v]hwdownload,scale_npp=w=1280:h=-2,format=nv12,format=yuv420p[0:v]', '-b:v 7500k'];
+                break;
+            case "1080P":
+                parameters = ['-filter_complex [0:v]hwdownload,scale_npp=w=1920:h=-2,format=nv12,format=yuv420p[0:v]', '-b:v 12M'];
+                break;
+            case "1440P":
+                parameters = ['-filter_complex [0:v]hwdownload,scale_npp=w=2560:h=-2,format=nv12,format=yuv420p[0:v]', '-b:v 24M'];
+                break;
+            case "4K":
+                parameters = ['-filter_complex [0:v]hwdownload,scale_npp=w=3860:h=-2,format=nv12,format=yuv420p[0:v]', '-b:v 60M'];
+                break;
+            case "8K":
+                parameters = ['-filter_complex [0:v]hwdownload,scale_npp=w=8192:h=-2,format=nv12,format=yuv420p[0:v]', '-b:v 120M'];
+                break;
+            default:
+                throw `${quality} is not a valid quality selector (transcoding.js)`
+        }
+        return parameters;
+    }
+    
+    getQualityParameter(quality) {
+        return this.gpuTranscoding ? this.getQualityParameterGpu(quality) : this.getQualityParameterCpu(quality);
     }
 
     getSeekParameter() {
@@ -88,12 +122,6 @@ class Transcoding {
     setType(type) {
         this.type = type;
     }
-
-    /*
-    generateHash() {
-        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + '/';
-    }
-    */
 
     timestampToSeconds(timestamp) {
         let time = timestamp.split(':');
@@ -121,8 +149,16 @@ class Transcoding {
         return dir;
     }
 
-    getOutputOptions() {
+    getCpuOutputOptions() {
         return [
+            '-deadline realtime',
+            '-preset:v ultrafast'
+        ]
+    }
+
+    getOutputOptions() {
+        //'-level 4.1' was used before, but makes GPU transcoding fail sometimes
+        const options = [
             '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
             '-pix_fmt yuv420p',
             '-map 0',
@@ -131,20 +167,45 @@ class Transcoding {
             '-g 52',
             `-crf ${this.CRF_SETTING}`,
             '-sn',
-            '-deadline realtime',
-            '-preset:v ultrafast',
             '-f hls',
             `-hls_time ${Transcoding.SEGMENT_DURATION}`,
             '-force_key_frames expr:gte(t,n_forced*2)',
             '-hls_playlist_type vod',
             `-start_number ${this.startSegment}`,
-            '-strict -2', // ?
-            '-level 4.1', // Might fix chromecast issues?
+            '-strict 1', // Force to use specification when decoding audio/video
             '-ac 2', // Set two audio channels. Fixes audio issues
-            '-b:v 1024k',
-            '-b:a 192k',
+            '-b:a 320k',
             '-muxdelay 0'
         ];
+
+        if (!this.gpuTranscoding) {
+            return options.concat(this.getCpuOutputOptions());
+        }
+        return options;
+    }
+
+    getGpuInputOptions() {
+        return ['-hwaccel nvdec'];
+    }
+
+    getCpuInputOptions() {
+        return ['-threads 8'];
+    }
+
+    getInputOptions() {
+        const options = [
+            '-y',
+            '-loglevel verbose',
+            '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
+            this.getSeekParameter(),
+        ]
+
+
+        if (this.gpuTranscoding) {
+            return options.concat(this.getGpuInputOptions());
+        } else {
+            return options.concat(this.getCpuInputOptions());
+        }
     }
 
     start(quality, output, audioStreamIndex, audioSupported) {
@@ -155,18 +216,14 @@ class Transcoding {
             let outputOptions = this.getOutputOptions();
             outputOptions.push('-map -a');
             outputOptions.push(`-map 0:${audioStreamIndex}`);
+            outputOptions = outputOptions.concat(this.getQualityParameter(quality));
 
-            outputOptions.push(this.getQualityParameter(quality));
+            const inputOptions = this.getInputOptions();
 
-            let inputOptions = [
-                '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
-                '-threads 8',
-                this.getSeekParameter(),
-            ];
-
-            if (this.fastStart) {
-                outputOptions.push(`-to ${(this.startSegment * Transcoding.SEGMENT_DURATION) + Transcoding.FAST_START_TIME}`); // Quickly transcode the first 4 segments
-            } else if (!this.fastStart) {
+            // GPU Transcoding only uses fast-start, so we need to transcode the whole file
+            if (this.fastStart && !this.gpuTranscoding) {
+                outputOptions.push(`-to ${(this.startSegment * Transcoding.SEGMENT_DURATION) + Transcoding.FAST_START_TIME}`); // Quickly transcode the first segments
+            } else if (!this.fastStart) { // TODO: We shouldn't run slow transcoding on GPU
                 inputOptions.push('-re'); // Process the file slowly to save CPU
             }
 
@@ -179,16 +236,22 @@ class Transcoding {
                 this.finished = true;
             })
             .on('progress', progress => {
-                const seconds = this.addSeekTimeToSeconds(this.timestampToSeconds(progress.timemark));
-                const latestSegment = Math.max(Math.floor(seconds / Transcoding.SEGMENT_DURATION) - 1); // - 1 because the first segment is 0
-                this.latestSegment = latestSegment;
+                // this.addSeekTimeToSeconds(this.timestampToSeconds(progress.timemark)); <- This is needed on other versions of ffmpeg. TODO: How do we know if this is needed?
+                const seconds = this.timestampToSeconds(progress.timemark) 
+                // Sometimes ffmpeg reports timemark as negative if using nvenc
+                if (seconds > 0) {
+                    const latestSegment = Math.max(Math.floor(seconds / Transcoding.SEGMENT_DURATION) - 1); // - 1 because the first segment is 0
+                    this.latestSegment = latestSegment;
+                }
             })
             .on('start', (commandLine) => {
-                logger.DEBUG(`[HLS] Spawned Ffmpeg (startSegment: ${this.startSegment}) with command: ${commandLine}`);
+                logger.DEBUG(`[HLS] Spawned Ffmpeg (startSegment: ${this.startSegment}, GPU: ${this.gpuTranscoding}) with command: ${commandLine}`);
                 resolve();
             })
             .on('error', (err, stdout, stderr) => {
                 if (err.message != 'Output stream closed' && err.message != 'ffmpeg was killed with signal SIGKILL') {
+                    console.log(err);
+                    console.log(stdout);
                     logger.ERROR(`Cannot process video: ${err.message}`);
                     logger.ERROR(`ffmpeg stderr: ${stderr}`);
                 }
