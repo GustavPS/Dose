@@ -157,6 +157,7 @@ class Transcoding {
     }
 
     getOutputOptions() {
+        //'-level 4.1' was used before, but makes GPU transcoding fail sometimes
         const options = [
             '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
             '-pix_fmt yuv420p',
@@ -171,8 +172,7 @@ class Transcoding {
             '-force_key_frames expr:gte(t,n_forced*2)',
             '-hls_playlist_type vod',
             `-start_number ${this.startSegment}`,
-            '-strict -2', // ?
-            '-level 4.1', // Might fix chromecast issues?
+            '-strict 1', // Force to use specification when decoding audio/video
             '-ac 2', // Set two audio channels. Fixes audio issues
             '-b:a 320k',
             '-muxdelay 0'
@@ -188,19 +188,24 @@ class Transcoding {
         return ['-hwaccel nvdec'];
     }
 
+    getCpuInputOptions() {
+        return ['-threads 8'];
+    }
+
     getInputOptions() {
         const options = [
             '-y',
             '-loglevel verbose',
             '-copyts', // Fixes timestamp issues (Keep timestamps as original file)
-            '-threads 8',
             this.getSeekParameter(),
         ]
 
+
         if (this.gpuTranscoding) {
             return options.concat(this.getGpuInputOptions());
+        } else {
+            return options.concat(this.getCpuInputOptions());
         }
-        return options;
     }
 
     start(quality, output, audioStreamIndex, audioSupported) {
@@ -215,9 +220,10 @@ class Transcoding {
 
             const inputOptions = this.getInputOptions();
 
-            if (this.fastStart) {
+            // GPU Transcoding only uses fast-start, so we need to transcode the whole file
+            if (this.fastStart && !this.gpuTranscoding) {
                 outputOptions.push(`-to ${(this.startSegment * Transcoding.SEGMENT_DURATION) + Transcoding.FAST_START_TIME}`); // Quickly transcode the first segments
-            } else if (!this.fastStart && !this.gpuTranscoding) { // TODO: We shouldn't run slow transcoding on GPU
+            } else if (!this.fastStart) { // TODO: We shouldn't run slow transcoding on GPU
                 inputOptions.push('-re'); // Process the file slowly to save CPU
             }
 

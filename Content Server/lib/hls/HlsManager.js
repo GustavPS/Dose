@@ -32,9 +32,13 @@ class HlsManager {
                 const fastTranscoding = new Transcoding(filePath, startSegment, true, useGpuTranscoding); // Fast transcoding
                 const transcodingGroup = new TranscodingGroup(user, content, groupHash, fastTranscoding);
 
-                const slowTranscodingStartSegment = startSegment + (Transcoding.FAST_START_TIME / Transcoding.SEGMENT_DURATION)
-                const slowTranscoding = new Transcoding(filePath, slowTranscodingStartSegment, false, useGpuTranscoding); // Slow transcoding
-                transcodingGroup.addSlowTranscoding(slowTranscoding);
+                // GPU Transcoding doesn't need slow transcoding
+                if (!useGpuTranscoding) {
+                    const slowTranscodingStartSegment = startSegment + (Transcoding.FAST_START_TIME / Transcoding.SEGMENT_DURATION)
+                    const slowTranscoding = new Transcoding(filePath, slowTranscodingStartSegment, false, useGpuTranscoding); // Slow transcoding
+                    transcodingGroup.addSlowTranscoding(slowTranscoding);
+                }
+  
                 global.transcodings.push(transcodingGroup);
                 const promises = transcodingGroup.start(quality, output, audioStreamIndex, audioTranscoding);
 

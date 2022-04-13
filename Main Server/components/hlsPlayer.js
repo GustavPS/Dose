@@ -8,7 +8,10 @@ import Resolution from '../lib/resolution';
 import { Component } from 'react';
 
 
-export default class HlsPlayer extends Component {    
+export default class HlsPlayer extends Component {
+    static MAX_BUFFER_LENGTH_LOW = 10;
+    static MAX_BUFFER_LENGTH_HIGH = 60;
+
     constructor(props) {
         super(props);
         this.server = this.props.server;
@@ -167,7 +170,7 @@ export default class HlsPlayer extends Component {
      * 
      * @returns an array of base64 encoded images
      */
-     getPreviewImages() {
+    getPreviewImages() {
         return new Promise(resolve => {
             validateServerAccess(this.server, (serverToken) => {
                 fetch(`${this.server.server_ip}/api/previewImage/${this.id}/all?type=${this.type}&token=${serverToken}`).then(res => {
@@ -177,6 +180,20 @@ export default class HlsPlayer extends Component {
                 })
             });
         });
+    }
+
+    /**
+     * Set the maximum HLS buffer length. If 1440P or higher is used the video buffer will overflow and crash
+     * To fix this set the buffer length to a lower value if it's possible for the user to select 1440P or higher
+     */
+    setMaxMaxBufferLength() {
+        if (this.isResolutionAbove1080P()) {
+            this.hls.config.maxMaxBufferLength = HlsPlayer.MAX_BUFFER_LENGTH_LOW;
+            console.log(`[HLS] Setting max buffer length to ${HlsPlayer.MAX_BUFFER_LENGTH_LOW}`);
+        } else {
+            this.hls.config.maxMaxBufferLength = HlsPlayer.MAX_BUFFER_LENGTH_HIGH;
+            console.log(`[HLS] Setting max buffer length to ${HlsPlayer.MAX_BUFFER_LENGTH_HIGH}`);
+        }
     }
 
     /**
@@ -206,6 +223,7 @@ export default class HlsPlayer extends Component {
                             this.videoNode.src = src;
                             this.videoNode.currentTime = 0;
                         } else {
+                            this.setMaxMaxBufferLength();
                             this.hls.loadSource(src);
                             this.hls.attachMedia(this.videoNode);
                             this.videoNode.src = src;
@@ -401,11 +419,11 @@ export default class HlsPlayer extends Component {
         } else {
             this.videoNode.volume = this.state.volume;
         }
-        
-        if(this.state.volume <= 0.1) {
-            this.setState({muted: true});
+
+        if (this.state.volume <= 0.1) {
+            this.setState({ muted: true });
         } else {
-            this.setState({muted: false});
+            this.setState({ muted: false });
         }
     }
 
@@ -417,12 +435,12 @@ export default class HlsPlayer extends Component {
         this.state.volume += amount / 100;
         if (this.state.volume <= 0) {
             this.state.volume = 0;
-            this.setState({muted: true});
+            this.setState({ muted: true });
         } else if (this.state.volume > 1) {
             this.state.volume = 1;
-            this.setState({muted: false});
+            this.setState({ muted: false });
         } else {
-            this.setState({muted: false});
+            this.setState({ muted: false });
         }
 
         this.soundBar.value = this.state.volume * 100;
@@ -441,11 +459,11 @@ export default class HlsPlayer extends Component {
             this.state.oldVolume = this.state.volume;
             this.state.volume = 0;
             this.soundBar.value = 0;
-            this.setState({muted: true});
+            this.setState({ muted: true });
         } else {
             this.state.volume = this.state.oldVolume;
             this.soundBar.value = this.state.volume * 100;
-            this.setState({muted: false});
+            this.setState({ muted: false });
         }
 
         if (this.chromecastHandler.isCasting()) {
@@ -525,6 +543,12 @@ export default class HlsPlayer extends Component {
         return this.state.title;
     }
 
+    isResolutionAbove1080P() {
+        return this.state.resolutions.some(resolution => {
+            return resolution.name === '1440p';
+        });
+    }
+
     /**
      * Setup the video player and listeners
      */
@@ -560,7 +584,8 @@ export default class HlsPlayer extends Component {
                             }
                         }
                     } else {
-                        this.hls = new Hls({ maxMaxBufferLength: 60, debug: useDebug });
+                        this.hls = new Hls({ debug: useDebug });
+                        this.setMaxMaxBufferLength();
                         this.hls.loadSource(src);
                         this.hls.attachMedia(this.videoNode);
                         this.videoNode.volume = 1;
@@ -608,7 +633,7 @@ export default class HlsPlayer extends Component {
                 this.chromecastHandler.stopCast();
             }
             this.stopTranscoding();
-            
+
             document.removeEventListener("keydown", this.handleKeyPress);
 
             console.log(`[HLS] Unsubscribing from all events`);
@@ -657,7 +682,7 @@ export default class HlsPlayer extends Component {
         this.soundBar.value = 100;
         this.seekBar.value = 0;
         this.pingInterval = setInterval(this.ping, 5000);
-        
+
         this.getPreviewImages().then((image_array) => {
             this.setState({
                 previewImages: image_array
@@ -724,11 +749,11 @@ export default class HlsPlayer extends Component {
             time = hours !== 0 ? hours + ':' : '';
         }
         time += minutes + ':' + seconds;
-        
+
         if (!isNaN(scrubbed)) {
             this.seekBarLabel.innerHTML = `<span>${time}</span>`;
             this.seekBarLabel.style.left = `calc(${newValue}% + (${newPosition}px))`;
-            if(this.state.previewImages.length != 0) {
+            if (this.state.previewImages.length != 0) {
                 this.seekBarPreview.innerHTML = `<img src=${"data:image/png;base64," + (this.state.previewImages[Math.floor(scrubbed / 10)] == undefined ? "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzU4LjU0LjEwMAD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABwEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAJABAAMBIgACEQADEQD/2gAMAwEAAhEDEQA/AIeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/2Q==" : this.state.previewImages[Math.floor(scrubbed / 10)])}></img>`
                 this.seekBarPreview.style.left = `calc(${newValue}% - (${65}px))`;
             }
@@ -743,7 +768,7 @@ export default class HlsPlayer extends Component {
      */
     startSeek() {
         this.seeking = true;
-        if(this.state.previewImages.length != 0) {
+        if (this.state.previewImages.length != 0) {
             this.seekBarPreview.style.display = "block";
         }
     }
@@ -952,34 +977,34 @@ export default class HlsPlayer extends Component {
      * Handle keypresses in the video container
      */
     handleKeyPress(event) {
-        if(event.key === 'f'){
-          this.toggleFullscreen();
+        if (event.key === 'f') {
+            this.toggleFullscreen();
         }
 
-        if(event.key === ' ' || event.key === 'p'){
+        if (event.key === ' ' || event.key === 'p') {
             this.togglePlay();
         }
 
-        if(event.key === 'm'){
+        if (event.key === 'm') {
             this.toggleMute();
         }
 
-        if(event.key === 'ArrowUp'){
+        if (event.key === 'ArrowUp') {
             this.setVolume(10);
         }
 
-        if(event.key === 'ArrowDown'){
+        if (event.key === 'ArrowDown') {
             this.setVolume(-10);
         }
 
-        if(event.key === 'ArrowRight'){
+        if (event.key === 'ArrowRight') {
             this.skip(15);
         }
 
-        if(event.key === 'ArrowLeft'){
+        if (event.key === 'ArrowLeft') {
             this.skip(-15);
         }
-      }
+    }
 
 
     // TODO: Shouldn't include chromecast api from cdn, should be included in the main server and use import statement
@@ -1009,11 +1034,11 @@ export default class HlsPlayer extends Component {
                                     <div className={Styles.seekBarPreview} ref={node => this.seekBarPreview = node}>
 
                                     </div>
-                                
+
                                     <div className={Styles.seekTime} id="seekTime" ref={node => this.seekBarLabel = node}>
-                                    
+
                                     </div>
-                                    
+
                                     <input className={Styles.seekbar} type="range" id="seekbar" name="seekbar" ref={node => this.seekBar = node}
                                         min="0" max="100" step="0.01" className={Styles.seekbar} onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime} />
                                 </div>
