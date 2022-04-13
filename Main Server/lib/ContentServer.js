@@ -173,4 +173,38 @@ export default class ContentServer {
             });
         });
     }
+
+    getAllGenres() {
+        return new Promise(resolve => {
+            validateServerAccess(this.#server, (token) => {
+                const url = `${this.#ip}/api/genre/list?token=${token}`;
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }).then(r => r.json()).then(result => {
+                    resolve(result.genres);
+                });
+            });
+        });
+    }
+
+    getMoviesByGenre(genre, limit = 20, offset = 0) {
+        return new Promise(resolve => {
+            validateServerAccess(this.#server, (token) => {
+                const url = `${this.#ip}/api/movies/list/genre/${genre}?orderby=added_date&limit=${limit}&offset=${offset}&token=${token}`;
+                resolve(this.#request(url, this.getStandardPostOptions(limit)));
+            });
+        });
+    }
+
+    getShowsByGenre(genre, limit= 20) {
+        return new Promise(resolve => {
+            validateServerAccess(this.#server, (token) => {
+                const url = `${this.#ip}/api/series/list/genre/${genre}?orderby=added_date&limit=${limit}&token=${token}`;
+                resolve(this.#request(url, this.getStandardPostOptions(limit)));
+            });
+        });
+    }
 }

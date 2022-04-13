@@ -15,9 +15,6 @@ export default function ChangeImages(props) {
     const {server, id, serverToken, type} = props;
     const Router = useRouter();
 
-
-
-
     const updateImages = () => {
         let poster;
         let backdrop;
@@ -90,13 +87,13 @@ export default function ChangeImages(props) {
             if (image.type === 'BACKDROP') {
               backdropElements.push(
                 <Col key={count} className={Styles.metadataSearchRow}>
-                  <Image style={{width: "500px"}} src={img} className={'imageSearchImg', active ? Styles.activeImage : ''} onClick={() => selectImage(image.id, image.type)} data-imageid={image.id}/>
+                  <Image style={{width: "500px"}} src={img} alt="" className={'imageSearchImg', active ? Styles.activeImage : ''} onClick={() => selectImage(image.id, image.type)} data-imageid={image.id}/>
                 </Col>
               );
             } else {
               posterElements.push(
                 <Col key={count} className={Styles.metadataSearchRow}>
-                  <Image style={{width: "200px"}} src={img} className={'imageSearchImg', active ? Styles.activeImage : ''} onClick={() => selectImage(image.id, image.type)} data-imageid={image.id}/>
+                  <Image style={{width: "200px"}} src={img} alt="" className={'imageSearchImg', active ? Styles.activeImage : ''} onClick={() => selectImage(image.id, image.type)} data-imageid={image.id}/>
                 </Col>
               );
             }

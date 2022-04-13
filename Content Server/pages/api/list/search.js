@@ -2,7 +2,7 @@ const db = require('../../../lib/db');
 const cors = require('../../../lib/cors');
 const validateUser = require('../../../lib/validateUser');
 
-export default (req, res) => {
+const Search = (req, res) => {
     return new Promise(resolve => {
         res = cors(res);
 
@@ -66,3 +66,5 @@ export default (req, res) => {
         });
     });
 }
+
+export default Search;

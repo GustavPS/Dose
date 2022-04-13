@@ -40,7 +40,7 @@ export default class ServerBox extends Component {
             <div onClick={this.props.onClick} className={style.server}>
                 <h5>{this.serverName}</h5>
                 <div className={style.statusBox}>
-                    <img ref={this.imgRef} className={style.statusImage} width="40"/>
+                    <img alt="" ref={this.imgRef} className={style.statusImage} width="40"/>
                 </div>
                 <p>{this.serverAdress}</p>
             </div>

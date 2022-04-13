@@ -11,7 +11,7 @@ require("../../../mocks");
 const configPath = path.join(process.env.TEMP_DIRECTORY, 'config.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-export default async (req, res) => {
+const Validate = async (req, res) => {
     return new Promise(async (resolve) => {
         res = cors(res);
         await fetch(`${config.mainServer}/api/auth/validate`, {
@@ -77,3 +77,5 @@ export default async (req, res) => {
             });
     });
 }
+
+export default Validate;

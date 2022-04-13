@@ -34,14 +34,60 @@
     min-height: 0 !important;
     min-width: 0 !important;
     filter: invert(1);
-    position: absolute;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
     margin: 0 0 0 15px !important;
+}
+
+.menuBtn {
+    color: white;
+    text-decoration: none;
+    display: inline;
+    margin-left: 20px;
+    font-size: 1.5rem;
+}
+
+.menuBtn:hover {
+    color: white;
+}
+
+.header {
+    min-height: 50px;
+    position: absolute;
+    z-index: 50;
+    width: 100%;
+    color: white;
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 10%, rgba(0, 0, 0, 0.6) 50%, rgba(0, 0, 0, 0));
+}
+
+.headerContent {
+    margin: 10px 5%;
+    align-items: center;
+    display: inline-flex;
+}
+
+.headerContent h1 {
+    font-size: 35px;
+    margin-bottom: unset;
+    line-height: unset;
+}
+
+.menu {
+    margin: 3px 0 0 20px;
+}
+
+.search {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
 }
 
 @media only screen and (max-width: 768px) {
     .logo {
         width: 100px !important;
+    }
+
+    .menuBtn {
+        margin-left: 15px !important;
+        font-size: 1rem !important;
     }
 }

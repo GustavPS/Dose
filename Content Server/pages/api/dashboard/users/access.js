@@ -2,7 +2,7 @@ const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
 
-export default (req, res) => {
+const SetUserAccess = (req, res) => {
     return new Promise(resolve => {
         if (req.method !== 'POST') {
             res.status(405).send({ message: 'Only POST requests allowed' })
@@ -25,3 +25,5 @@ export default (req, res) => {
             });
     });
 }
+
+export default SetUserAccess;

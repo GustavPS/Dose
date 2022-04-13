@@ -4,7 +4,7 @@ const validateUser = require('../../../../lib/validateUser');
 const Logger = require('../../../../lib/logger');
 const logger = new Logger();
 
-export default (req, res) => {
+const CreateAdmin = (req, res) => {
     const { username, password, token } = req.body;
     if (!validateUser(token, process.env.DASHBOARD_SECRET)) {
         res.status(403).json({
@@ -61,3 +61,5 @@ export default (req, res) => {
         });
     });
 }
+
+export default CreateAdmin;

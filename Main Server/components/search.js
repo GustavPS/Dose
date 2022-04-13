@@ -17,6 +17,13 @@ export default class Search extends Component {
         this.onClose = props.onClose;
         this.onSearch = props.onSearch;
         this.dataDownloaded = false;
+        this.className = props.className;
+
+        this.state = {
+            formVisible: false
+        }
+
+        this.openForm = this.openForm.bind(this);
     }
 
     /**
@@ -25,11 +32,11 @@ export default class Search extends Component {
     getAllContent() {
         validateServerAccess(this.server, (serverToken) => {
             fetch(`${this.server.server_ip}/api/list?token=${serverToken}`)
-            .then(r => r.json())
-            .then(content => {
-                this.series = content.series;
-                this.movies = content.movies;
-            });
+                .then(r => r.json())
+                .then(content => {
+                    this.series = content.series;
+                    this.movies = content.movies;
+                });
         });
     }
 
@@ -41,7 +48,6 @@ export default class Search extends Component {
         let query = event.target.value;
         if (query === "") {
             this.onClose();
-            //this.onSearch([]);
             return;
         }
         let found = [];
@@ -57,15 +63,23 @@ export default class Search extends Component {
                 found.push(serie);
             }
         }
-        console.log(found);
-       this.onSearch(found);
+        this.onSearch(found);
+    }
+
+    openForm() {
+        this.setState({ formVisible: true });
     }
 
     render() {
         return (
-            <Form autoComplete="off" className={Style.searchForm}>
-                <Form.Control onInput={this.search} type="text" placeholder="Search.." />
-            </Form>
+            <div className={this.className}>
+                <img alt="" onClick={this.openForm} src="/images/search.png" width={30} height={30} className={Style.searchIcon} />
+
+                <Form autoComplete="off" className={`${Style.searchForm} ${this.state.formVisible ? Style.visible : ''}`}>
+                    <Form.Control onInput={this.search} type="text" placeholder="Search.." />
+                </Form>
+
+            </div>
         )
     }
 }

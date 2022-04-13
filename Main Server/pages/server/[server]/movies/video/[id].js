@@ -5,20 +5,13 @@ import { Form, Button, ListGroup, Image} from 'react-bootstrap';
 import Styles from '../../../../../styles/movies.video.module.css';
 import Router from 'next/router';
 import cookies from 'next-cookies'
-
 import HlsPlayer from '../../../../../components/hlsPlayer';
 import VideoTrailer from '.././../../../../components/videoTrailer';
 import validateServerAccess from '../../../../../lib/validateServerAccess';
 import Actor from '../../../../../components/actor';
 import useWindowSize from '../../../../../components/hooks/WindowSize';
 import MovieBackdrop from '../../../../../components/movieBackdrop';
-
-
-
 import ChangeImages from '../../../../../components/changeImages';
-
-// Fetcher for useSWR, redirect to login if not authorized
-let fetchedMetadata = false;
 
 
 export default function Home(props) {
@@ -242,10 +235,10 @@ export default function Home(props) {
           console.log(result);
           let metadataElements = [];
           for (let movie of result) {
-            let img = movie.poster_path !== null ? `https://image.tmdb.org/t/p/w500/${movie.poster_path}` : 'https://via.placeholder.com/500x750' 
+            const img = movie.poster_path !== null ? `https://image.tmdb.org/t/p/w500/${movie.poster_path}` : 'https://via.placeholder.com/500x750' 
             metadataElements.push(
               <ListGroup.Item key={movie.id} className={Styles.metadataSearchRow} data-metadataid={movie.id}>
-                <Image src={img} />
+                <Image src={img} alt="" />
                 <div>
                   <h5>{movie.title}</h5>
                   <p>{movie.overview}</p>
@@ -464,10 +457,10 @@ export default function Home(props) {
         {actors.length * 200 > windowSize.width &&
                                 <>
                                     <div className={Styles.scrollButton} onClick={() => scrollLeft('actors')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                        <img alt="" src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
                                     </div>
                                     <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('actors')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                        <img alt="" src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
                                     </div>
                                 </>
                             }
@@ -483,10 +476,10 @@ export default function Home(props) {
                             {recommended.length * 480 > windowSize.width &&
                                 <div>
                                     <div className={Styles.scrollButton} onClick={() => scrollLeft('recommended')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
+                                        <img alt="" src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/left.svg`} width="70" height="70" />
                                     </div>
                                     <div className={Styles.scrollButton} style={{right: '0'}} onClick={() => scrollRight('recommended')}>
-                                        <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
+                                        <img alt="" src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/right.svg`} width="70" height="70" />
                                     </div>
                                 </div>
                             }

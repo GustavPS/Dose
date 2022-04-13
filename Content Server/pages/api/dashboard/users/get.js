@@ -2,7 +2,7 @@ const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
 
-export default (req, res) => {
+const GetUser = (req, res) => {
     return new Promise(resolve => {
         res = cors(res);
         const token = req.query.token;
@@ -18,3 +18,5 @@ export default (req, res) => {
         });
     });
 }
+
+export default GetUser;

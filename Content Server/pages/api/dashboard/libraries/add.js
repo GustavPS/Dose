@@ -33,7 +33,7 @@ const validateLibraries = (libraries) => {
 }
 
 
-export default (req, res) => {
+const AddLibraries = (req, res) => {
     const libraries = req.body.libraries;
 
     if (!Array.isArray(libraries)) {
@@ -95,4 +95,5 @@ export default (req, res) => {
         }
     });
 }
-  
+
+export default AddLibraries;

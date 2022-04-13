@@ -413,17 +413,17 @@ export default class HlsPlayer extends Component {
      * Set the volume of the video based on the volume bar value
      */
     updateVolume() {
-        this.state.volume = this.soundBar.value / 100;
+        const volume = this.soundBar.value / 100;
         if (this.chromecastHandler.isCasting()) {
             this.chromecastHandler.setVolume(this.state.volume);
         } else {
             this.videoNode.volume = this.state.volume;
         }
-
-        if (this.state.volume <= 0.1) {
-            this.setState({ muted: true });
+        
+        if(volume <= 0.1) {
+            this.setState({muted: true, volume: volume});
         } else {
-            this.setState({ muted: false });
+            this.setState({muted: false, volume: volume});
         }
     }
 
@@ -432,22 +432,15 @@ export default class HlsPlayer extends Component {
      * @param {number} amount - the value to increase or decrease the volume by 
      */
     setVolume(amount) {
-        this.state.volume += amount / 100;
-        if (this.state.volume <= 0) {
-            this.state.volume = 0;
-            this.setState({ muted: true });
-        } else if (this.state.volume > 1) {
-            this.state.volume = 1;
-            this.setState({ muted: false });
-        } else {
-            this.setState({ muted: false });
-        }
+        const volume = Math.min(Math.max(this.state.volume + (amount / 100), 0), 1); // Make sure the volume is between 0 and 1
+        const muted = volume === 0;
+        this.setState({muted: muted, volume: volume});
 
-        this.soundBar.value = this.state.volume * 100;
+        this.soundBar.value = volume * 100;
         if (this.chromecastHandler.isCasting()) {
-            this.chromecastHandler.setVolume(this.state.volume);
+            this.chromecastHandler.setVolume(volume);
         } else {
-            this.videoNode.volume = this.state.volume;
+            this.videoNode.volume = volume;
         }
     }
 
@@ -455,21 +448,21 @@ export default class HlsPlayer extends Component {
      * toggles mute and remembers the old volume
      */
     toggleMute() {
+        let volume = this.state.volume;
         if (this.state.volume > 0) {
-            this.state.oldVolume = this.state.volume;
-            this.state.volume = 0;
+            volume = 0;
             this.soundBar.value = 0;
-            this.setState({ muted: true });
+            this.setState({muted: true, oldVolume: this.state.volume, volume: volume});
         } else {
-            this.state.volume = this.state.oldVolume;
-            this.soundBar.value = this.state.volume * 100;
-            this.setState({ muted: false });
+            volume = this.state.oldVolume;
+            this.soundBar.value = volume * 100;
+            this.setState({muted: false, volume: volume});
         }
 
         if (this.chromecastHandler.isCasting()) {
-            this.chromecastHandler.setVolume(this.state.volume);
+            this.chromecastHandler.setVolume(volume);
         } else {
-            this.videoNode.volume = this.state.volume;
+            this.videoNode.volume = volume;
         }
     }
 
@@ -660,10 +653,6 @@ export default class HlsPlayer extends Component {
 
                 });
             });
-
-
-
-
 
         // Check the localStorage if the chromecast API has already been loaded, if not, load it
         let runningOnClient = typeof window !== "undefined";
@@ -1013,6 +1002,7 @@ export default class HlsPlayer extends Component {
             <>
                 <Head>
                     {this.state.importGCastAPI &&
+                        /* eslint-disable-next-line @next/next/no-sync-scripts */
                         <script src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" strategy="beforeInteractive"></script>
                     }
                 </Head>
@@ -1040,7 +1030,7 @@ export default class HlsPlayer extends Component {
                                     </div>
 
                                     <input className={Styles.seekbar} type="range" id="seekbar" name="seekbar" ref={node => this.seekBar = node}
-                                        min="0" max="100" step="0.01" className={Styles.seekbar} onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime} />
+                                        min="0" max="100" step="0.01" onMouseDown={this.startSeek} onMouseUp={this.seek} onInput={this.updateSeekTime} />
                                 </div>
 
                                 <div className={Styles.lowerControls}>

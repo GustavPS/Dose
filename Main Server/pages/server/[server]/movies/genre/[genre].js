@@ -1,18 +1,20 @@
 import Layout from "../../../../../components/layout";
+import Styles from "../../../../../styles/genre.module.css";
 import cookie from "js-cookie";
 import Head from "next/head";
 import Router, { useRouter } from 'next/router'
-import getMoviesByGenre from '../../../../../lib/movieApi';
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import MovieBackdrop from "../../../../../components/movieBackdrop";
 import { useBottomScrollListener } from 'react-bottom-scroll-listener';
-
+import ContentServer from "../../../../../lib/ContentServer";
+import Spinner from "../../../../../components/Spinner/spinner";
 
 const Main = (props) => {
-    let router = useRouter();
-    let server = props.server;
-    let {genre} = router.query
-    let limit = 30;
+    const router = useRouter();
+    const server = props.server;
+    const limit = 30;
+    const contentServer = new ContentServer(server);
+    const { genre } = router.query
     const [offset, setOffset] = useState(0);
     const [gotAllMovies, setGotAllMovies] = useState(false);
     const [fetchingNewData, setFetchingNewData] = useState(false);
@@ -20,59 +22,58 @@ const Main = (props) => {
 
     const handleScroll = () => {
         if (!fetchingNewData && !gotAllMovies) {
-            getMovies();
+            fetchData();
         }
     }
     useBottomScrollListener(handleScroll);
 
-    const getMovies = () => {
+    const fetchData = () => {
         setFetchingNewData(true);
-        getMoviesByGenre(server, genre, offset, limit)
-            .then(result => {
-                setOffset(result.nextOffset);
-                if (result.movies.length === 0) {
-                    setGotAllMovies(true);
-                    return;
-                }
-
-                let movieElements = [];
-                for (let movie of result.movies) {
-                    let img = movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000'
-                    movieElements.push(
-                        <MovieBackdrop multipleRows
-                                       markAsDoneButton
-                                       id={movie.id}
-                                       runtime={movie.runtime}
-                                       title={movie.title}
-                                       overview={movie.overview}
-                                       runtime={movie.runtime}
-                                       backdrop={img}
-                                       onClick={(id) => selectMovie(movie.id)} />
-                    );
-                }
-                setMovies(movies.concat(movieElements));
+        contentServer.getMoviesByGenre(genre, limit, offset).then(data => {
+            if (data.length === 0) {
+                setGotAllMovies(true);
                 setFetchingNewData(false);
-            });
+                return;
+            }
+            setOffset(offset + limit);
+            setMovies(movies.concat(data));
+            setFetchingNewData(false);
+        });
     }
 
     useEffect(() => {
-        getMovies();
+        fetchData();
     }, []);
 
     const selectMovie = (id) => {
         Router.push(`/server/${server.server_id}/movies/video/${id}`);
     }
 
-
     // LAYOUT //
     return (
-        <Layout searchEnabled server={server} serverToken={cookie.get('serverToken')} style={{overflowY: "scroll"}}>
+        <Layout searchEnabled server={server} serverToken={cookie.get('serverToken')} style={{ overflowY: "scroll" }}>
             <Head>
             </Head>
-            <div style={{color: 'white', paddingTop: "120px"}} >
-                <div style={{textAlign: "center"}}>
+            <div style={{ color: 'white', paddingTop: "120px" }} >
+                <div style={{ textAlign: "center" }}>
                     <h1>{genre.charAt(0).toUpperCase() + genre.slice(1)} movies</h1>
-                    {movies}
+
+                    {movies.map((movie, idx) => {
+                        return (
+                            <MovieBackdrop multipleRows
+                                key={idx}
+                                markAsDoneButton
+                                id={movie.id}
+                                runtime={movie.runtime}
+                                title={movie.title}
+                                overview={movie.overview}
+                                backdrop={movie.backdrop !== null ? `https://image.tmdb.org/t/p/w500/${movie.backdrop}` : 'https://via.placeholder.com/2000x1000'}
+                                onClick={(id) => selectMovie(movie.id)} />
+                        )
+                    })}
+                    {fetchingNewData &&
+                        <Spinner className={Styles.spinner}></Spinner>
+                    }
                 </div>
             </div>
         </Layout>

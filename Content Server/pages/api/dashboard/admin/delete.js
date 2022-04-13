@@ -5,7 +5,7 @@ const db = require('../../../../lib/db');
 const cors = require('../../../../lib/cors');
 const validateUser = require('../../../../lib/validateUser');
 
-export default (req, res) => {
+const DeleteAdmin = (req, res) => {
     res = cors(res);
     const { token, id } = req.query;
     const user = validateUser(token, process.env.DASHBOARD_SECRET);
@@ -26,3 +26,5 @@ export default (req, res) => {
         success: true
     })
 }
+
+export default DeleteAdmin;

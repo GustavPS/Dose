@@ -12,9 +12,10 @@ import EpisodePoster from '../../../components/episodePoster';
 import socketIOClient from "socket.io-client";
 import ContentServer from '../../../lib/ContentServer';
 
-const main = (props) => {
+const Main = (props) => {
     // props.server is from the SSR under this function
     const server = props.server;
+    const contentServer = new ContentServer(server);
     const [ongoingMovies, setOngoingMovies] = useState([]);
     const [movieWatchList, setMovieWatchList] = useState([]);
     const [ongoingShows, setOngoingShows] = useState([]);
@@ -26,7 +27,6 @@ const main = (props) => {
     const [loaded, setLoaded] = useState(false)
 
     const newlyAddedMoviesRef = useRef(null);
-    const contentServer = new ContentServer(server);
     newlyAddedMoviesRef.current = newlyAddedMovies;
 
     const fetchData = () => {
@@ -157,18 +157,18 @@ const main = (props) => {
                         </video>
                         <div className={Styles.recommendedInformation}>
                             {recommendedMovie["activeLogo"] != false &&
-                                <img src={`https://image.tmdb.org/t/p/original/${recommendedMovie["activeLogo"].path}`} className={Styles.logo} />
+                                <img src={`https://image.tmdb.org/t/p/original/${recommendedMovie["activeLogo"].path}`} className={Styles.logo} alt="Logo" />
                             }
                             {recommendedMovie["activeLogo"] == false &&
                                 <h1>{recommendedMovie["title"]}</h1>
                             }
                             <p>{recommendedMovie["overview"]}</p>
                             <div className={Styles.controls}>
-                                <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}?autoPlay=true`}>
-                                    <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/001-play-button.png`} />
+                                <Link passHref={true} href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}?autoPlay=true`}>
+                                    <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/001-play-button.png`} alt="Play" />
                                 </Link>
-                                <Link href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}`}>
-                                    <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/002-information.png`} />
+                                <Link passHref={true} href={`/server/${server.server_id}/movies/video/${recommendedMovie["id"]}`}>
+                                    <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/images/002-information.png`} alt="More info" />
                                 </Link>
                             </div>
                         </div>
@@ -195,7 +195,7 @@ const main = (props) => {
     )
 }
 
-export default main;
+export default Main;
 
 // Get the information about the server and send it to the front end before render (this is server-side)
 export async function getServerSideProps(context) {

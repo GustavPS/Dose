@@ -80,7 +80,7 @@ const saveToConfigFile = (config, mainServerUrl) => {
     });
 }
 
-export default async (req, res) => {
+const SetupAccount = async (req, res) => {
     const { username, password, mainServerUrl, contentServerIp, contentServerName } = req.body;
     const config = new Config();
     const setupDone = await config.isSetupDone();
@@ -175,3 +175,5 @@ export default async (req, res) => {
         });
     });
 }
+
+export default SetupAccount;
