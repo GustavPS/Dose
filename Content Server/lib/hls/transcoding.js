@@ -265,7 +265,7 @@ class Transcoding {
         logger.DEBUG("[HLS] Stopping transcoding");
         this.ffmpegProc.kill();
         // If this process is for a transcoding fast start, we need to keep the temp folder for the slow transcoding process
-        if (!this.fastStart) {
+        if (!this.fastStart || this.gpuTranscoding) {
             this.removeTempFolder();
         }
     }
