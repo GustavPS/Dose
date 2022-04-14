@@ -1,3 +1,8 @@
+# MOVING
+**This repo is being moved!**
+
+This repository has split into two different repositories. One for the Main Server (front-end) and one for the Content Server (back-end). The new repositories are located in the [DoseLibrary](https://github.com/DoseLibrary) organization. Please visist the new location for the [Content Server](https://github.com/DoseLibrary/ContentServer) and the new location for the [Main Server](https://github.com/DoseLibrary/MainServer). The move isn't completly done yet. When it is this page will be updated, but no more commits will be done in this repository. Future updates and patches will be at the above repositories.
+
 # DOSE
 <div align="center">
   <img src="https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square" alt="Coverage status">
@@ -6,7 +11,6 @@
   <a href="https://www.codefactor.io/repository/github/gustavps/dose"><img src="https://www.codefactor.io/repository/github/gustavps/dose/badge" alt="CodeFactor" /></a>
   
 </div>
-
 
 
 A complete library solution for movies and TV Shows. Display and view your purchased content via the web using a beautiful UI.
