@@ -18,7 +18,7 @@
     "didyoumean": "^1.2.1",
     "hls.js": "^0.13.2",
     "js-cookie": "^2.2.1",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "next": "^12.1.0",
     "next-cookies": "^2.0.3",
     "node-async-locks": "^2.0.0",
